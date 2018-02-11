@@ -2,27 +2,27 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
     <link rel="stylesheet" href="/static/style.css" />
-    <title>{% block title %}Chris & Dana's June 2017 Purity Spring Retreat{% endblock %}</title>
+    <title>{{block "title" .}}Chris & Dana's June 2017 Purity Spring Retreat{{end}}</title>
     <script src="/static/support.js" language="javascript"></script>
-    {%block extrahead %}{% endblock %}
+    {{block "extrahead" .}}{{end}}
 </head>
 
 <body link="#ff9999" vlink="#9999ff" >
-  {% block mainbody %}
+  {{block "mainbody" .}}
   <div id="wrap">
     <div id="header"></div>
     <div id="nav">
-        {% block nav %}
+        {{block "nav" .}}
 	<!--
 	<ul>
             <li><a href="/">Nav1</a></li>
             <li><a href="/rsvp/">Nav2</a></li>
         </ul>
 	-->
-	{% endblock %}
+	{{end}}
     </div>
     <div id="sidebar">
-        {% block sidebar %}
+        {{block "sidebar" .}}
         <ul>
             <li><a href="/">Welcome</a></li>
             <li>Logistics
@@ -59,20 +59,20 @@
             <li><a href="/accounts/logout/">Logout</a></li>	    
 	    {% endif %}
         </ul>
-        {% endblock %}
+        {{end}}
     </div>
 
     <div id="content"> <!--  style="margin: 4em 4em 4em 4em; padding: 2em 2em 2em 2em; width: 50em; background-color: #990000; text-align: center; -->
-      {% block header %}<h1>Chris & Dana's Purity Spring Retreat</h1>{% endblock %}
+      {{block "header" .}}<h1>Chris & Dana's Purity Spring Retreat</h1>{{end}}
 
-      {% block content %}{% endblock %}
+      {{block "content" .}}{{end}}
     </div>
     <!--
     <div id="footer">
         {% block footer %}(Some footer content){% endblock %}
     </div>
     -->
-    {% endblock mainbody %}
+    {{ end }}
 </body>
 </html>
 
