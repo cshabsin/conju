@@ -1,0 +1,78 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <link rel="stylesheet" href="/static/style.css" />
+    <title>{% block title %}Chris & Dana's June 2017 Purity Spring Retreat{% endblock %}</title>
+    <script src="/static/support.js" language="javascript"></script>
+    {%block extrahead %}{% endblock %}
+</head>
+
+<body link="#ff9999" vlink="#9999ff" >
+  {% block mainbody %}
+  <div id="wrap">
+    <div id="header"></div>
+    <div id="nav">
+        {% block nav %}
+	<!--
+	<ul>
+            <li><a href="/">Nav1</a></li>
+            <li><a href="/rsvp/">Nav2</a></li>
+        </ul>
+	-->
+	{% endblock %}
+    </div>
+    <div id="sidebar">
+        {% block sidebar %}
+        <ul>
+            <li><a href="/">Welcome</a></li>
+            <li>Logistics
+	      <ul>
+		<li><a href="/psr2017/lodging/">- Room Rates -</li>	
+		<li><a href="/psr2017/directions/">- Directions -</li>
+	      </ul>
+		</li>
+
+	    <li><a href="/psr2017/activities/">Activities</a></li>
+            <!-- <li><a href="/about-us/">About Us</a></li> -->
+<!--            <li><a href="/photos/">Photos</a>
+	    {% ifequal request.path.1 "p" %}
+	    {% ifequal request.path.2 "h" %}
+	    {% ifequal request.path.3 "o" %}
+	    {% ifequal request.path.4 "t" %}
+	      <ul>
+		<li><a href="/photologue/gallery/">- Galleries -</li>
+		<li><a href="/photos/upload/">- Upload -</li>
+		<li><a href="/photos/engagement/">- Engagement -</li>
+		</ul>
+	    {% endifequal %} {% endifequal %} {% endifequal %} {% endifequal %}
+	    </li>
+-->
+            <!-- <li><a href="/gifts/">Gifts</a></li> -->
+            <li><a href="/rsvp/">RSVP</a></li>
+            <li><a href="/comment/">Comment</a></li>
+            <!-- <li><a href="/faq/">FAQ</a></li> -->
+	    {% if user.is_authenticated and user.is_staff %}
+            <li><a href="/admin/">Admin</a></li>	    
+            <li><a href="/tools/">Admin Tools</a></li>	    
+	    {% endif %}
+	    {% if user.is_authenticated %}
+            <li><a href="/accounts/logout/">Logout</a></li>	    
+	    {% endif %}
+        </ul>
+        {% endblock %}
+    </div>
+
+    <div id="content"> <!--  style="margin: 4em 4em 4em 4em; padding: 2em 2em 2em 2em; width: 50em; background-color: #990000; text-align: center; -->
+      {% block header %}<h1>Chris & Dana's Purity Spring Retreat</h1>{% endblock %}
+
+      {% block content %}{% endblock %}
+    </div>
+    <!--
+    <div id="footer">
+        {% block footer %}(Some footer content){% endblock %}
+    </div>
+    -->
+    {% endblock mainbody %}
+</body>
+</html>
+
