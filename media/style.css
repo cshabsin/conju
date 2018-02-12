@@ -1,0 +1,344 @@
+
+
+/* Colors:
+    dark red:     #990000
+    lighter red:  #bb0000
+    blue:         #009933
+    dark beige:   #e6c0d8
+    light beige:  #ffeff9
+    mid beige:    #ffd5ef
+    mid beigh 2:  #f6e3ec
+    light blue:   #eff9ff
+
+    wedding blue background: #CDE9FA
+    wedding purple text: #4F0463
+
+  Derived from: http://www.456bereastreet.com/lab/developing_with_web_standards/csslayout/2-col/
+*/
+
+@font-face { font-family: 'LMRoman'; src: url('/media/fonts/lmroman9-regular.otf'); }
+@font-face { font-family: 'LMRoman'; src: url('/media/fonts/lmroman9-bold.otf'); font-weight: bold; }
+/*@font-face { font-family: 'LMRoman'; src: url('/media/fonts/lmroman9-bolditalic.otf'); font-weight: bold; font-style: italic; } */
+@font-face { font-family: 'LMRoman'; src: url('/media/fonts/lmroman9-italic.otf'); font-style: italic; }
+
+
+body {
+    margin:0;
+    padding:0;
+    color:      #1F1497;
+    background: #FAF4E2;
+    font-family: LMRoman, georgia, new york,serif;
+    
+}
+
+.warning{
+    font-weight:bold;
+    color: #FAF4E2;
+    background: #1F1497;
+    padding:10px;
+}
+
+html {
+    margin:0;
+    padding:0;
+}
+
+#wrap {
+    width:800px;
+    margin:0 auto;
+    background: none;
+}
+
+h1 {
+    margin:0;
+}
+
+#header {
+    background: none;
+    padding:5px 10px;
+    margin-top: 110px;
+    margin-left: 80px;
+    text-align: left;
+    
+}
+
+#content {
+    color: #1f1497;
+    /*color:      #eff9ff;*/
+    float: right;
+    width: 600px;
+    padding:10px;
+    margin: 20px 20px 20px 0px;
+}
+
+
+/* Side navigation bar */
+#sidebar {
+    /*background: #c0d8e6;*/
+    float: left;
+    width: 140px;
+    padding: 5px;
+    margin: 40px 0px 10px 0px;
+}
+
+#sidebar ul {
+    margin:0;
+    padding:0;
+    list-style:none;
+}
+
+#sidebar ul li {
+/* background color was C0D8E6 */
+    background: #191497/* url('/static/button.png') no-repeat*/;
+    background-position: center 7px;
+    /*filter:alpha(opacity=70);  opacity:0.7;*/
+    color: #FAF4E2;
+    margin: 8px;
+    padding: 8px;
+    font: 10pt bold; 
+    text-align: center;
+}
+
+#sidebar ul li a:link { color: #FAF4E2; text-decoration: none; } 
+#sidebar ul li a:visited { color: #FAF4E2; text-decoration: none;  }
+#sidebar ul li a:active  { color: #FAF4E2; text-decoration: none; }
+#sidebar ul li a:hover   { color: #CCAA12; text-decoration: none; }
+
+
+
+#sidebar ul li ul li {
+    background: none;
+    background-position: 10px center;
+    padding: 2px;
+    margin: 4px;
+}
+
+ a:link    { color: #1f1497; }
+ a:visited { color: #1f1497; }
+ a:active  { color: #1f1497; }
+ a:hover   { color: #444444; }
+/*
+#sidebar li a:link    { color: #4F0463; text-decoration: none; }
+#sidebar li a:visited { color: #4F0463; text-decoration: none; }
+#sidebar li a:active  { color: #4F0463; text-decoration: none; }
+#sidebar li a:hover   { color: red; text-decoration: none; }
+
+*/
+
+
+/* Footer */
+
+#footer {
+    background:#c0d8e6;
+    clear:both;
+    padding:5px 10px;
+}
+
+#footer p {
+    margin:0;
+}
+
+
+/* For a top navigation bar... */
+#nav {
+    background: #c99;
+}
+#nav ul {
+    margin:0;
+    padding:0;
+    list-style:none;
+}
+#nav li {
+    display:inline;
+    margin:0;
+    padding:0;
+}
+
+textarea {width:100%}
+
+table.infotable { border-collapse: collapse; width:100% }
+
+table.infotable tr, table.infotable td, table.infotable th {
+    margin:  0px;
+    padding: 4px;
+    border: 1px solid #191497;
+    /*background-color: #e3ecf6;*/
+    color: #191497;
+    text-align: left;
+}
+
+table.infotable2 tr, table.infotable2 td, table.infotable2 th {
+    margin:  0px;
+    padding: 4px;
+    border: 2px solid #c0d8e6;
+    background-color:
+    color: black;
+    text-align: left;
+}
+
+table.activitytable{
+    width:75%;
+}
+
+table.activitytable td{
+    width:33%;
+    padding:10px;
+    vertical-align:top;
+}
+
+table.timespantable{
+    border-collapse:collapse;
+    margin-bottom:50px;
+}
+
+table.timespantable tr.header td{
+    padding-bottom:15px;
+}
+
+table.timespantable td.guest{
+    width:200px;
+}
+
+table.timespantable td{
+    width:125px;
+}
+
+table.timespantable td.present{
+    background-color: #990000;
+}
+
+
+.errorlist {
+    font: bold;
+    color: #0000ff;
+}
+
+.fieldWrapper {
+    display: block;
+    font-size: 10pt;
+    padding: 5px;
+}
+
+.fieldWrapper input[type="text"], .fieldWrapper textarea {
+    font-size: 12pt;
+    border: solid 1px #9999bb;
+    background: #f9fcff;
+}
+
+.fieldLabel {
+    color: #191497;
+    padding: 2px;
+    display: block;
+}
+
+.fieldWrapper ul {
+    list-style: none;
+    text-indent: -2em;
+}
+
+.formBox {
+    border: 1px #191497 solid;
+    padding: 10px;
+    margin: 20px 4px 20px 4px;
+    color: #191497;
+    text-align: left;
+}
+
+.formButton {
+    text-align: center;
+}
+
+.formButton input {
+    color: #191497;
+    background: #c0d8e6;
+    font-size: 14pt;
+    padding: 4px;
+}
+
+.formBox h4 {
+}
+
+.formBox h3 {
+    color:      #191497;
+    margin-top: 2px; 
+}
+
+.AttendingSelect {
+    onselect: 
+}
+
+.IfAttending {
+    display: none;
+}
+
+.logisticsRequestContainer {
+    display: none;
+}
+
+.allRooms {
+    display: inline-block;
+    margin-bottom:20px;
+}
+
+.individualRoom {
+    margin: 10px 0px 15px 20px;
+}
+
+.roomSharers {
+    margin-left: 20px;
+}
+
+.rideSharingOptions {
+    margin:10px 0px;
+}
+
+.GuestVenue select {
+    margin:10px 0px;
+}
+
+.drivingSelect {
+    margin-top:10px;
+}
+
+.activityInput {
+    width:25px;
+}
+
+.activityDescription {
+    padding-left:10px
+}
+
+.photo-controls {
+    text-align: center;
+    display: block;
+    padding: 5pt;
+    margin: 5pt;
+    background-color: #c0d8e6;
+}
+
+
+.photo-display {
+    text-align: center;
+    display: block;
+    padding: 5pt;
+    margin: 5pt;
+}
+
+.photo-gallery {
+    display: block;
+    padding: 10pt;
+    margin: 10pt;
+    background-color: #c0d8e6;
+}
+
+.gallery-photo {
+    display: inline;
+}
+
+.gallery-photo img {
+    padding: 4pt 4pt 4pt 4pt;
+    margin: 7pt;
+    background-color: #000000;    
+    display: inline;
+}
+
