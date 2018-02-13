@@ -41,3 +41,8 @@ func (p Person) ApproxAge() time.Duration {
 	}
 	return time.Now().Sub(p.Birthdate)
 }
+
+// Round a duration to half-years.
+func HalfYears(d time.Duration) float64 {
+	return RoundDuration(d, Halfyear).Hours() / 24 / 365
+}
