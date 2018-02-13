@@ -24,10 +24,6 @@ var rick = Person{
 	LastName:  "Shabsin",
 }
 
-
-
-
-
 func ExampleFirstName() {
 	fmt.Printf("Informal: %s\n", chris.GetFirstName(Informal))
 	fmt.Printf("Formal: %s\n", chris.GetFirstName(Formal))
@@ -84,7 +80,4 @@ func TestCollectiveAddress(t *testing.T) {
 		t.Errorf(">3 different names, informal was incorrect, got: %s, want: %s.", fn6, "Rick, Chris, Dana & Lydia")
 	}
 
-
-
 }
-
