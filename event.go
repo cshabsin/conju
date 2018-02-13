@@ -24,10 +24,10 @@ func CurrentEventKey(ctx context.Context) *datastore.Key {
 
 func CreateOneOffEvent(ctx context.Context) error {
 	e := Event{
-		Name: "Purity Spring 2018",
+		Name:      "Purity Spring 2018",
 		StartDate: time.Date(2018, 6, 8, 0, 0, 0, 0, time.Local),
-		EndDate: time.Date(2018, 6, 11, 0, 0, 0, 0, time.Local),
-		Current: true,
+		EndDate:   time.Date(2018, 6, 11, 0, 0, 0, 0, time.Local),
+		Current:   true,
 	}
 	_, err := datastore.Put(ctx, CurrentEventKey(ctx), &e)
 	return err
