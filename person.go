@@ -59,15 +59,12 @@ func (p *Person) FullName() string {
 // nickname if present.
 func (p *Person) FullNameWithFormality(formality NameFormality) string {
 
-	if p.Nickname != "" {
-		if formality == Full {
-			return fmt.Sprintf("%s (%s) %s", p.FirstName, p.Nickname, p.LastName)
-		}
-
-		return fmt.Sprintf("%s %s", p.GetFirstName(formality), p.LastName)
-
+	if p.Nickname != "" && formality == Full {
+		return fmt.Sprintf("%s (%s) %s", p.FirstName, p.Nickname, p.LastName)
 	}
-	return fmt.Sprintf("%s %s", p.FirstName, p.LastName)
+
+	return fmt.Sprintf("%s %s", p.GetFirstName(formality), p.LastName)
+
 }
 
 func CollectiveAddress(people []Person, formality NameFormality) string {
