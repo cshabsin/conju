@@ -48,34 +48,60 @@ func TestFullNameWithFormality(t *testing.T) {
 }
 
 func TestCollectiveAddress(t *testing.T) {
-	fn := CollectiveAddress([]Person{chris}, Informal)
-	if fn != "Chris Shabsin" {
-		t.Errorf("Single person with nickname, informal was incorrect, got: %s, want: %s.", fn, "Chris Shabsin")
+	type TestCase struct {
+		Name string
+		People []Person
+		NameFormality
+		Want string
 	}
-
-	fn = CollectiveAddress([]Person{dana, chris}, Informal)
-	if fn != "Dana Scott & Chris Shabsin" {
-		t.Errorf("Couple different names, informal was incorrect, got: %s, want: %s.", fn, "Dana Scott & Chris Shabsin")
+	testcases := []TestCase{
+		{
+			Name: "Single Person w/ Nickname",
+			People: []Person{chris},
+			NameFormality: Informal,
+			Want: "Chris Shabsin",
+		},
+		{
+			Name: "Couple w/ Different Last Names",
+			People: []Person{dana, chris},
+			NameFormality: Informal,
+			Want: "Dana Scott & Chris Shabsin",
+		},
+		{
+			Name: "Couple w/ Same Last Name",
+			People: []Person{chris, lydia},
+			NameFormality: Formal,
+			Want: "Christopher & Lydia Shabsin",
+		},
+		{
+			Name: ">2 Different Names, Informal",
+			People: []Person{chris, dana, lydia},
+			NameFormality: Informal,
+			Want: "Chris, Dana & Lydia",
+		},
+		{
+			Name: ">2 Different Names, Formal",
+			People: []Person{chris, dana, lydia},
+			NameFormality: Formal,
+			Want: "Christopher, Dana & Lydia",
+		},
+		{
+			Name: ">2 Same Names, Formal",
+			People: []Person{rick, chris, lydia},
+			NameFormality: Formal,
+			Want: "Richard, Christopher & Lydia Shabsin",
+		},
+		{
+			Name: ">3 Different Names, Informal",
+			People: []Person{rick, chris, dana, lydia},
+			NameFormality: Informal,
+			Want: "Rick, Chris, Dana & Lydia",
+		},
 	}
-
-	fn = CollectiveAddress([]Person{chris, lydia}, Formal)
-	if fn != "Christopher & Lydia Shabsin" {
-		t.Errorf("Couple same name, formal was incorrect, got: %s, want: %s.", fn, "Christopher & Lydia Shabsin")
+	for _, tc := range(testcases) {
+		fn := CollectiveAddress(tc.People, tc.NameFormality)
+		if fn != tc.Want {
+			t.Errorf("%s incorrect, got: %s, want: %s.", tc.Name, fn, tc.Want)
+		}
 	}
-
-	fn = CollectiveAddress([]Person{chris, dana, lydia}, Informal)
-	if fn != "Chris, Dana & Lydia" {
-		t.Errorf(">2 different names, informal was incorrect, got: %s, want: %s.", fn, "Chris, Dana & Lydia")
-	}
-
-	fn = CollectiveAddress([]Person{rick, chris, lydia}, Formal)
-	if fn != "Richard, Christopher & Lydia Shabsin" {
-		t.Errorf(">2 different names, formal was incorrect, got: %s, want: %s.", fn, "Richard, Christopher & Lydia Shabsin")
-	}
-
-	fn = CollectiveAddress([]Person{rick, chris, dana, lydia}, Informal)
-	if fn != "Rick, Chris, Dana & Lydia" {
-		t.Errorf(">3 different names, informal was incorrect, got: %s, want: %s.", fn, "Rick, Chris, Dana & Lydia")
-	}
-
 }
