@@ -26,7 +26,7 @@ type Person struct {
 }
 
 func PersonKey(ctx context.Context) *datastore.Key {
-	return datastore.NewKey(ctx, "Person", "", 0, nil)
+	return datastore.NewIncompleteKey(ctx, "Person", nil)
 }
 
 func CreatePerson(ctx context.Context, first, last string) error {
