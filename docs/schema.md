@@ -13,4 +13,4 @@
     * Invitation
       * Contains:
       	* slice of Key to Person objects
-	* invitation code
+        * invitation code
