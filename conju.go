@@ -10,6 +10,8 @@ func init() {
 	http.HandleFunc("/test2", makeTemplateHandler("test.html", "test2.html"))
 	http.HandleFunc("/test3", makeTemplateHandler("test.html", "test3.html"))
 	http.HandleFunc("/create", handleCreate)
+	http.HandleFunc("/importData", ImportData)
+
 }
 
 func handleCreate(w http.ResponseWriter, r *http.Request) {

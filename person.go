@@ -15,11 +15,14 @@ type Person struct {
 	LastName    string
 	Nickname    string
 	Email       string
-	HomePhone   string
-	MobilePhone string
+	Telephone   string
 	Address     string
 	Birthdate   time.Time
 	FallbackAge float64
+	// these fields can be removed after all the data is ported
+	OldGuestId  int
+	OldInviteeId int
+	OldInviteCode string
 }
 
 func PersonKey(ctx context.Context) *datastore.Key {
