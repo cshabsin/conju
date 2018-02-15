@@ -1,29 +1,17 @@
 package conju
 
 import (
-	"net/http"
-	"strconv"
+	"fmt"
 
-	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
 )
 
 func init() {
 	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html"))
 	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
-	AddSessionHandler("/create", handleCreate)
 	AddSessionHandler("/importData", ImportData)
 	AddSessionHandler("/increment", handleIncrement)
-}
-
-func handleCreate(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
-	err := CreateOneOffEvent(ctx)
-	if err != nil {
-		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(wr.ResponseWriter, wr.Request, "/", http.StatusFound)
+	AddSessionHandler("/cleanup", handleCleanup)
 }
 
 func handleIncrement(wr WrappedRequest) {
@@ -32,6 +20,26 @@ func handleIncrement(wr WrappedRequest) {
 	} else {
 		wr.Values["n"] = wr.Values["n"].(int) + 1
 	}
+	ev, err := wr.CurrentEvent()
+	if err != nil {
+		log.Errorf(wr.Context, "%v", err)
+		wr.Values["event"] = nil
+	}
 	wr.SaveSession()
-	wr.ResponseWriter.Write([]byte(strconv.Itoa(wr.Values["n"].(int))))
+	var event_name string
+	if ev != nil {
+		event_name = ev.Name
+	}
+	wr.ResponseWriter.Write([]byte(
+		fmt.Sprintf("%s\n%d\n", event_name, wr.Values["n"].(int))))
+}
+
+func handleCleanup(wr WrappedRequest) {
+	wr.Values["event"] = nil
+	wr.SaveSession()
+	// Deletes all "current event" objects
+	err := cleanUp(wr.Context)
+	if err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
 }
