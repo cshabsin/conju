@@ -56,7 +56,7 @@ func ImportGuests(w http.ResponseWriter, r *http.Request) {
     	if processedHeader {
 	   guestRow := scanner.Text()
 	   fields := strings.Split(guestRow, "\t")
-           fmt.Fprintf(b, "%n fields: %s\n", len(fields),guestRow)
+           fmt.Fprintf(b, "%d fields: %s\n", len(fields),guestRow)
 	   Guest.GuestId, err = strconv.Atoi(fields[0])
        	   Guest.FirstName = fields[1]
 	   Guest.LastName = fields[2]
