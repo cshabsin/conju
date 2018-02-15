@@ -24,6 +24,9 @@ func AddSessionHandler(url string, f func(WrappedRequest)) {
 			return
 		}
 		f(WrappedRequest{w, r, sess})
-		sess.Save(r, w)
 	})
+}
+
+func (w *WrappedRequest) SaveSession() error {
+	return w.Save(w.Request, w.ResponseWriter)
 }
