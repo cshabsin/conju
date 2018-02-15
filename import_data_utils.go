@@ -36,8 +36,8 @@ type ImportedGuest struct {
 }
 
 
-func ImportData(w http.ResponseWriter, r *http.Request) {
-     ImportGuests(w, r)
+func ImportData(wr WrappedRequest) {
+     ImportGuests(wr.ResponseWriter, wr.Request)
 }
 
 func ImportGuests(w http.ResponseWriter, r *http.Request) {
