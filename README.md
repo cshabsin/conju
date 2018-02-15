@@ -14,12 +14,14 @@ Choose project "shabscott" for dev environment. (prod environment to follow)
 
 Includes followup info about login support (google accounts) and datastore usage in Go.
 
+```
 $ eval $(ssh-agent -s)
 $ ssh-add
 $ cd  ~/work/conju
 $ git init
 $ git remote add origin git@github.com:cshabsin/conju.git                                                                                              
 $ git pull origin master
+```
 
 Install Go tools (apt-get install golang-go on Debian, not sure what this is on Mac).
 Set GOPATH environment variable somewhere useful (like ~/gopath).
@@ -31,13 +33,17 @@ Run "dev_appserver.py app.yaml" to test on localhost:8080. Admin console at loca
 
 (Only seems to work with Emacs 24)
 
+```
 $ mkdir -p ~/.emacs.d/lisp
 $ cd ~/.emacs.d/lisp
 $ wget https://raw.githubusercontent.com/dominikh/go-mode.el/master/go-mode.el
+```
 
 Add to ~/.emacs.d/init.el:
+```lisp
 (add-to-list 'load-path "/home/cshabsin/.emacs.d/lisp")
 (require 'go-mode)
+```
 
 ## Useful Links
 
