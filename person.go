@@ -19,6 +19,7 @@ type Person struct {
 	Address     string
 	Birthdate   time.Time
 	FallbackAge float64
+	NeedBirthdate bool
 	// these fields can be removed after all the data is ported
 	OldGuestId  int
 	OldInviteeId int

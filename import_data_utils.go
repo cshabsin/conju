@@ -18,6 +18,7 @@ import (
 )
 
 const Guest_Data_File_Name = "test_import_data/Test_Guests.tsv"
+//const Guest_Data_File_Name = "Guests_to_Import.tsv"
 
 type ImportedGuest struct {
      GuestId int
@@ -30,6 +31,7 @@ type ImportedGuest struct {
      CellPhone string
      AgeOverride float64
      Birthdate time.Time
+     NeedBirthdate bool
      InviteCode string
      Address string
 }
@@ -54,7 +56,7 @@ func ImportGuests(w http.ResponseWriter, r *http.Request, ctx context.Context) {
     	if processedHeader {
 	   guestRow := scanner.Text()
 	   fields := strings.Split(guestRow, "\t")
-           fmt.Fprintf(b, "%d fields: %s\n", len(fields),guestRow)
+           fmt.Fprintf(b, "%s\n",guestRow)
 	   Guest.GuestId, err = strconv.Atoi(fields[0])
        	   Guest.FirstName = fields[1]
 	   Guest.LastName = fields[2]
@@ -65,10 +67,11 @@ func ImportGuests(w http.ResponseWriter, r *http.Request, ctx context.Context) {
 	   Guest.CellPhone = fields[7]
 	   Guest.AgeOverride, err = strconv.ParseFloat(fields[8], 64)
 
-	   layout := "2017-08-24 21:14:00"
+	   layout := "2006-01-02 15:04:05"
 	   Guest.Birthdate, err	= time.Parse(layout, fields[9]) 
-	   Guest.InviteCode = fields[10]
-	   Guest.Address = strings.Replace(fields[11],"|","\n",-1)
+	   Guest.NeedBirthdate = fields[10] == "1"
+	   Guest.InviteCode = fields[11]
+	   Guest.Address = strings.Replace(fields[12],"|","\n",-1)
 
 	   fmt.Println(err)	   
 		    
@@ -111,6 +114,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, guest ImportedGuest) err
        Telephone: phone,
        FallbackAge: guest.AgeOverride,
        Birthdate: guest.Birthdate,
+       NeedBirthdate: guest.NeedBirthdate,
        Address: guest.Address,
      }
      
