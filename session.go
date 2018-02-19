@@ -2,12 +2,10 @@ package conju
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/gorilla/sessions"
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 )
 
 // TODO(cshabsin): Figure out how to store the secret in the datastore
@@ -19,10 +17,17 @@ type WrappedRequest struct {
 	*http.Request
 	context.Context
 	*sessions.Session
-	cachedEvent *Event
+	*Event
 }
 
-func AddSessionHandler(url string, f func(WrappedRequest)) {
+type Getter func(*WrappedRequest) error
+
+type Getters struct {
+	Getters []Getter
+}
+
+func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
+	getters := Getters{make([]Getter, 0)}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		sess, err := store.Get(r, "conju")
 		if err != nil {
@@ -30,40 +35,32 @@ func AddSessionHandler(url string, f func(WrappedRequest)) {
 			return
 		}
 		ctx := appengine.NewContext(r)
-		if sess.Values["event"] == nil {
-			k, err := CurrentEventKey(ctx)
-			if err != nil {
+		wr := WrappedRequest{w, r, ctx, sess, nil}
+		for _, getter := range(getters.Getters) {
+			if err = getter(&wr); err != nil {
+				// TODO: Probably not internal server error
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			sess.Values["event"] = k.Encode()
 		}
-		f(WrappedRequest{w, r, ctx, sess, nil})
+		f(wr)
 	})
+	return &getters
 }
 
+func (g *Getters) Needs(getter Getter) *Getters {
+	g.Getters = append(g.Getters, getter)
+	return g
+}
+
+// TODO(cshabsin): Add check for whether the wrapped request has
+// already written the header (in which case emit a warning or
+// something since the change to the value will not be saved.
+func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
+	w.Values[key] = value
+}
+
+// Call SaveSession before writing any output to writer.
 func (w *WrappedRequest) SaveSession() error {
 	return w.Session.Save(w.Request, w.ResponseWriter)
 }
-
-func (w *WrappedRequest) CurrentEvent() (*Event, error) {
-	if w.cachedEvent != nil {
-		return w.cachedEvent, nil
-	}
-	encoded_key, ok := w.Values["event"].(string)
-	if !ok {
-		return nil, errors.New("Event not found in session.")
-	}
-	key, err := datastore.DecodeKey(encoded_key)
-	if err != nil {
-		return nil, err
-	}
-	var e Event
-	err = datastore.Get(w.Context, key, &e)
-	if err != nil {
-		return nil, err
-	}
-	w.cachedEvent = &e
-	return &e, nil
-}
-

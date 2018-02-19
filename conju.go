@@ -10,7 +10,7 @@ func init() {
 	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html"))
 	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
 	AddSessionHandler("/importData", ImportData)
-	AddSessionHandler("/increment", handleIncrement)
+	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
 	AddSessionHandler("/cleanup", handleCleanup)
 }
 
@@ -20,12 +20,8 @@ func handleIncrement(wr WrappedRequest) {
 	} else {
 		wr.Values["n"] = wr.Values["n"].(int) + 1
 	}
-	ev, err := wr.CurrentEvent()
-	if err != nil {
-		log.Errorf(wr.Context, "%v", err)
-		wr.Values["event"] = nil
-	}
 	wr.SaveSession()
+	ev := wr.Event
 	var event_name string
 	if ev != nil {
 		event_name = ev.Name

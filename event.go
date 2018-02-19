@@ -4,6 +4,7 @@ package conju
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"google.golang.org/appengine/datastore"
@@ -45,6 +46,38 @@ func CreateDefaultEvent(ctx context.Context) (*datastore.Key, error) {
 	}
 	return datastore.Put(ctx, datastore.NewIncompleteKey(
 		ctx, "Event", nil), &e)
+}
+
+// Sets up Event in the WrappedRequest.
+func EventGetter(wr *WrappedRequest) error {
+	log.Println("EventGetter called")
+	var key *datastore.Key
+	var err error
+	if wr.Values["event"] == nil {
+		key, err = CurrentEventKey(wr.Context)
+		if err != nil {
+			return err
+		}
+		wr.SetSessionValue("event", key.Encode())
+		wr.SaveSession()
+	} else {
+		encoded_key := wr.Values["event"].(string)
+		key, err = datastore.DecodeKey(encoded_key)
+		if err != nil {
+			wr.SetSessionValue("event", nil)
+			wr.SaveSession()
+			return err
+		}
+	}
+	log.Printf("Got key %v", key)
+	var e Event
+	err = datastore.Get(wr.Context, key, &e)
+	if err != nil {
+		return err
+	}
+	wr.Event = &e
+	log.Printf("Got event %v", e)
+	return nil
 }
 
 func cleanUp(ctx context.Context) error {
