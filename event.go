@@ -4,7 +4,6 @@ package conju
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"google.golang.org/appengine/datastore"
@@ -50,7 +49,6 @@ func CreateDefaultEvent(ctx context.Context) (*datastore.Key, error) {
 
 // Sets up Event in the WrappedRequest.
 func EventGetter(wr *WrappedRequest) error {
-	log.Println("EventGetter called")
 	var key *datastore.Key
 	var err error
 	if wr.Values["event"] == nil {
@@ -69,14 +67,12 @@ func EventGetter(wr *WrappedRequest) error {
 			return err
 		}
 	}
-	log.Printf("Got key %v", key)
 	var e Event
 	err = datastore.Get(wr.Context, key, &e)
 	if err != nil {
 		return err
 	}
 	wr.Event = &e
-	log.Printf("Got event %v", e)
 	return nil
 }
 

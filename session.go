@@ -17,7 +17,7 @@ type WrappedRequest struct {
 	*http.Request
 	context.Context
 	*sessions.Session
-	*Event
+	*Event  // TODO(cshabsin): Differentiate between "no event" and "event not read".
 }
 
 type Getter func(*WrappedRequest) error
