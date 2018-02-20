@@ -7,7 +7,6 @@ import (
 )
 
 type Invitation struct {
-	Guest          []*datastore.Key  // Person
+	Guest          []*datastore.Key // Person
 	InvitationCode string
 }
-

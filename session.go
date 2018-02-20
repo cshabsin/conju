@@ -17,7 +17,7 @@ type WrappedRequest struct {
 	*http.Request
 	context.Context
 	*sessions.Session
-	*Event  // TODO(cshabsin): Differentiate between "no event" and "event not read".
+	*Event // TODO(cshabsin): Differentiate between "no event" and "event not read".
 }
 
 type Getter func(*WrappedRequest) error
@@ -36,7 +36,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 		}
 		ctx := appengine.NewContext(r)
 		wr := WrappedRequest{w, r, ctx, sess, nil}
-		for _, getter := range(getters.Getters) {
+		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
 				// TODO: Probably not internal server error
 				http.Error(w, err.Error(), http.StatusInternalServerError)
