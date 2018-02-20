@@ -18,7 +18,6 @@ import (
 )
 
 const Guest_Data_File_Name = "test_import_data/Test_Guests.tsv"
-
 //const Guest_Data_File_Name = "Guests_to_Import.tsv"
 
 type ImportedGuest struct {

@@ -1,0 +1,15 @@
+{{template "test.html" .}}
+
+
+{{define "body"}}
+
+<table>
+
+  {{range .People}}
+    <tr>
+      <td>{{.FullName}}</td><td>{{.Email}}</td><td>{{.Address}}</td>
+    </tr>
+{{end}}
+</table>
+
+{{end}}
