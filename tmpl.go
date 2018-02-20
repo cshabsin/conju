@@ -3,7 +3,6 @@ package conju
 import (
 	"html/template"
 
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 )
 
@@ -21,11 +20,10 @@ func templatePaths(fns []string) []string {
 // more template filenames to parse, and returns a provider that executes
 // the last template in the list.
 func makeTemplateHandler(ts ...string) func(WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles(templatePaths(ts)...))
+	tpl := template.Must(template.ParseFiles(templatePaths(ts)...))
 	return func(wr WrappedRequest) {
-		ctx := appengine.NewContext(wr.Request)
 		if err := tpl.ExecuteTemplate(wr.ResponseWriter, ts[len(ts)-1], nil); err != nil {
-			log.Errorf(ctx, "%v", err)
+			log.Errorf(wr.Context, "%v", err)
 		}
 	}
 }
