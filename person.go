@@ -11,18 +11,18 @@ import (
 )
 
 type Person struct {
-	FirstName   string
-	LastName    string
-	Nickname    string
-	Email       string
-	Telephone   string
-	Address     string
-	Birthdate   time.Time
-	FallbackAge float64
+	FirstName     string
+	LastName      string
+	Nickname      string
+	Email         string
+	Telephone     string
+	Address       string
+	Birthdate     time.Time
+	FallbackAge   float64
 	NeedBirthdate bool
 	// these fields can be removed after all the data is ported
-	OldGuestId  int
-	OldInviteeId int
+	OldGuestId    int
+	OldInviteeId  int
 	OldInviteCode string
 }
 

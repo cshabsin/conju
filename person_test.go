@@ -49,56 +49,56 @@ func TestFullNameWithFormality(t *testing.T) {
 
 func TestCollectiveAddress(t *testing.T) {
 	type TestCase struct {
-		Name string
+		Name   string
 		People []Person
 		NameFormality
 		Want string
 	}
 	testcases := []TestCase{
 		{
-			Name: "Single Person w/ Nickname",
-			People: []Person{chris},
+			Name:          "Single Person w/ Nickname",
+			People:        []Person{chris},
 			NameFormality: Informal,
-			Want: "Chris Shabsin",
+			Want:          "Chris Shabsin",
 		},
 		{
-			Name: "Couple w/ Different Last Names",
-			People: []Person{dana, chris},
+			Name:          "Couple w/ Different Last Names",
+			People:        []Person{dana, chris},
 			NameFormality: Informal,
-			Want: "Dana Scott & Chris Shabsin",
+			Want:          "Dana Scott & Chris Shabsin",
 		},
 		{
-			Name: "Couple w/ Same Last Name",
-			People: []Person{chris, lydia},
+			Name:          "Couple w/ Same Last Name",
+			People:        []Person{chris, lydia},
 			NameFormality: Formal,
-			Want: "Christopher & Lydia Shabsin",
+			Want:          "Christopher & Lydia Shabsin",
 		},
 		{
-			Name: ">2 Different Names, Informal",
-			People: []Person{chris, dana, lydia},
+			Name:          ">2 Different Names, Informal",
+			People:        []Person{chris, dana, lydia},
 			NameFormality: Informal,
-			Want: "Chris, Dana & Lydia",
+			Want:          "Chris, Dana & Lydia",
 		},
 		{
-			Name: ">2 Different Names, Formal",
-			People: []Person{chris, dana, lydia},
+			Name:          ">2 Different Names, Formal",
+			People:        []Person{chris, dana, lydia},
 			NameFormality: Formal,
-			Want: "Christopher, Dana & Lydia",
+			Want:          "Christopher, Dana & Lydia",
 		},
 		{
-			Name: ">2 Same Names, Formal",
-			People: []Person{rick, chris, lydia},
+			Name:          ">2 Same Names, Formal",
+			People:        []Person{rick, chris, lydia},
 			NameFormality: Formal,
-			Want: "Richard, Christopher & Lydia Shabsin",
+			Want:          "Richard, Christopher & Lydia Shabsin",
 		},
 		{
-			Name: ">3 Different Names, Informal",
-			People: []Person{rick, chris, dana, lydia},
+			Name:          ">3 Different Names, Informal",
+			People:        []Person{rick, chris, dana, lydia},
 			NameFormality: Informal,
-			Want: "Rick, Chris, Dana & Lydia",
+			Want:          "Rick, Chris, Dana & Lydia",
 		},
 	}
-	for _, tc := range(testcases) {
+	for _, tc := range testcases {
 		fn := CollectiveAddress(tc.People, tc.NameFormality)
 		if fn != tc.Want {
 			t.Errorf("%s incorrect, got: %s, want: %s.", tc.Name, fn, tc.Want)
