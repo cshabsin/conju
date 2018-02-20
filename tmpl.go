@@ -22,7 +22,12 @@ func templatePaths(fns []string) []string {
 func makeTemplateHandler(ts ...string) func(WrappedRequest) {
 	tpl := template.Must(template.ParseFiles(templatePaths(ts)...))
 	return func(wr WrappedRequest) {
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, ts[len(ts)-1], nil); err != nil {
+		v := struct {
+			*Event
+		}{
+			wr.Event,
+		}
+		if err := tpl.ExecuteTemplate(wr.ResponseWriter, ts[len(ts)-1], v); err != nil {
 			log.Errorf(wr.Context, "%v", err)
 		}
 	}

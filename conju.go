@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html"))
+	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html")).Needs(EventGetter)
 	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
 	AddSessionHandler("/importData", ImportData)
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
