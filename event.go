@@ -75,22 +75,3 @@ func EventGetter(wr *WrappedRequest) error {
 	wr.Event = &e
 	return nil
 }
-
-func cleanUp(ctx context.Context) error {
-	q := datastore.NewQuery("CurrentEvent")
-	for t := q.Run(ctx); ; {
-		var ce CurrentEvent
-		key, err := t.Next(&ce)
-		if err == datastore.Done {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		err = datastore.Delete(ctx, key)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}

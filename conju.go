@@ -15,9 +15,10 @@ func init() {
 	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
 	AddSessionHandler("/importData", ImportData)
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
-	AddSessionHandler("/resetData", handleCleanup)
+	AddSessionHandler("/resetData", clearAllData)
 
-	AddSessionHandler("/listGuests", handleListGuests)}
+	AddSessionHandler("/listGuests", handleListGuests)
+}
 
 func handleIncrement(wr WrappedRequest) {
 	if wr.Values["n"] == nil {
@@ -34,17 +35,6 @@ func handleIncrement(wr WrappedRequest) {
 	wr.ResponseWriter.Write([]byte(
 		fmt.Sprintf("%s\n%d\n", event_name, wr.Values["n"].(int))))
 }
-
-func handleCleanup(wr WrappedRequest) {
-	wr.Values["event"] = nil
-	wr.SaveSession()
-	// Deletes all "current event" objects
-	err := cleanUp(wr.Context)
-	if err != nil {
-		log.Errorf(wr.Context, "%v", err)
-	}
-}
-
 
 func handleListGuests(wr WrappedRequest) {
 
@@ -64,9 +54,9 @@ func handleListGuests(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := struct {
-		People           []*Person
+		People []*Person
 	}{
-		People:           allPeople,
+		People: allPeople,
 	}
 
 	var tpl = template.Must(template.ParseFiles("templates/test.html", "templates/listAllGuests.html"))
