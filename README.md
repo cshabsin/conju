@@ -27,6 +27,14 @@ Install Go tools (apt-get install golang-go on Debian, not sure what this is on 
 Set GOPATH environment variable somewhere useful (like ~/gopath).  
 Run "go get" to fetch dependencies into GOPATH.
 
+Install the gofmt git pre-commit hook to be warned when you attempt to
+commit a change with non-gofmt'ed changes.
+
+```
+$ curl -o .git/hooks/pre-commit https://golang.org/misc/git/pre-commit
+$ chmod a+x .git/hooks/pre-commit
+```
+
 Run "dev_appserver.py app.yaml" to test on localhost:8080. Admin console at localhost:8000.
 
 ### Emacs go mode setup
@@ -36,7 +44,7 @@ Run "dev_appserver.py app.yaml" to test on localhost:8080. Admin console at loca
 ```
 $ mkdir -p ~/.emacs.d/lisp
 $ cd ~/.emacs.d/lisp
-$ wget https://raw.githubusercontent.com/dominikh/go-mode.el/master/go-mode.el
+$ curl -O https://raw.githubusercontent.com/dominikh/go-mode.el/master/go-mode.el
 ```
 
 Add to ~/.emacs.d/init.el:
