@@ -1,0 +1,18 @@
+{{template "test.html" .}}
+
+
+{{define "body"}}
+
+<table class="listTable">
+  <tr><th>Name</th><th>Email Address</th><th>Address</th></tr>
+  {{range .People}}
+    <tr>
+      <td><a href="updatePerson?key={{.EncodedKey}}">{{.FullName}}</a></td><td>{{.Email}}</td>
+      <td>
+	{{range .FormattedAddressForHtml}} {{.}}<br>{{end}}
+      </td>
+    </tr>
+{{end}}
+</table>
+
+{{end}}
