@@ -2,12 +2,6 @@ package conju
 
 import (
 	"fmt"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
-	"html/template"
-	"net/http"
-	"time"
 )
 
 func init() {
@@ -17,7 +11,8 @@ func init() {
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
 	AddSessionHandler("/resetData", clearAllData)
 
-	AddSessionHandler("/listGuests", handleListGuests)
+	AddSessionHandler("/listPeople", handleListPeople)
+	AddSessionHandler("/updatePerson", handleUpdatePerson)
 }
 
 func handleIncrement(wr WrappedRequest) {
@@ -34,33 +29,4 @@ func handleIncrement(wr WrappedRequest) {
 	}
 	wr.ResponseWriter.Write([]byte(
 		fmt.Sprintf("%s\n%d\n", event_name, wr.Values["n"].(int))))
-}
-
-func handleListGuests(wr WrappedRequest) {
-
-	ctx := appengine.NewContext(wr.Request)
-	tic := time.Now()
-	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
-
-	var allPeople []*Person
-	if _, err := q.GetAll(ctx, &allPeople); err != nil {
-		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		log.Errorf(ctx, "GetAll: %v", err)
-		return
-	}
-	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
-	log.Infof(ctx, "Rendering %d people", len(allPeople))
-
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	data := struct {
-		People []*Person
-	}{
-		People: allPeople,
-	}
-
-	var tpl = template.Must(template.ParseFiles("templates/test.html", "templates/listAllGuests.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listAllGuests.html", data); err != nil {
-		log.Errorf(ctx, "%v", err)
-	}
 }

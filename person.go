@@ -5,26 +5,37 @@ package conju
 import (
 	"context"
 	"fmt"
+	"html/template"
+	"net/http"
+	"strings"
 	"time"
 
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 type Person struct {
+     	DatastoreKey  *datastore.Key
 	FirstName     string
 	LastName      string
 	Nickname      string
+	Pronouns      int
 	Email         string
 	Telephone     string
 	Address       string
 	Birthdate     time.Time
+	IsAdmin	      bool
 	FallbackAge   float64
+	//TODO: make this nilable
 	NeedBirthdate bool
 	// these fields can be removed after all the data is ported
 	OldGuestId    int
 	OldInviteeId  int
 	OldInviteCode string
 }
+
+// TODO: define map of int -> string for pronoun enum --> display string
 
 func PersonKey(ctx context.Context) *datastore.Key {
 	return datastore.NewIncompleteKey(ctx, "Person", nil)
@@ -132,4 +143,90 @@ func (p Person) ApproxAge() time.Duration {
 // Round a duration to half-years.
 func HalfYears(d time.Duration) float64 {
 	return RoundDuration(d, Halfyear).Hours() / 24 / 365
+}
+
+func (p Person) FormattedAddressForHtml() []string {
+     return strings.Split(p.Address, "\n")
+}
+
+func (p Person) EncodedKey() string {
+     fmt.Println(p.DatastoreKey)
+     if p.DatastoreKey == nil {
+     	return ""
+     }
+     return p.DatastoreKey.Encode()
+
+}
+
+func handleListPeople(wr WrappedRequest) {
+
+	ctx := appengine.NewContext(wr.Request)
+	tic := time.Now()
+	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
+
+	var allPeople []*Person
+	keys, err := q.GetAll(ctx, &allPeople); 
+	if err != nil {
+		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		log.Errorf(ctx, "GetAll: %v", err)
+		return
+	}
+	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
+	log.Infof(ctx, "Rendering %d people", len(allPeople))
+	
+	for i := 0; i < len(allPeople); i++ {
+    	    allPeople[i].DatastoreKey = keys[i]
+  	}
+
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	data := struct {
+		People []*Person
+	}{
+		People: allPeople,
+	}
+
+        tpl := template.Must(template.ParseFiles("templates/test.html", "templates/listPeople.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {
+		log.Errorf(ctx, "%v", err)
+	}
+}
+
+func handleUpdatePerson(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+
+	queryMap := wr.Request.URL.Query()
+	keyForUpdatePerson := queryMap["key"][0]
+
+	tic := time.Now()
+	key, _ := datastore.DecodeKey(keyForUpdatePerson)
+	q := datastore.NewQuery("Person").Filter("__key__ =", key)
+
+
+
+	//TODO: alternatives to GetAll
+	var p []*Person
+
+	if _, err := q.GetAll(ctx, &p); err != nil {
+		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		log.Errorf(ctx, "GetAll: %v", err)
+		return
+	}
+	person := p[0];
+	//log.Infof(ctx, datastore.get("person", person))
+	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
+	log.Infof(ctx, "Rendering update form for %s", person.FullName())
+
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	data := struct {
+		ThisPerson *Person
+	}{
+		ThisPerson: person,
+	}
+
+	var tpl = template.Must(template.ParseFiles("templates/test.html", "templates/updatePerson.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
+		log.Errorf(ctx, "%v", err)
+	}
 }

@@ -24,7 +24,7 @@
 
 body {
     margin:0;
-    padding:0;
+    padding:30px;
     color:      #1F1497;
     background: #FAF4E2;
     font-family: LMRoman, georgia, new york,serif;
@@ -50,7 +50,7 @@ html {
 }
 
 h1 {
-    margin:0;
+
 }
 
 #header {
@@ -156,12 +156,18 @@ h1 {
 
 textarea {width:100%}
 
-table.infotable { border-collapse: collapse; width:100% }
+table.listTable{margin:20px; border-collapse: collapse}
+table.listTable td{padding:5px; vertical-align:top; border-top:1px solid #1F1497; border-bottom:1px solid #1F1497;}
+
+table.formtable {margin:20px}
+.formtable td{padding:5px}
+
+table.infotable { border-collapse: collapse; margin:20px}
 
 table.infotable tr, table.infotable td, table.infotable th {
     margin:  0px;
-    padding: 4px;
-    border: 1px solid #191497;
+    padding: 7px;
+    /*border: 1px solid #191497;*/
     /*background-color: #e3ecf6;*/
     color: #191497;
     text-align: left;
@@ -342,3 +348,9 @@ table.timespantable td.present{
     display: inline;
 }
 
+input[type=submit]{
+    width:75px;
+    height:50px;
+    font-size:150%;
+    border-radius:10px;
+}
