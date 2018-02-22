@@ -16,17 +16,17 @@ import (
 )
 
 type Person struct {
-     	DatastoreKey  *datastore.Key
-	FirstName     string
-	LastName      string
-	Nickname      string
-	Pronouns      int
-	Email         string
-	Telephone     string
-	Address       string
-	Birthdate     time.Time
-	IsAdmin	      bool
-	FallbackAge   float64
+	DatastoreKey *datastore.Key
+	FirstName    string
+	LastName     string
+	Nickname     string
+	Pronouns     int
+	Email        string
+	Telephone    string
+	Address      string
+	Birthdate    time.Time
+	IsAdmin      bool
+	FallbackAge  float64
 	//TODO: make this nilable
 	NeedBirthdate bool
 	// these fields can be removed after all the data is ported
@@ -146,15 +146,15 @@ func HalfYears(d time.Duration) float64 {
 }
 
 func (p Person) FormattedAddressForHtml() []string {
-     return strings.Split(p.Address, "\n")
+	return strings.Split(p.Address, "\n")
 }
 
 func (p Person) EncodedKey() string {
-     fmt.Println(p.DatastoreKey)
-     if p.DatastoreKey == nil {
-     	return ""
-     }
-     return p.DatastoreKey.Encode()
+	fmt.Println(p.DatastoreKey)
+	if p.DatastoreKey == nil {
+		return ""
+	}
+	return p.DatastoreKey.Encode()
 
 }
 
@@ -165,7 +165,7 @@ func handleListPeople(wr WrappedRequest) {
 	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
 
 	var allPeople []*Person
-	keys, err := q.GetAll(ctx, &allPeople); 
+	keys, err := q.GetAll(ctx, &allPeople)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
 		log.Errorf(ctx, "GetAll: %v", err)
@@ -173,10 +173,10 @@ func handleListPeople(wr WrappedRequest) {
 	}
 	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
 	log.Infof(ctx, "Rendering %d people", len(allPeople))
-	
+
 	for i := 0; i < len(allPeople); i++ {
-    	    allPeople[i].DatastoreKey = keys[i]
-  	}
+		allPeople[i].DatastoreKey = keys[i]
+	}
 
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -186,7 +186,7 @@ func handleListPeople(wr WrappedRequest) {
 		People: allPeople,
 	}
 
-        tpl := template.Must(template.ParseFiles("templates/test.html", "templates/listPeople.html"))
+	tpl := template.Must(template.ParseFiles("templates/test.html", "templates/listPeople.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
@@ -202,8 +202,6 @@ func handleUpdatePerson(wr WrappedRequest) {
 	key, _ := datastore.DecodeKey(keyForUpdatePerson)
 	q := datastore.NewQuery("Person").Filter("__key__ =", key)
 
-
-
 	//TODO: alternatives to GetAll
 	var p []*Person
 
@@ -212,7 +210,7 @@ func handleUpdatePerson(wr WrappedRequest) {
 		log.Errorf(ctx, "GetAll: %v", err)
 		return
 	}
-	person := p[0];
+	person := p[0]
 	//log.Infof(ctx, datastore.get("person", person))
 	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
 	log.Infof(ctx, "Rendering update form for %s", person.FullName())
