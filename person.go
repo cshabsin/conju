@@ -222,14 +222,22 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 
 	queryMap := wr.Request.URL.Query()
-	keyForUpdatePerson := queryMap["key"][0]
 
-	person, err := fetchPerson(wr, keyForUpdatePerson)
-	if err != nil {
-		log.Errorf(ctx, "%v", err)
-		http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+	var person *Person
+	var err error
+
+	person = &Person{
+		NeedBirthdate: false,
 	}
 
+	if queryMap["key"] != nil && queryMap["key"][0] != "" {
+		keyForUpdatePerson := queryMap["key"][0]
+		person, err = fetchPerson(wr, keyForUpdatePerson)
+		if err != nil {
+			log.Errorf(ctx, "%v", err)
+			http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+		}
+	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := struct {
@@ -248,7 +256,19 @@ func handleSaveUpdatePerson(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	wr.Request.ParseForm()
 
-	p, err := fetchPerson(wr, wr.Request.Form.Get("EncodedKey"))
+	var p *Person
+	var err error
+
+	if wr.Request.Form.Get("EncodedKey") != "" {
+		p, err = fetchPerson(wr, wr.Request.Form.Get("EncodedKey"))
+	} else {
+		newKey := PersonKey(ctx)
+		p = &Person{
+			NeedBirthdate: false,
+		}
+		p.DatastoreKey = newKey
+	}
+
 	//TODO: Is there an easier way to do this?
 	//TODO: Deal with errors
 	p.FirstName = wr.Request.Form.Get("FirstName")
