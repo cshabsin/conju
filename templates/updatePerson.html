@@ -6,8 +6,8 @@
   <a href="listPeople">All People</a>
 
   <h1>{{with .ThisPerson}}{{.FullName}}{{end}}</h1>
-  <form action="savePerson" method="POST">
-    <input type="hidden" value="{{with .ThisPerson}}{{.EncodedKey}}{{end}}">
+  <form action="saveUpdatePerson" method="POST">
+    <input type="hidden" name="EncodedKey" value="{{with .ThisPerson}}{{.EncodedKey}}{{end}}">
     <table class="formtable">
       <tr><td>First Name:</td><td><input type="text" name="FirstName" value="{{with .ThisPerson}}{{.FirstName}}{{end}}"></td></tr>
       <tr><td>Last Name:</td><td><input type="text" name="LastName" value="{{with .ThisPerson}}{{.LastName}}{{end}}"></td></tr>
@@ -27,7 +27,7 @@
       </table>
 {{/*    {{end}} */}}
 
-    <input type="submit" value="Save"> (This does nothing yet.)
+    <input type="submit" value="Save">
   
     </form>
 

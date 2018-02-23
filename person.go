@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -192,28 +193,42 @@ func handleListPeople(wr WrappedRequest) {
 	}
 }
 
-func handleUpdatePerson(wr WrappedRequest) {
+func fetchPerson(wr WrappedRequest, encodedKey string) (*Person, error) {
 	ctx := appengine.NewContext(wr.Request)
 
-	queryMap := wr.Request.URL.Query()
-	keyForUpdatePerson := queryMap["key"][0]
-
-	tic := time.Now()
-	key, _ := datastore.DecodeKey(keyForUpdatePerson)
+	key, e := datastore.DecodeKey(encodedKey)
+	if e != nil {
+		return nil, e
+	}
 	q := datastore.NewQuery("Person").Filter("__key__ =", key)
 
 	//TODO: alternatives to GetAll
 	var p []*Person
 
-	if _, err := q.GetAll(ctx, &p); err != nil {
-		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		log.Errorf(ctx, "GetAll: %v", err)
-		return
-	}
-	person := p[0]
-	//log.Infof(ctx, datastore.get("person", person))
+	tic := time.Now()
+	keys, e := q.GetAll(ctx, &p)
 	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
-	log.Infof(ctx, "Rendering update form for %s", person.FullName())
+	if e != nil {
+		return nil, e
+	}
+
+	person := p[0]
+	person.DatastoreKey = keys[0]
+
+	return person, nil
+}
+
+func handleUpdatePersonForm(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+
+	queryMap := wr.Request.URL.Query()
+	keyForUpdatePerson := queryMap["key"][0]
+
+	person, err := fetchPerson(wr, keyForUpdatePerson)
+	if err != nil {
+		log.Errorf(ctx, "%v", err)
+		http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+	}
 
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -227,4 +242,34 @@ func handleUpdatePerson(wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
+}
+
+func handleSaveUpdatePerson(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	p, err := fetchPerson(wr, wr.Request.Form.Get("EncodedKey"))
+	//TODO: Is there an easier way to do this?
+	//TODO: Deal with errors
+	p.FirstName = wr.Request.Form.Get("FirstName")
+	p.LastName = wr.Request.Form.Get("LastName")
+	p.Nickname = wr.Request.Form.Get("Nickname")
+	p.Pronouns, _ = strconv.Atoi(wr.Request.Form.Get("Pronouns"))
+	p.Email = wr.Request.Form.Get("Email")
+	p.Telephone = wr.Request.Form.Get("Telephone")
+	p.Address = wr.Request.Form.Get("Address")
+	p.Birthdate, _ = time.Parse("01/02/2006", wr.Request.Form.Get("Birthdate"))
+	p.FallbackAge, _ = strconv.ParseFloat(wr.Request.Form.Get("FallbackAge"), 64)
+	p.NeedBirthdate = (wr.Request.Form.Get("NeedBirthdate") == "on")
+
+	tic := time.Now()
+	_, err = datastore.Put(ctx, p.DatastoreKey, p)
+	if err != nil {
+		log.Errorf(ctx, "%v", err)
+	}
+
+	log.Infof(ctx, "Datastore insertion took %s", time.Since(tic).String())
+
+	// Where to go from here will depend on who's logged in and what they're doing
+	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
 }

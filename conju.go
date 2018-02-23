@@ -12,7 +12,8 @@ func init() {
 	AddSessionHandler("/resetData", clearAllData)
 
 	AddSessionHandler("/listPeople", handleListPeople)
-	AddSessionHandler("/updatePerson", handleUpdatePerson)
+	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm)
+	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson)
 }
 
 func handleIncrement(wr WrappedRequest) {
