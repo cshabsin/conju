@@ -21,7 +21,7 @@ type Person struct {
 	FirstName    string
 	LastName     string
 	Nickname     string
-	Pronouns     int
+	Pronouns     PronounSet
 	Email        string
 	Telephone    string
 	Address      string
@@ -59,6 +59,43 @@ const (
 	Formal                        // Christopher Shabsin
 	Full                          // Christopher (Chris) Shabsin
 )
+
+// If you change this also change PronounFromConstant
+type PronounSet int
+
+const (
+	They PronounSet = iota
+	She
+	He
+	Zie
+)
+
+// TODO: is there a better way to do this?
+func PronounFromConstant(pronounConstant int) PronounSet {
+	switch pronounConstant {
+	case 1:
+		return She
+	case 2:
+		return He
+	case 3:
+		return Zie
+	default:
+		return They
+	}
+}
+
+func GetPronouns(p PronounSet) string {
+	switch p {
+	case She:
+		return "She/Her/Hers"
+	case He:
+		return "He/Him/His"
+	case Zie:
+		return "Zie/Hir/Hirs"
+	default:
+		return "They/Them/Theirs"
+	}
+}
 
 func (p *Person) GetFirstName(formality NameFormality) string {
 	if p.Nickname != "" && formality == Informal {
@@ -241,12 +278,18 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := struct {
-		ThisPerson *Person
+		ThisPerson  *Person
+		AllPronouns []PronounSet
 	}{
-		ThisPerson: person,
+		ThisPerson:  person,
+		AllPronouns: []PronounSet{They, She, He, Zie},
 	}
 
-	var tpl = template.Must(template.ParseFiles("templates/test.html", "templates/updatePerson.html"))
+	functionMap := template.FuncMap{
+		"PronounString": GetPronouns,
+	}
+
+	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/updatePerson.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
@@ -274,7 +317,11 @@ func handleSaveUpdatePerson(wr WrappedRequest) {
 	p.FirstName = wr.Request.Form.Get("FirstName")
 	p.LastName = wr.Request.Form.Get("LastName")
 	p.Nickname = wr.Request.Form.Get("Nickname")
-	p.Pronouns, _ = strconv.Atoi(wr.Request.Form.Get("Pronouns"))
+	pronounConstant, e := strconv.Atoi(wr.Request.Form.Get("Pronouns"))
+	if e != nil {
+		pronounConstant = 0
+	}
+	p.Pronouns = PronounFromConstant(pronounConstant)
 	p.Email = wr.Request.Form.Get("Email")
 	p.Telephone = wr.Request.Form.Get("Telephone")
 	p.Address = wr.Request.Form.Get("Address")

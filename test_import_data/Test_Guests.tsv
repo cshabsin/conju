@@ -1,5 +1,5 @@
-id	first_name	last_name	nickname	email	invitee_id	home_phone	cell_phone	age	birthdate		invite_code	address
-1	Eleanor	Shellstrop		eshellstrop@gmail.com	1	123-456-789	987-654-321	-1		1	ES1-CA2	Terrifying Clown Cottage|Neighborhood 12358W
-2	Chidi	Anagonye		anagonye@stjohnscollege.edu.au	1		(123) 132-1234	-1		1	ES1-CA2	Terrifying Clown Cottage|Neighborhood 12358W
-3	Tahani	Al-Jamil	Giraffe	tahani@philanthropy.org	2		3546354635	-1			TAJ-JM1	Giant Stately Mansion|Neighborhood 12358W
-4	Jason	Mendoza		jaguarsROCK1234@hotmail.com	2		2342344543	-1	1990-06-01 0:00:00		TAJ-JM1	Budhole|Giant Stately Mansion|Neighborhood 12358W
+id	first_name	last_name	nickname	email	invitee_id	home_phone	cell_phone	age	birthdate		invite_code	address pronouns
+1	Eleanor	Shellstrop		eshellstrop@gmail.com	1	123-456-789	987-654-321	-1		1	ES1-CA2	Terrifying Clown Cottage|Neighborhood 12358W she
+2	Chidi	Anagonye		anagonye@stjohnscollege.edu.au	1		(123) 132-1234	-1		1	ES1-CA2	Terrifying Clown Cottage|Neighborhood 12358W he
+3	Tahani	Al-Jamil	Giraffe	tahani@philanthropy.org	2		3546354635	-1			TAJ-JM1	Giant Stately Mansion|Neighborhood 12358W     she
+4	Jason	Mendoza		jaguarsROCK1234@hotmail.com	2		2342344543	-1	1990-06-01 0:00:00		TAJ-JM1	Budhole|Giant Stately Mansion|Neighborhood 12358W he

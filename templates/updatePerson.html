@@ -12,7 +12,14 @@
       <tr><td>First Name:</td><td><input type="text" name="FirstName" value="{{with .ThisPerson}}{{.FirstName}}{{end}}"></td></tr>
       <tr><td>Last Name:</td><td><input type="text" name="LastName" value="{{with .ThisPerson}}{{.LastName}}{{end}}"></td></tr>
       <tr><td>Nickname:</td><td><input type="text" name="Nickname" value="{{with .ThisPerson}}{{.Nickname}}{{end}}"></td></t>
-      <tr><td>Pronouns:</td><td><input type="text" name="Pronouns "></td></tr>
+      <tr><td>Pronouns:</td><td>
+        <select name="Pronouns">
+	  {{$ThisPersonsPronouns := .ThisPerson.Pronouns}} 
+          {{range .AllPronouns}}
+            <option value="{{.}}"{{if eq . $ThisPersonsPronouns}} selected{{end}}>{{PronounString .}}</option>
+          {{end}}
+        </select>
+      </td></tr>
       <tr><td>Email:</td><td><input type="text" name="Email" value="{{with .ThisPerson}}{{.Email}}{{end}}"></td></tr>
       <tr><td>Telephone:</td><td><input type="text" name="Telephone" value="{{with .ThisPerson}}{{.Telephone}}{{end}}"></td></tr>
       <tr><td>Address:</td><td><textarea type="text" name="Address">{{with .ThisPerson}}{{.Address}}{{end}}</textarea></td></tr>
@@ -28,7 +35,7 @@
 {{/*    {{end}} */}}
 
     <input type="submit" value="Save">
-  
+
     </form>
 
 {{end}}

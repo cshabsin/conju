@@ -35,6 +35,7 @@ type ImportedGuest struct {
 	NeedBirthdate bool
 	InviteCode    string
 	Address       string
+	Pronouns      PronounSet
 }
 
 func ImportData(wr WrappedRequest) {
@@ -72,7 +73,17 @@ func ImportGuests(w http.ResponseWriter, r *http.Request, ctx context.Context) {
 			Guest.NeedBirthdate = fields[10] == "1"
 			Guest.InviteCode = fields[11]
 			Guest.Address = strings.Replace(fields[12], "|", "\n", -1)
-
+			pronoun := fields[13]
+			switch pronoun {
+			case "she":
+				Guest.Pronouns = She
+			case "he":
+				Guest.Pronouns = He
+			case "zie":
+				Guest.Pronouns = Zie
+			default:
+				Guest.Pronouns = They
+			}
 			fmt.Println(err)
 
 			CreatePersonFromImportedGuest(ctx, Guest)
@@ -108,6 +119,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, guest ImportedGuest) err
 		FirstName:     guest.FirstName,
 		LastName:      guest.LastName,
 		Nickname:      guest.Nickname,
+		Pronouns:      guest.Pronouns,
 		Email:         guest.Email,
 		Telephone:     phone,
 		FallbackAge:   guest.AgeOverride,
