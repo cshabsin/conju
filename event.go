@@ -14,7 +14,9 @@ type CurrentEvent struct {
 }
 
 type Event struct {
+	EventId   int // this can get deleted after all the data is imported
 	Name      string
+	ShortName string
 	StartDate time.Time
 	EndDate   time.Time
 	Current   bool
@@ -34,6 +36,19 @@ func CurrentEventKey(ctx context.Context) (*datastore.Key, error) {
 		return k, nil
 	}
 	return ce.Key, nil
+}
+
+func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, current bool) (*datastore.Key, error) {
+	e := Event{
+		EventId:   id,
+		Name:      name,
+		ShortName: shortName,
+		StartDate: startDate,
+		EndDate:   endDate,
+		Current:   true,
+	}
+	return datastore.Put(ctx, datastore.NewIncompleteKey(
+		ctx, "Event", nil), &e)
 }
 
 func CreateDefaultEvent(ctx context.Context) (*datastore.Key, error) {

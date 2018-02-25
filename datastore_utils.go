@@ -1,47 +1,37 @@
 package conju
 
 import (
+	"fmt"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
-func clearAllData(wr WrappedRequest) {
+func ClearAllData(wr WrappedRequest) {
 
 	wr.Values["event"] = nil
 	wr.SaveSession()
 
-	//TODO: loop through all entity types
+	entityNames := []string{"Event", "CurrentEvent", "Person"}
 
-	q := datastore.NewQuery("CurrentEvent")
-	for t := q.Run(wr.Context); ; {
-		var ce CurrentEvent
-		key, err := t.Next(&ce)
-		if err == datastore.Done {
-			break
-		}
-		if err != nil {
-			log.Errorf(wr.Context, "%v", err)
-			return
-		}
-		err = datastore.Delete(wr.Context, key)
-		if err != nil {
-			log.Errorf(wr.Context, "%v", err)
-			return
-		}
-	}
+	for _, entityName := range entityNames {
+		wr.ResponseWriter.Write([]byte(fmt.Sprintf("Clearing: %s\n", entityName)))
+		q := datastore.NewQuery(entityName).KeysOnly()
 
-	q = datastore.NewQuery("Person")
-	for t := q.Run(wr.Context); ; {
-		var p Person
-		key, err := t.Next(&p)
-		if err == datastore.Done {
-			break
-		}
+		keys, err := q.GetAll(wr.Context, nil)
 		if err != nil {
 			log.Errorf(wr.Context, "%v", err)
 			return
 		}
-		err = datastore.Delete(wr.Context, key)
+
+		wr.ResponseWriter.Write([]byte(
+			fmt.Sprintf("	%d %s to delete\n", len(keys), entityName)))
+
+		if err != nil {
+			log.Errorf(wr.Context, "%v", err)
+			return
+		}
+
+		err = datastore.DeleteMulti(wr.Context, keys)
 		if err != nil {
 			log.Errorf(wr.Context, "%v", err)
 			return
