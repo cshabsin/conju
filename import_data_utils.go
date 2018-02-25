@@ -17,9 +17,11 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-const Guest_Data_File_Name = "test_import_data/Test_Guests.tsv"
+//const Import_Data_Directory = "test_import_data"
+const Import_Data_Directory = "real_import_data"
 
-//const Guest_Data_File_Name = "Guests_to_Import.tsv"
+const Guest_Data_File_Name = "Guests_to_Import.tsv"
+const RSVP_Data_File_Name = "rsvps.tsv"
 
 type ImportedGuest struct {
 	GuestId       int
@@ -44,7 +46,7 @@ func ImportData(wr WrappedRequest) {
 
 func ImportGuests(w http.ResponseWriter, r *http.Request, ctx context.Context) {
 	b := new(bytes.Buffer)
-	guestFile, err := os.Open(Guest_Data_File_Name)
+	guestFile, err := os.Open(Import_Data_Directory + "/" + Guest_Data_File_Name)
 	if err != nil {
 		log.Fatal(err)
 	}
