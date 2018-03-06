@@ -235,24 +235,20 @@ func fetchPerson(wr WrappedRequest, encodedKey string) (*Person, error) {
 
 	key, e := datastore.DecodeKey(encodedKey)
 	if e != nil {
+		log.Errorf(ctx, "%v", e)
 		return nil, e
 	}
-	q := datastore.NewQuery("Person").Filter("__key__ =", key)
 
-	//TODO: alternatives to GetAll
-	var p []*Person
+	var person Person
+	e = datastore.Get(ctx, key, &person)
+	person.DatastoreKey = key
 
-	tic := time.Now()
-	keys, e := q.GetAll(ctx, &p)
-	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
 	if e != nil {
+		log.Errorf(ctx, "%v", e)
 		return nil, e
 	}
 
-	person := p[0]
-	person.DatastoreKey = keys[0]
-
-	return person, nil
+	return &person, nil
 }
 
 func handleUpdatePersonForm(wr WrappedRequest) {
@@ -274,6 +270,8 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 			log.Errorf(ctx, "%v", err)
 			http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
 		}
+		key, _ := datastore.DecodeKey(keyForUpdatePerson)
+		person.DatastoreKey = key
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
@@ -304,6 +302,9 @@ func handleSaveUpdatePerson(wr WrappedRequest) {
 
 	if wr.Request.Form.Get("EncodedKey") != "" {
 		p, err = fetchPerson(wr, wr.Request.Form.Get("EncodedKey"))
+		if err != nil {
+			log.Errorf(ctx, "%v", err)
+		}
 	} else {
 		newKey := PersonKey(ctx)
 		p = &Person{
