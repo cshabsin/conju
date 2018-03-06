@@ -53,14 +53,8 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			startDate, _ := time.Parse(layout, fields[3])
 			endDate, _ := time.Parse(layout, fields[4])
 			eventId, _ := strconv.Atoi(fields[0])
-			eventKey, _ := CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate,
+			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate,
 				fields[5] == "1")
-			if fields[5] == "1" {
-				ce_key := datastore.NewKey(ctx, "CurrentEvent", "current_event", 0, nil)
-				ce := CurrentEvent{eventKey}
-				datastore.Put(ctx, ce_key, &ce)
-			}
-
 			w.Write([]byte(fmt.Sprintf("Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))))
 		}
 		processedHeader = true

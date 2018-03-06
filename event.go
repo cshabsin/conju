@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 type CurrentEvent struct {
@@ -22,6 +23,7 @@ type Event struct {
 	Current   bool
 }
 
+/*
 func CurrentEventKey(ctx context.Context) (*datastore.Key, error) {
 	ce_key := datastore.NewKey(ctx, "CurrentEvent", "current_event", 0, nil)
 	var ce CurrentEvent
@@ -37,7 +39,7 @@ func CurrentEventKey(ctx context.Context) (*datastore.Key, error) {
 	}
 	return ce.Key, nil
 }
-
+*/
 func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, current bool) (*datastore.Key, error) {
 	e := Event{
 		EventId:   id,
@@ -45,12 +47,13 @@ func CreateEvent(ctx context.Context, id int, name string, shortName string, sta
 		ShortName: shortName,
 		StartDate: startDate,
 		EndDate:   endDate,
-		Current:   true,
+		Current:   current,
 	}
 	return datastore.Put(ctx, datastore.NewIncompleteKey(
 		ctx, "Event", nil), &e)
 }
 
+/*
 func CreateDefaultEvent(ctx context.Context) (*datastore.Key, error) {
 	e := Event{
 		Name:      "Purity Spring 2018",
@@ -61,32 +64,40 @@ func CreateDefaultEvent(ctx context.Context) (*datastore.Key, error) {
 	return datastore.Put(ctx, datastore.NewIncompleteKey(
 		ctx, "Event", nil), &e)
 }
-
+*/
 // Sets up Event in the WrappedRequest.
 func EventGetter(wr *WrappedRequest) error {
-	var key *datastore.Key
+	ctx := wr.Context
+	encoded_key := wr.Values["event"]
+
+	var key *datastore.Key = nil
 	var err error
-	if wr.Values["event"] == nil {
-		key, err = CurrentEventKey(wr.Context)
-		if err != nil {
-			return err
-		}
-		wr.SetSessionValue("event", key.Encode())
-		wr.SaveSession()
-	} else {
-		encoded_key := wr.Values["event"].(string)
-		key, err = datastore.DecodeKey(encoded_key)
-		if err != nil {
-			wr.SetSessionValue("event", nil)
-			wr.SaveSession()
-			return err
-		}
+	var e *Event
+
+	if encoded_key != nil {
+		key, _ = datastore.DecodeKey(encoded_key.(string))
+		err = datastore.Get(wr.Context, key, e)
 	}
-	var e Event
-	err = datastore.Get(wr.Context, key, &e)
-	if err != nil {
-		return err
+
+	var keys []*datastore.Key
+	var events []*Event
+	if e == nil {
+		q := datastore.NewQuery("Event").Filter("Current =", true)
+		keys, err = q.GetAll(ctx, &events)
+		if len(keys) > 1 {
+			log.Infof(ctx, "found %d current events", len(keys))
+			return err
+
+		}
+		e = events[0]
+		key = keys[0]
 	}
-	wr.Event = &e
+
+	wr.Event = e
+	//wr.EventKey = key.Encode()
+	wr.SetSessionValue("EventKey", key.Encode())
+	wr.SetSessionValue("Event", e)
+	wr.SaveSession()
+
 	return nil
 }

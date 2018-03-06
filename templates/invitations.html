@@ -1,0 +1,12 @@
+{{template "test.html" .}}
+{{define "body"}}
+
+<h1>Invitations for {{with .CurrentEvent}} {{.ShortName}} {{end}}</h1>
+
+{{range .RealizedInvitations}}
+{{ListInvitees .Invitees}}<br>
+{{end}}
+
+
+
+{{end}}

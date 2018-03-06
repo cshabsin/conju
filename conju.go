@@ -13,6 +13,7 @@ func init() {
 	AddSessionHandler("/listPeople", handleListPeople)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm)
 	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson)
+	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter)
 }
 
 func handleIncrement(wr WrappedRequest) {
