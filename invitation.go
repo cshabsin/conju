@@ -4,6 +4,7 @@ package conju
 
 import (
 	"html/template"
+	"sort"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -21,6 +22,15 @@ func handleInvitations(wr WrappedRequest) {
 	currentEventKeyEncoded := wr.Values["EventKey"].(string)
 	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
 
+	var notInvitedSet = make(map[datastore.Key]Person)
+	personQuery := datastore.NewQuery("Person")
+	var people []*Person
+	personKeys, _ := personQuery.GetAll(ctx, &people)
+
+	for i := 0; i < len(personKeys); i++ {
+		notInvitedSet[*personKeys[i]] = *people[i]
+	}
+
 	var invitations []*Invitation
 
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
@@ -35,12 +45,14 @@ func handleInvitations(wr WrappedRequest) {
 	var realizedInvitations []RealizedInvitation
 
 	for i := 0; i < len(invitations); i++ {
+
 		personKeys := invitations[i].Invitees
 		var invitees []Person
 		for _, personKey := range personKeys {
 			var person Person
 			datastore.Get(ctx, personKey, &person)
 			invitees = append(invitees, person)
+			delete(notInvitedSet, *personKey)
 		}
 
 		realizedInvitation := RealizedInvitation{
@@ -51,14 +63,22 @@ func handleInvitations(wr WrappedRequest) {
 		realizedInvitations = append(realizedInvitations, realizedInvitation)
 	}
 
+	var notInvitedList []Person
+	for k := range notInvitedSet {
+		notInvitedList = append(notInvitedList, notInvitedSet[k])
+	}
+	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a], notInvitedList[b]) })
+
 	data := struct {
 		CurrentEvent        Event
 		Invitations         []*Invitation
 		RealizedInvitations []RealizedInvitation
+		NotInvitedList      []Person
 	}{
 		CurrentEvent:        *currentEvent,
 		Invitations:         invitations,
 		RealizedInvitations: realizedInvitations,
+		NotInvitedList:      notInvitedList,
 	}
 
 	functionMap := template.FuncMap{

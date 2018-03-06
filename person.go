@@ -165,6 +165,14 @@ func getCommonLastName(people []Person) string {
 	return lastName
 }
 
+func SortByLastFirstName(a, b Person) bool {
+	lastNameComparison := strings.Compare(a.LastName, b.LastName)
+	if lastNameComparison != 0 {
+		return lastNameComparison < 0
+	}
+	return strings.Compare(a.FirstName, b.FirstName) < 0
+}
+
 const (
 	Halfyear time.Duration = 12 * 365 * time.Hour
 	Year                   = 2 * Halfyear

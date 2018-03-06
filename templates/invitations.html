@@ -4,9 +4,12 @@
 <h1>Invitations for {{with .CurrentEvent}} {{.ShortName}} {{end}}</h1>
 
 {{range .RealizedInvitations}}
-{{ListInvitees .Invitees}}<br>
+  {{ListInvitees .Invitees}}<br>
 {{end}}
 
-
+<h3>Not Invited to {{with .CurrentEvent}} {{.ShortName}} {{end}}</h3>
+{{range .NotInvitedList}}
+  {{.FullName}}<br>
+{{end}}
 
 {{end}}
