@@ -76,21 +76,21 @@ func handleInvitations(wr WrappedRequest) {
 	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a], notInvitedList[b]) })
 
 	type EventWithKey struct {
-	     Key string
-	     Ev Event
+		Key string
+		Ev  Event
 	}
- 
+
 	var eventsWithKeys []EventWithKey
 	if len(invitations) == 0 {
-	   var allEvents []*Event
-	   eventKeys, _ := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
-	   for i := 0; i < len(eventKeys); i++ {
-	       ewk := EventWithKey {
-	       	   Key: eventKeys[i].Encode(),
-		   Ev: *allEvents[i], 
-	       }
-	       eventsWithKeys = append(eventsWithKeys, ewk)
-	   }
+		var allEvents []*Event
+		eventKeys, _ := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+		for i := 0; i < len(eventKeys); i++ {
+			ewk := EventWithKey{
+				Key: eventKeys[i].Encode(),
+				Ev:  *allEvents[i],
+			}
+			eventsWithKeys = append(eventsWithKeys, ewk)
+		}
 	}
 
 	data := struct {
@@ -98,7 +98,7 @@ func handleInvitations(wr WrappedRequest) {
 		Invitations         []*Invitation
 		RealizedInvitations []RealizedInvitation
 		NotInvitedList      []Person
-		EventsWithKeys	    []EventWithKey
+		EventsWithKeys      []EventWithKey
 	}{
 		CurrentEvent:        *currentEvent,
 		Invitations:         invitations,
@@ -128,7 +128,7 @@ func handleCopyInvitations(wr WrappedRequest) {
 
 	baseEventKeyEncoded := wr.Request.Form.Get("baseEvent")
 	if baseEventKeyEncoded == "" {
-	   return
+		return
 	}
 
 	baseEventKey, _ := datastore.DecodeKey(baseEventKeyEncoded)
@@ -139,12 +139,12 @@ func handleCopyInvitations(wr WrappedRequest) {
 	var newInvitations []Invitation
 	var newInvitationKeys []*datastore.Key
 	for _, invitation := range invitations {
-	    newInvitations = append(newInvitations, Invitation {
-	         Event: currentEventKey,
-	    	 Invitees: invitation.Invitees,
-	    })
-	    newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
-	    newInvitationKeys = append(newInvitationKeys, newKey)
+		newInvitations = append(newInvitations, Invitation{
+			Event:    currentEventKey,
+			Invitees: invitation.Invitees,
+		})
+		newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+		newInvitationKeys = append(newInvitationKeys, newKey)
 	}
 
 	datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
