@@ -64,6 +64,11 @@ func handleInvitations(wr WrappedRequest) {
 		realizedInvitations = append(realizedInvitations, realizedInvitation)
 	}
 
+	sort.Slice(realizedInvitations,
+		func(a, b int) bool {
+			return SortByLastFirstName(realizedInvitations[a].Invitees[0], realizedInvitations[b].Invitees[0])
+		})
+
 	var notInvitedList []Person
 	for k := range notInvitedSet {
 		notInvitedList = append(notInvitedList, notInvitedSet[k])
