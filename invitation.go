@@ -4,6 +4,7 @@ package conju
 
 import (
 	"html/template"
+	"net/http"
 	"sort"
 
 	"google.golang.org/appengine"
@@ -69,16 +70,36 @@ func handleInvitations(wr WrappedRequest) {
 	}
 	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a], notInvitedList[b]) })
 
+	type EventWithKey struct {
+	     Key string
+	     Ev Event
+	}
+ 
+	var eventsWithKeys []EventWithKey
+	if len(invitations) == 0 {
+	   var allEvents []*Event
+	   eventKeys, _ := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+	   for i := 0; i < len(eventKeys); i++ {
+	       ewk := EventWithKey {
+	       	   Key: eventKeys[i].Encode(),
+		   Ev: *allEvents[i], 
+	       }
+	       eventsWithKeys = append(eventsWithKeys, ewk)
+	   }
+	}
+
 	data := struct {
 		CurrentEvent        Event
 		Invitations         []*Invitation
 		RealizedInvitations []RealizedInvitation
 		NotInvitedList      []Person
+		EventsWithKeys	    []EventWithKey
 	}{
 		CurrentEvent:        *currentEvent,
 		Invitations:         invitations,
 		RealizedInvitations: realizedInvitations,
 		NotInvitedList:      notInvitedList,
+		EventsWithKeys:      eventsWithKeys,
 	}
 
 	functionMap := template.FuncMap{
@@ -91,4 +112,37 @@ func handleInvitations(wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "invitations.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
+}
+
+func handleCopyInvitations(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	//currentEvent := wr.Event
+	currentEventKeyEncoded := wr.Values["EventKey"].(string)
+	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	wr.Request.ParseForm()
+
+	baseEventKeyEncoded := wr.Request.Form.Get("baseEvent")
+	if baseEventKeyEncoded == "" {
+	   return
+	}
+
+	baseEventKey, _ := datastore.DecodeKey(baseEventKeyEncoded)
+	var invitations []*Invitation
+	q := datastore.NewQuery("Invitation").Filter("Event =", baseEventKey)
+	q.GetAll(ctx, &invitations)
+
+	var newInvitations []Invitation
+	var newInvitationKeys []*datastore.Key
+	for _, invitation := range invitations {
+	    newInvitations = append(newInvitations, Invitation {
+	         Event: currentEventKey,
+	    	 Invitees: invitation.Invitees,
+	    })
+	    newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+	    newInvitationKeys = append(newInvitationKeys, newKey)
+	}
+
+	datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
+	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+
 }

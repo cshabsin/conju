@@ -1,15 +1,26 @@
 {{template "test.html" .}}
 {{define "body"}}
 
-<h1>Invitations for {{with .CurrentEvent}} {{.ShortName}} {{end}}</h1>
+<h1>Invitations for {{with .CurrentEvent}}{{.ShortName}}{{end}}</h1>
+
+<form action="copyInvitations" method="POST">
+{{if not .RealizedInvitations}}Copy invitations from: 
+  <select name="baseEvent">
+    {{range .EventsWithKeys}}
+      <option value="{{.Key}}">{{.Ev.ShortName}}</option>
+    {{end}}
+  </select>
+  <input type="submit" value="Create"/>
+ {{end}}
 
 {{range .RealizedInvitations}}
-  {{ListInvitees .Invitees}}<br>
+<input type="radio" name="invitation" value="{{.EncodedKey}}">{{ListInvitees .Invitees}}<br>
 {{end}}
 
 <h3>Not Invited to {{with .CurrentEvent}} {{.ShortName}} {{end}}</h3>
+
 {{range .NotInvitedList}}
-  {{.FullName}}<br>
+ <input type="checkbox" value="{{.DatastoreKey}}"> {{.FullName}}<br>
 {{end}}
 
 {{end}}
