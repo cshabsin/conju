@@ -12,7 +12,9 @@
   </select>
   <input type="submit" value="Create"/>
  {{end}}
+</form>
 
+<form action="addInvitation" method="POST">
 {{range .RealizedInvitations}}
 <input type="radio" name="invitation" value="{{.EncodedKey}}">{{ListInvitees .Invitees}}<br>
 {{end}}
@@ -20,7 +22,8 @@
 <h3>Not Invited to {{with .CurrentEvent}} {{.ShortName}} {{end}}</h3>
 
 {{range .NotInvitedList}}
- <input type="checkbox" value="{{.DatastoreKey}}"> {{.FullName}}<br>
+ <input name="person" type="checkbox" value="{{.Key}}"> {{.Person.FullName}}<br>
 {{end}}
-
+<input type="submit" value="Create/Add to Invitation">
+</form>
 {{end}}

@@ -23,13 +23,19 @@ func handleInvitations(wr WrappedRequest) {
 	currentEventKeyEncoded := wr.Values["EventKey"].(string)
 	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
 
-	var notInvitedSet = make(map[datastore.Key]Person)
+	type PersonWithKey struct {
+		Key    string
+		Person Person
+	}
+
+	var notInvitedSet = make(map[datastore.Key]PersonWithKey)
 	personQuery := datastore.NewQuery("Person")
 	var people []*Person
 	personKeys, _ := personQuery.GetAll(ctx, &people)
 
 	for i := 0; i < len(personKeys); i++ {
-		notInvitedSet[*personKeys[i]] = *people[i]
+		personWithKey := PersonWithKey{Key: personKeys[i].Encode(), Person: *people[i]}
+		notInvitedSet[*personKeys[i]] = personWithKey
 	}
 
 	var invitations []*Invitation
@@ -53,7 +59,9 @@ func handleInvitations(wr WrappedRequest) {
 			var person Person
 			datastore.Get(ctx, personKey, &person)
 			invitees = append(invitees, person)
-			delete(notInvitedSet, *personKey)
+			if personKey != nil {
+				delete(notInvitedSet, *personKey)
+			}
 		}
 
 		realizedInvitation := RealizedInvitation{
@@ -69,11 +77,11 @@ func handleInvitations(wr WrappedRequest) {
 			return SortByLastFirstName(realizedInvitations[a].Invitees[0], realizedInvitations[b].Invitees[0])
 		})
 
-	var notInvitedList []Person
+	var notInvitedList []PersonWithKey
 	for k := range notInvitedSet {
 		notInvitedList = append(notInvitedList, notInvitedSet[k])
 	}
-	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a], notInvitedList[b]) })
+	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a].Person, notInvitedList[b].Person) })
 
 	type EventWithKey struct {
 		Key string
@@ -97,7 +105,7 @@ func handleInvitations(wr WrappedRequest) {
 		CurrentEvent        Event
 		Invitations         []*Invitation
 		RealizedInvitations []RealizedInvitation
-		NotInvitedList      []Person
+		NotInvitedList      []PersonWithKey
 		EventsWithKeys      []EventWithKey
 	}{
 		CurrentEvent:        *currentEvent,
@@ -150,4 +158,49 @@ func handleCopyInvitations(wr WrappedRequest) {
 	datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 
+}
+
+func handleAddInvitation(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	currentEventKeyEncoded := wr.Values["EventKey"].(string)
+	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	wr.Request.ParseForm()
+
+	invitationKeyEncoded := wr.Request.Form.Get("invitation")
+	people := wr.Request.Form["person"]
+
+	if len(people) == 0 {
+		log.Infof(ctx, "Couldn't find any selected people!")
+		return
+	}
+
+	var newPeople []*datastore.Key
+	for _, person := range people {
+		key, _ := datastore.DecodeKey(person)
+		newPeople = append(newPeople, key)
+	}
+
+	if invitationKeyEncoded == "" {
+		log.Infof(ctx, "no invitation selected, creating new one...")
+		newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+		var newInvitation Invitation
+		newInvitation.Event = currentEventKey
+		newInvitation.Invitees = newPeople
+
+		_, err := datastore.Put(ctx, newKey, &newInvitation)
+		if err != nil {
+			log.Errorf(ctx, "%v", err)
+		}
+	} else {
+		existingInvitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
+		var existingInvitation Invitation
+		datastore.Get(ctx, existingInvitationKey, &existingInvitation)
+		existingInvitation.Invitees = append(existingInvitation.Invitees, newPeople...)
+		_, err := datastore.Put(ctx, existingInvitationKey, &existingInvitation)
+		if err != nil {
+			log.Errorf(ctx, "%v", err)
+		}
+	}
+
+	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
