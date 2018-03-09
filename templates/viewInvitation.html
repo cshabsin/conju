@@ -1,0 +1,48 @@
+<script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
+{{template "test.html" .}}
+{{define "body"}}
+
+<script>
+  function adjustArrows() {
+    $(".listUpArrow").show();
+    $(".listUpArrow:first").hide();
+    $(".listDownArrow").show();
+    $(".listDownArrow:last").hide();
+  }
+
+  $( document ).ready(function() {
+    adjustArrows();
+
+    $(".listUpArrow, .listDownArrow").click(function() {
+      var row = $(this).closest('tr');
+      if ($(this).hasClass('listUpArrow'))
+        row.prev().before(row);
+      else
+        row.next().after(row);
+
+      adjustArrows();
+    });
+
+  })
+</script>
+
+<h1>Invitation for {{with .Invitation}}{{.Event.ShortName}}{{end}}</h1>
+
+
+<form action="saveInvitation">
+  <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
+  <table class="inviteeTable">
+    {{range .Invitation.Invitees}}
+       <tr><td><img class="hidden listUpArrow" src="../media/arrow.png"></td>
+           <td><img class="hidden listDownArrow" src="../media/arrow.png"></td>
+           <td>
+             {{.Person.FullName}}
+             <input type="hidden" name="person" value="{{.Key}}">
+           </td>
+       </tr>
+    {{end}}
+  </table>
+  <input type="submit" value="Save">
+
+</form>
+{{end}}
