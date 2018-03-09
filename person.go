@@ -29,7 +29,8 @@ type Person struct {
 	IsAdmin      bool
 	FallbackAge  float64
 	//TODO: make this nilable
-	NeedBirthdate bool
+	NeedBirthdate   bool
+	PrivateComments string
 	// these fields can be removed after all the data is ported
 	OldGuestId    int
 	OldInviteeId  int
@@ -342,6 +343,7 @@ func handleSaveUpdatePerson(wr WrappedRequest) {
 	p.Birthdate, _ = time.Parse("01/02/2006", wr.Request.Form.Get("Birthdate"))
 	p.FallbackAge, _ = strconv.ParseFloat(wr.Request.Form.Get("FallbackAge"), 64)
 	p.NeedBirthdate = (wr.Request.Form.Get("NeedBirthdate") == "on")
+	p.PrivateComments = wr.Request.Form.Get("PrivateComments")
 
 	tic := time.Now()
 	_, err = datastore.Put(ctx, p.DatastoreKey, p)
