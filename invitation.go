@@ -3,6 +3,7 @@ package conju
 // TODO: move to "package models"?
 
 import (
+	"context"
 	"html/template"
 	"net/http"
 	"sort"
@@ -17,16 +18,47 @@ type Invitation struct {
 	Invitees []*datastore.Key // []Person
 }
 
+type RealizedInvitation struct {
+	EncodedKey string
+	Invitees   []PersonWithKey
+	Event      Event
+}
+
+func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
+	personKeys := invitation.Invitees
+	var invitees []PersonWithKey
+	for _, personKey := range personKeys {
+		var person Person
+		datastore.Get(ctx, personKey, &person)
+		person.DatastoreKey = personKey
+		personWithKey := PersonWithKey{
+			Person: person,
+			Key:    personKey.Encode(),
+		}
+
+		invitees = append(invitees, personWithKey)
+	}
+
+	var event Event
+
+	if getEvent {
+		datastore.Get(ctx, invitation.Event, &event)
+	}
+
+	realizedInvitation := RealizedInvitation{
+		EncodedKey: invitationKey.Encode(),
+		Invitees:   invitees,
+		Event:      event,
+	}
+
+	return realizedInvitation
+}
+
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	currentEvent := wr.Event
 	currentEventKeyEncoded := wr.Values["EventKey"].(string)
 	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
-
-	type PersonWithKey struct {
-		Key    string
-		Person Person
-	}
 
 	var notInvitedSet = make(map[datastore.Key]PersonWithKey)
 	personQuery := datastore.NewQuery("Person")
@@ -44,29 +76,12 @@ func handleInvitations(wr WrappedRequest) {
 	var invitationKeys []*datastore.Key
 	invitationKeys, _ = q.GetAll(ctx, &invitations)
 
-	type RealizedInvitation struct {
-		EncodedKey string
-		Invitees   []Person
-	}
-
 	var realizedInvitations []RealizedInvitation
 
 	for i := 0; i < len(invitations); i++ {
-
-		personKeys := invitations[i].Invitees
-		var invitees []Person
-		for _, personKey := range personKeys {
-			var person Person
-			datastore.Get(ctx, personKey, &person)
-			invitees = append(invitees, person)
-			if personKey != nil {
-				delete(notInvitedSet, *personKey)
-			}
-		}
-
-		realizedInvitation := RealizedInvitation{
-			EncodedKey: invitationKeys[i].Encode(),
-			Invitees:   invitees,
+		realizedInvitation := makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i], false)
+		for _, invitee := range realizedInvitation.Invitees {
+			delete(notInvitedSet, *invitee.Person.DatastoreKey)
 		}
 
 		realizedInvitations = append(realizedInvitations, realizedInvitation)
@@ -74,7 +89,7 @@ func handleInvitations(wr WrappedRequest) {
 
 	sort.Slice(realizedInvitations,
 		func(a, b int) bool {
-			return SortByLastFirstName(realizedInvitations[a].Invitees[0], realizedInvitations[b].Invitees[0])
+			return SortByLastFirstName(realizedInvitations[a].Invitees[0].Person, realizedInvitations[b].Invitees[0].Person)
 		})
 
 	var notInvitedList []PersonWithKey
@@ -116,7 +131,11 @@ func handleInvitations(wr WrappedRequest) {
 	}
 
 	functionMap := template.FuncMap{
-		"ListInvitees": func(people []Person) string {
+		"ListInvitees": func(peopleWithKeys []PersonWithKey) string {
+			var people []Person
+			for _, person := range peopleWithKeys {
+				people = append(people, person.Person)
+			}
 			return CollectiveAddress(people, Informal)
 		},
 	}
@@ -201,6 +220,50 @@ func handleAddInvitation(wr WrappedRequest) {
 			log.Errorf(ctx, "%v", err)
 		}
 	}
+
+	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+}
+
+func handleViewInvitation(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	invitationKeyEncoded := wr.Request.Form.Get("invitation")
+	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
+	var invitation Invitation
+	datastore.Get(ctx, invitationKey, &invitation)
+
+	data := struct {
+		Invitation RealizedInvitation
+	}{
+		Invitation: makeRealizedInvitation(ctx, *invitationKey, invitation, true),
+	}
+
+	tpl := template.Must(template.ParseFiles("templates/test.html", "templates/viewInvitation.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
+		log.Errorf(ctx, "%v", err)
+	}
+
+}
+
+func handleSaveInvitation(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	invitationKeyEncoded := wr.Request.Form.Get("invitation")
+	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
+	var invitation Invitation
+	datastore.Get(ctx, invitationKey, &invitation)
+
+	people := wr.Request.Form["person"]
+	var newPeople []*datastore.Key
+	for _, person := range people {
+		key, _ := datastore.DecodeKey(person)
+		newPeople = append(newPeople, key)
+	}
+
+	invitation.Invitees = newPeople
+	_, _ = datastore.Put(ctx, invitationKey, &invitation)
 
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }

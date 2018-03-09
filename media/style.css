@@ -357,3 +357,22 @@ table.timespantable td.present{
 
 input[type="checkbox"] {margin:7px}
 input[type="radio"] {margin:7px}
+
+img.listUpArrow{
+    width:20px;
+    height:20px;
+}
+
+img.listDownArrow{
+    width:20px;
+    height:20px;
+    transform:rotate(180deg);
+}
+
+.inviteeTable td {
+    padding: 10px 5px;
+}
+
+.hidden {
+    display: none;
+}

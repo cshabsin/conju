@@ -16,6 +16,8 @@ func init() {
 	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter)
 	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(EventGetter)
 	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(EventGetter)
+	AddSessionHandler("/viewInvitation", handleViewInvitation)
+	AddSessionHandler("/saveInvitation", handleSaveInvitation)
 
 }
 

@@ -36,6 +36,11 @@ type Person struct {
 	OldInviteCode string
 }
 
+type PersonWithKey struct {
+	Key    string
+	Person Person
+}
+
 // TODO: define map of int -> string for pronoun enum --> display string
 
 func PersonKey(ctx context.Context) *datastore.Key {
