@@ -23,6 +23,7 @@ const Import_Data_Directory = "real_import_data"
 const Guest_Data_File_Name = "Guests_to_Import.tsv"
 const RSVP_Data_File_Name = "rsvps.tsv"
 const Events_Data_File_Name = "events.tsv"
+const Food_File_Name = "food.tsv"
 
 func ReloadData(wr WrappedRequest) {
 	// TODO: print out report of what got imported
@@ -33,6 +34,8 @@ func ReloadData(wr WrappedRequest) {
 	guestMap := ImportGuests(wr.ResponseWriter, wr.Context)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	ImportRsvps(wr.ResponseWriter, wr.Context, guestMap)
+	wr.ResponseWriter.Write([]byte("\n\n"))
+	ImportFoodPreferences(wr.ResponseWriter, wr.Context, guestMap)
 }
 
 func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
@@ -239,4 +242,81 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	io.Copy(w, b)
 
+}
+
+func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]datastore.Key) {
+	b := new(bytes.Buffer)
+
+	allRestrictions := GetAllFoodRestrictionTags()
+
+	foodFile, err := os.Open(Import_Data_Directory + "/" + Food_File_Name)
+	if err != nil {
+		log.Errorf(ctx, "%v", err)
+	}
+	defer foodFile.Close()
+
+	scanner := bufio.NewScanner(foodFile)
+	processedHeader := false
+	for scanner.Scan() {
+		if processedHeader {
+			var restrictions []FoodRestriction
+			foodRow := scanner.Text()
+			fields := strings.Split(foodRow, "\t")
+			guestIdInt, _ := strconv.Atoi(fields[0])
+			name := fields[2]
+			dietCode := fields[3]
+			switch dietCode {
+			case "v":
+				restrictions = append(restrictions, Vegetarian)
+			case "n":
+				restrictions = append(restrictions, Vegan)
+			case "f":
+				restrictions = append(restrictions, VegetarianPlusFish)
+			case "r":
+				restrictions = append(restrictions, NoRedMeat)
+			}
+
+			if fields[4] == "1" {
+				restrictions = append(restrictions, Kosher)
+			}
+			if fields[5] == "1" {
+				restrictions = append(restrictions, NoDairy)
+			}
+			if fields[6] == "1" {
+				restrictions = append(restrictions, NoGluten)
+			}
+			if fields[7] == "1" {
+				restrictions = append(restrictions, DangerousAllergy)
+			}
+			if fields[8] == "1" {
+				restrictions = append(restrictions, InconvenientAllergy)
+			}
+
+			foodIssues := ""
+			foodNotes := strings.Replace(fields[9], "|", "\n", -1)
+
+			personKey := guestMap[guestIdInt]
+			var p Person
+			err := datastore.Get(ctx, &personKey, &p)
+			if err != nil {
+				log.Errorf(ctx, "%v", err)
+			}
+			p.FoodRestrictions = restrictions
+			for _, rest := range restrictions {
+				foodIssues += allRestrictions[rest].Description + ", "
+			}
+
+			p.FoodNotes = foodNotes
+
+			w.Write([]byte(fmt.Sprintf("Restrictions for %s: %s %s\n", name, foodIssues, foodNotes)))
+			_, err = datastore.Put(ctx, &personKey, &p)
+			if err != nil {
+				log.Errorf(ctx, "%v", err)
+			}
+		}
+		processedHeader = true
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	io.Copy(w, b)
 }

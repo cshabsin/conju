@@ -22,9 +22,23 @@
       </td></tr>
       <tr><td>Email:</td><td><input type="text" name="Email" value="{{with .ThisPerson}}{{.Email}}{{end}}"></td></tr>
       <tr><td>Telephone:</td><td><input type="text" name="Telephone" value="{{with .ThisPerson}}{{.Telephone}}{{end}}"></td></tr>
-      <tr><td>Address:</td><td><textarea type="text" name="Address">{{with .ThisPerson}}{{.Address}}{{end}}</textarea></td></tr>
+      <tr><td>Address:</td><td><textarea type="text" name="Address" class="addressField">{{with .ThisPerson}}{{.Address}}{{end}}</textarea></td></tr>
       <tr><td>Birthdate:</td><td><input type="text" name="Birthdate" value="{{with .ThisPerson}}{{.Birthdate.Format "01/02/2006"}}{{end}}"></td></tr>
+      {{$FoodRestrictionMap := .ThisPerson.GetFoodRestrictionMap}}
+      <tr><td>Food Restrictions:</td><td>
+        <table><tr><td>
+          {{range $i, $restriction := .AllFoodRestrictions}}
+            {{$RestrictionMapValue := index $FoodRestrictionMap $restriction.Tag}} 
+            <input type="checkbox" name="FoodRestrictions" value="{{.Tag}}"
+            {{if eq 1 $RestrictionMapValue}}checked{{end}}
+            >{{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}<br>
+            {{if eq $i 4}}</td><td>{{end}}
+          {{end}}
+        </td></tr></table>
+      </td></tr>
+      <tr><td>Food Preferences:</td><td><textarea type="text" name="FoodNotes" class="freeformTextField">{{with .ThisPerson}}{{.FoodNotes}}{{end}}</textarea></td></tr>
     </table>
+
 
 {{/*    {{if .LoggedInPerson.IsAdmin}} */}}
       <h3>Admin information:</h3>

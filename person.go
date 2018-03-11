@@ -17,20 +17,21 @@ import (
 )
 
 type Person struct {
-	DatastoreKey *datastore.Key
-	FirstName    string
-	LastName     string
-	Nickname     string
-	Pronouns     PronounSet
-	Email        string
-	Telephone    string
-	Address      string
-	Birthdate    time.Time
-	IsAdmin      bool
-	FallbackAge  float64
-	//TODO: make this nilable
-	NeedBirthdate   bool
-	PrivateComments string
+	DatastoreKey     *datastore.Key
+	FirstName        string
+	LastName         string
+	Nickname         string
+	Pronouns         PronounSet
+	Email            string
+	Telephone        string
+	Address          string
+	Birthdate        time.Time
+	FoodRestrictions []FoodRestriction
+	FoodNotes        string
+	IsAdmin          bool
+	FallbackAge      float64
+	NeedBirthdate    bool
+	PrivateComments  string
 	// these fields can be removed after all the data is ported
 	OldGuestId    int
 	OldInviteeId  int
@@ -101,6 +102,76 @@ func GetPronouns(p PronounSet) string {
 	default:
 		return "They/Them/Theirs"
 	}
+}
+
+type FoodRestriction int
+
+const (
+	Vegetarian FoodRestriction = iota
+	Vegan
+	NoRedMeat
+	VegetarianPlusFish
+	NoDairy
+	NoGluten
+	Kosher
+	Halal
+	InconvenientAllergy
+	DangerousAllergy
+)
+
+type FoodRestrictionTag struct {
+	Tag          FoodRestriction
+	Description  string
+	Supplemental string
+}
+
+func GetAllFoodRestrictionTags() [DangerousAllergy + 1]FoodRestrictionTag {
+	var toReturn [DangerousAllergy + 1]FoodRestrictionTag
+	toReturn[Vegetarian] = FoodRestrictionTag{
+		Tag:         Vegetarian,
+		Description: "Vegetarian",
+	}
+	toReturn[Vegan] = FoodRestrictionTag{
+		Tag:         Vegan,
+		Description: "Vegan",
+	}
+	toReturn[NoRedMeat] = FoodRestrictionTag{
+		Tag:          NoRedMeat,
+		Description:  "No Red Meat",
+		Supplemental: "Chicken/Fish Okay",
+	}
+	toReturn[VegetarianPlusFish] = FoodRestrictionTag{
+		Tag:         VegetarianPlusFish,
+		Description: "Vegetarian + Fish",
+	}
+	toReturn[NoDairy] = FoodRestrictionTag{
+		Tag:         NoDairy,
+		Description: "No Dairy",
+	}
+	toReturn[NoGluten] = FoodRestrictionTag{
+		Tag:         NoGluten,
+		Description: "No Gluten",
+	}
+	toReturn[Kosher] = FoodRestrictionTag{
+		Tag:         Kosher,
+		Description: "Kosher",
+	}
+	toReturn[Halal] = FoodRestrictionTag{
+		Tag:         Halal,
+		Description: "Halal",
+	}
+	toReturn[InconvenientAllergy] = FoodRestrictionTag{
+		Tag:          InconvenientAllergy,
+		Description:  "Inconvenient Allergy",
+		Supplemental: "List your allergies below.",
+	}
+	toReturn[DangerousAllergy] = FoodRestrictionTag{
+		Tag:          DangerousAllergy,
+		Description:  "Dangerous Allergy",
+		Supplemental: "List your allergies below.",
+	}
+
+	return toReturn
 }
 
 func (p *Person) GetFirstName(formality NameFormality) string {
@@ -201,6 +272,15 @@ func (p Person) FormattedAddressForHtml() []string {
 	return strings.Split(p.Address, "\n")
 }
 
+func (p Person) GetFoodRestrictionMap() map[FoodRestriction]int {
+	var restrictionMap = make(map[FoodRestriction]int)
+
+	for _, restriction := range p.FoodRestrictions {
+		restrictionMap[restriction] = 1
+	}
+	return restrictionMap
+}
+
 func (p Person) EncodedKey() string {
 	fmt.Println(p.DatastoreKey)
 	if p.DatastoreKey == nil {
@@ -290,11 +370,13 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := struct {
-		ThisPerson  *Person
-		AllPronouns []PronounSet
+		ThisPerson          *Person
+		AllPronouns         []PronounSet
+		AllFoodRestrictions [DangerousAllergy + 1]FoodRestrictionTag
 	}{
-		ThisPerson:  person,
-		AllPronouns: []PronounSet{They, She, He, Zie},
+		ThisPerson:          person,
+		AllPronouns:         []PronounSet{They, She, He, Zie},
+		AllFoodRestrictions: GetAllFoodRestrictionTags(),
 	}
 
 	functionMap := template.FuncMap{
@@ -341,6 +423,17 @@ func handleSaveUpdatePerson(wr WrappedRequest) {
 	p.Telephone = wr.Request.Form.Get("Telephone")
 	p.Address = wr.Request.Form.Get("Address")
 	p.Birthdate, _ = time.Parse("01/02/2006", wr.Request.Form.Get("Birthdate"))
+	foodRestrictions := wr.Request.Form["FoodRestrictions"]
+	var thisPersonRestrictions []FoodRestriction
+	allRestrictions := GetAllFoodRestrictionTags()
+	for _, restriction := range foodRestrictions {
+		restrictionInt, _ := strconv.Atoi(restriction)
+		thisPersonRestrictions = append(thisPersonRestrictions, allRestrictions[restrictionInt].Tag)
+	}
+
+	p.FoodRestrictions = thisPersonRestrictions
+	p.FoodNotes = wr.Request.Form.Get("FoodNotes")
+
 	p.FallbackAge, _ = strconv.ParseFloat(wr.Request.Form.Get("FallbackAge"), 64)
 	p.NeedBirthdate = (wr.Request.Form.Get("NeedBirthdate") == "on")
 	p.PrivateComments = wr.Request.Form.Get("PrivateComments")
