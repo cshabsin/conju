@@ -78,9 +78,40 @@ func handleInvitations(wr WrappedRequest) {
 
 	var realizedInvitations []RealizedInvitation
 
+	type Statistics struct {
+		BabyCount        int
+		KidCount         int
+		TweenOrTeenCount int
+		UnknownKidCount  int
+		AdultCount       int
+		UninvitedCount   int
+	}
+
+	var statistics Statistics
+	statistics.UninvitedCount = len(people)
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i], false)
 		for _, invitee := range realizedInvitation.Invitees {
+			statistics.UninvitedCount--
+			birthdate := invitee.Person.Birthdate
+			if birthdate.IsZero() {
+				if invitee.Person.NeedBirthdate {
+					statistics.UnknownKidCount++
+				} else {
+					statistics.AdultCount++
+				}
+			} else {
+				age := HalfYears(invitee.Person.ApproxAge())
+				if age <= 3 {
+					statistics.BabyCount++
+				} else if age <= 10 {
+					statistics.KidCount++
+				} else if age < 16 {
+					statistics.TweenOrTeenCount++
+				} else {
+					statistics.AdultCount++
+				}
+			}
 			delete(notInvitedSet, *invitee.Person.DatastoreKey)
 		}
 
@@ -122,12 +153,14 @@ func handleInvitations(wr WrappedRequest) {
 		RealizedInvitations []RealizedInvitation
 		NotInvitedList      []PersonWithKey
 		EventsWithKeys      []EventWithKey
+		Stats               Statistics
 	}{
 		CurrentEvent:        *currentEvent,
 		Invitations:         invitations,
 		RealizedInvitations: realizedInvitations,
 		NotInvitedList:      notInvitedList,
 		EventsWithKeys:      eventsWithKeys,
+		Stats:               statistics,
 	}
 
 	functionMap := template.FuncMap{

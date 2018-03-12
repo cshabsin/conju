@@ -2,6 +2,15 @@
 {{define "body"}}
 
 <h1>Invitations for {{with .CurrentEvent}}{{.ShortName}}{{end}}</h1>
+{{with .Stats}}
+  {{.AdultCount}} adults<br>
+  {{.BabyCount}} babies (0-3) <br>
+  {{.KidCount}} kids (>3-10)<br>
+  {{.TweenOrTeenCount}} Tweens/Teens (>10-16)<br>
+  {{.UnknownKidCount}} Kids of Indeterminate Age<br>
+  {{.UninvitedCount}} People Uninvited<br>
+<br><Br>
+{{end}}
 
 <form action="copyInvitations" method="POST">
 {{if not .RealizedInvitations}}Copy invitations from: 
