@@ -43,6 +43,32 @@ type PersonWithKey struct {
 	Person Person
 }
 
+type PersonUpdateFormInfo struct {
+	ThisPerson          *Person
+	EncodedKey          string
+	AllPronouns         []PronounSet
+	AllFoodRestrictions [DangerousAllergy + 1]FoodRestrictionTag
+	Ajax                bool
+	Destination         string
+}
+
+func makePersonUpdateFormInfo(key *datastore.Key, person Person, ajax bool, destination string) PersonUpdateFormInfo {
+	encodedKey := ""
+	if key != nil {
+		*person.DatastoreKey = *key
+		encodedKey = key.Encode()
+	}
+
+	return PersonUpdateFormInfo{
+		ThisPerson:          &person,
+		EncodedKey:          encodedKey,
+		AllPronouns:         []PronounSet{They, She, He, Zie},
+		AllFoodRestrictions: GetAllFoodRestrictionTags(),
+		Ajax:                ajax,
+		Destination:         destination,
+	}
+}
+
 // TODO: define map of int -> string for pronoun enum --> display string
 
 func PersonKey(ctx context.Context) *datastore.Key {
@@ -369,22 +395,18 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	data := struct {
-		ThisPerson          *Person
-		AllPronouns         []PronounSet
-		AllFoodRestrictions [DangerousAllergy + 1]FoodRestrictionTag
+	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, false, "listPeople")
+	infoBundle := struct {
+		FormInfo PersonUpdateFormInfo
 	}{
-		ThisPerson:          person,
-		AllPronouns:         []PronounSet{They, She, He, Zie},
-		AllFoodRestrictions: GetAllFoodRestrictionTags(),
+		FormInfo: formInfo,
 	}
-
 	functionMap := template.FuncMap{
 		"PronounString": GetPronouns,
 	}
 
-	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/updatePerson.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
+	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/updatePerson.html", "templates/updatePersonForm.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", infoBundle); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
 }

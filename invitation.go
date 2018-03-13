@@ -266,13 +266,27 @@ func handleViewInvitation(wr WrappedRequest) {
 	var invitation Invitation
 	datastore.Get(ctx, invitationKey, &invitation)
 
-	data := struct {
-		Invitation RealizedInvitation
-	}{
-		Invitation: makeRealizedInvitation(ctx, *invitationKey, invitation, true),
+	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
+	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
+	for _, invitee := range realizedInvitation.Invitees {
+		personKey := invitee.Person.DatastoreKey
+		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, true, "")
+		formInfoMap[personKey] = formInfo
 	}
 
-	tpl := template.Must(template.ParseFiles("templates/test.html", "templates/viewInvitation.html"))
+	data := struct {
+		Invitation  RealizedInvitation
+		FormInfoMap map[*datastore.Key]PersonUpdateFormInfo
+	}{
+		Invitation:  makeRealizedInvitation(ctx, *invitationKey, invitation, true),
+		FormInfoMap: formInfoMap,
+	}
+
+	functionMap := template.FuncMap{
+		"PronounString": GetPronouns,
+	}
+
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/viewInvitation.html", "templates/updatePersonForm.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}

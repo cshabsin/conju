@@ -2,55 +2,15 @@
 
 
 {{define "body"}}
-
   <a href="listPeople">All People</a>
 
-  <h1>{{with .ThisPerson}}{{.FullName}}{{end}}</h1>
+  <h1>{{with .FormInfo.ThisPerson}}{{.FullName}}{{end}}</h1> 
   <form action="saveUpdatePerson" method="POST">
-    <input type="hidden" name="EncodedKey" value="{{with .ThisPerson}}{{.EncodedKey}}{{end}}">
-    <table class="formtable">
-      <tr><td>First Name:</td><td><input type="text" name="FirstName" value="{{with .ThisPerson}}{{.FirstName}}{{end}}"></td></tr>
-      <tr><td>Last Name:</td><td><input type="text" name="LastName" value="{{with .ThisPerson}}{{.LastName}}{{end}}"></td></tr>
-      <tr><td>Nickname:</td><td><input type="text" name="Nickname" value="{{with .ThisPerson}}{{.Nickname}}{{end}}"></td></t>
-      <tr><td>Pronouns:</td><td>
-        <select name="Pronouns">
-	  {{$ThisPersonsPronouns := .ThisPerson.Pronouns}} 
-          {{range .AllPronouns}}
-            <option value="{{.}}"{{if eq . $ThisPersonsPronouns}} selected{{end}}>{{PronounString .}}</option>
-          {{end}}
-        </select>
-      </td></tr>
-      <tr><td>Email:</td><td><input type="text" name="Email" value="{{with .ThisPerson}}{{.Email}}{{end}}"></td></tr>
-      <tr><td>Telephone:</td><td><input type="text" name="Telephone" value="{{with .ThisPerson}}{{.Telephone}}{{end}}"></td></tr>
-      <tr><td>Address:</td><td><textarea type="text" name="Address" class="addressField">{{with .ThisPerson}}{{.Address}}{{end}}</textarea></td></tr>
-      <tr><td>Birthdate:</td><td><input type="text" name="Birthdate" value="{{with .ThisPerson}}{{.Birthdate.Format "01/02/2006"}}{{end}}"></td></tr>
-      {{$FoodRestrictionMap := .ThisPerson.GetFoodRestrictionMap}}
-      <tr><td>Food Restrictions:</td><td>
-        <table><tr><td>
-          {{range $i, $restriction := .AllFoodRestrictions}}
-            {{$RestrictionMapValue := index $FoodRestrictionMap $restriction.Tag}} 
-            <input type="checkbox" name="FoodRestrictions" value="{{.Tag}}"
-            {{if eq 1 $RestrictionMapValue}}checked{{end}}
-            >{{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}<br>
-            {{if eq $i 4}}</td><td>{{end}}
-          {{end}}
-        </td></tr></table>
-      </td></tr>
-      <tr><td>Food Preferences:</td><td><textarea type="text" name="FoodNotes" class="freeformTextField">{{with .ThisPerson}}{{.FoodNotes}}{{end}}</textarea></td></tr>
-    </table>
 
-
-{{/*    {{if .LoggedInPerson.IsAdmin}} */}}
-      <h3>Admin information:</h3>
-      <table class="formtable">
-        <tr><td>Approx age during current event:</td><td><input type="text" name="FallbackAge" value="{{with .ThisPerson}}{{.FallbackAge}}{{end}}"></td></tr>
-        <tr><td>Need birthdate:</td><td><input type="checkbox" name="NeedBirthdate" {{if .ThisPerson.NeedBirthdate}}checked{{end}}></td></tr>
-	<tr><td>Private Comments:</td><td><textarea type="text" name="PrivateComments">{{with .ThisPerson}}{{.PrivateComments}}{{end}}</textarea></td></tr>
-      </table>
-{{/*    {{end}} */}}
-
-    <input class="emphasizedSubmit" type="submit" value="Save">
+     {{template "updatePersonForm" .FormInfo}}
+  <input class="emphasizedSubmit" type="submit" value="Save">
 
     </form>
 
 {{end}}
+

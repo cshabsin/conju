@@ -4,10 +4,18 @@
 
 <script>
   function adjustArrows() {
-    $(".listUpArrow").show();
-    $(".listUpArrow:first").hide();
-    $(".listDownArrow").show();
-    $(".listDownArrow:last").hide();
+    $(".listUpArrow img").show();
+    $(".listUpArrow img:first").hide();
+    $(".listDownArrow img").show();
+    $(".listDownArrow img:last").hide();
+  }
+
+  function togglePersonalInfo(encodedKey) {
+    $("#" + encodedKey).toggle();
+    if ($("#" + encodedKey).is(":visible")) $("#showInfo_" + encodedKey).text("Hide"); 
+    else {
+      $("#showInfo_" + encodedKey).text("Edit Personal Info"); 
+    }
   }
 
   $( document ).ready(function() {
@@ -25,19 +33,24 @@
 
   })
 </script>
+<a href="invitations">All Invitations</a>
 
 <h1>Invitation for {{with .Invitation}}{{.Event.ShortName}}{{end}}</h1>
-
 
 <form action="saveInvitation">
   <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
   <table class="inviteeTable">
+    {{$FormInfoMap := .FormInfoMap}}
     {{range .Invitation.Invitees}}
-       <tr><td><img class="hidden listUpArrow" src="../media/arrow.png"></td>
-           <td><img class="hidden listDownArrow" src="../media/arrow.png"></td>
+       <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
+           <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td>
-             {{.Person.FullName}}
+             <span class="invitationPersonHeading">{{.Person.FullName}}</span> <div class="invitationPersonalInfoLink"><a onclick="togglePersonalInfo('{{.Key}}')"><span id="showInfo_{{.Key}}">Edit Personal Info</span></a></div>
+
              <input type="hidden" name="person" value="{{.Key}}">
+	     <div id="{{.Key}}" style="display:none">
+{{template "updatePersonForm" (index $FormInfoMap .Person.DatastoreKey)}}
+</div>
            </td>
        </tr>
     {{end}}

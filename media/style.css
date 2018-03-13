@@ -362,12 +362,14 @@ table.timespantable td.present{
 input[type="checkbox"] {margin:7px}
 input[type="radio"] {margin:7px}
 
-img.listUpArrow{
+.listUpArrow {vertical-align:top;}
+.listUpArrow img {
     width:20px;
     height:20px;
 }
 
-img.listDownArrow{
+.listDownArrow {vertical-align:top;}
+.listDownArrow img {
     width:20px;
     height:20px;
     transform:rotate(180deg);
@@ -380,3 +382,17 @@ img.listDownArrow{
 .hidden {
     display: none;
 }
+
+.invitationPersonHeading {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.invitationPersonalInfoLink {
+    font-size:smaller;
+    display:inline-block;
+    font-weight:lighter;
+    margin-left:30px;
+}
+
+.invitationPersonalInfoLink a:hover{    color:      #1F1497;}
