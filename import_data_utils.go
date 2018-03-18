@@ -203,11 +203,12 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 	q := datastore.NewQuery("Event")
 	var e []*Event
 	eventKeys, err := q.GetAll(ctx, &e)
-	eventMap := make(map[int]datastore.Key)
+	eventKeyMap := make(map[int]datastore.Key)
+	eventMap := make(map[int]Event)
 
 	for i, event := range e {
-		eventMap[event.EventId] = *eventKeys[i]
-		log.Infof(ctx, "%d: %s", event.EventId, eventKeys[i].Encode())
+		eventKeyMap[event.EventId] = *eventKeys[i]
+		eventMap[event.EventId] = *e[i]
 	}
 
 	scanner := bufio.NewScanner(rsvpFile)
@@ -225,7 +226,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 				log.Errorf(ctx, "%v", err)
 			}
 
-			eventKey := eventMap[eventId]
+			eventKey := eventKeyMap[eventId]
 
 			var invitees []Person
 			var personKeys []*datastore.Key
@@ -259,7 +260,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 				log.Errorf(ctx, "------ %v", err)
 			}
 
-			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s: %s\n", e[0].ShortName, CollectiveAddress(invitees, Informal))))
+			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s: %s\n", eventMap[eventId].ShortName, CollectiveAddress(invitees, Informal))))
 
 		}
 		processedHeader = true
