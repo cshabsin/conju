@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"sort"
+	"strings"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -14,14 +15,140 @@ import (
 )
 
 type Invitation struct {
-	Event    *datastore.Key   // Event
-	Invitees []*datastore.Key // []Person
+	Event    *datastore.Key                // Event
+	Invitees []*datastore.Key              // []Person
+	RsvpMap  map[*datastore.Key]RsvpStatus // Person -> Rsvp
+}
+
+func (inv *Invitation) Load(ps []datastore.Property) error {
+	allRsvpStatuses := GetAllRsvpStatuses()
+
+	inv.RsvpMap = make(map[*datastore.Key]RsvpStatus)
+	for _, p := range ps {
+		if strings.HasPrefix(p.Name, "RsvpMap.") {
+			personKey, err := datastore.DecodeKey(p.Name[8:])
+			if err != nil {
+				return err
+			}
+			rsvpInt := p.Value.(int64)
+			inv.RsvpMap[personKey] = allRsvpStatuses[rsvpInt].Status
+		}
+	}
+
+	if err := datastore.LoadStruct(inv, ps); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (inv *Invitation) Save() ([]datastore.Property, error) {
+	props := []datastore.Property{
+		{
+			Name:  "Event",
+			Value: inv.Event,
+		},
+	}
+
+	for _, invitee := range inv.Invitees {
+		inviteeProp := datastore.Property{
+			Name:     "Invitees",
+			Value:    invitee,
+			Multiple: true,
+		}
+		props = append(props, inviteeProp)
+	}
+
+	rsvpMap := inv.RsvpMap
+	for k, v := range rsvpMap {
+		encodedKey := (*k).Encode()
+		props = append(props, datastore.Property{Name: "RsvpMap." + encodedKey, Value: int64(v)})
+	}
+	return props, nil
 }
 
 type RealizedInvitation struct {
 	EncodedKey string
 	Invitees   []PersonWithKey
 	Event      Event
+	RsvpMap    map[string]RsvpStatusInfo
+}
+
+// Each event should have a list of acceptable RSVP statuses
+type RsvpStatus int
+
+const (
+	No = iota
+	Maybe
+	FriSat
+	ThuFriSat
+	SatSun
+	FriSatSun
+	FriSatPlusEither
+	WeddingOnly
+	Fri
+	Sat
+)
+
+type RsvpStatusInfo struct {
+	Status           RsvpStatus
+	ShortDescription string
+	LongDescription  string
+}
+
+func GetAllRsvpStatuses() [Sat + 1]RsvpStatusInfo {
+	var toReturn [Sat + 1]RsvpStatusInfo
+
+	toReturn[No] = RsvpStatusInfo{
+		Status:           No,
+		ShortDescription: "No",
+		LongDescription:  "Will not attend",
+	}
+	toReturn[Maybe] = RsvpStatusInfo{
+		Status:           Maybe,
+		ShortDescription: "Maybe",
+		LongDescription:  "Undecided",
+	}
+	toReturn[FriSat] = RsvpStatusInfo{
+		Status:           FriSat,
+		ShortDescription: "FriSat",
+		LongDescription:  "Friday - Sunday",
+	}
+	toReturn[ThuFriSat] = RsvpStatusInfo{
+		Status:           ThuFriSat,
+		ShortDescription: "ThuFriSat",
+		LongDescription:  "Thursday - Sunday",
+	}
+	toReturn[SatSun] = RsvpStatusInfo{
+		Status:           SatSun,
+		ShortDescription: "SatSun",
+		LongDescription:  "Saturday - Sunday",
+	}
+	toReturn[FriSatSun] = RsvpStatusInfo{
+		Status:           FriSatSun,
+		ShortDescription: "FriSatSun",
+		LongDescription:  "Friday - Sunday",
+	}
+	toReturn[FriSatPlusEither] = RsvpStatusInfo{
+		Status:           FriSatPlusEither,
+		ShortDescription: "FriSatPlusEither",
+		LongDescription:  "Friday - Sunday, plus either Thursday or Sunday nights",
+	}
+	toReturn[WeddingOnly] = RsvpStatusInfo{
+		Status:           WeddingOnly,
+		ShortDescription: "WeddingOnly",
+		LongDescription:  "Wedding Only (no overnights)",
+	}
+	toReturn[Fri] = RsvpStatusInfo{
+		Status:           Fri,
+		ShortDescription: "Fri",
+		LongDescription:  "Friday - Saturday",
+	}
+	toReturn[Sat] = RsvpStatusInfo{
+		Status:           Sat,
+		ShortDescription: "Sat",
+		LongDescription:  "Saturday - Sunday",
+	}
+	return toReturn
 }
 
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
@@ -45,10 +172,18 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		datastore.Get(ctx, invitation.Event, &event)
 	}
 
+	allRsvpStatuses := GetAllRsvpStatuses()
+	realizedRsvpMap := make(map[string]RsvpStatusInfo)
+
+	for k, v := range invitation.RsvpMap {
+		realizedRsvpMap[k.Encode()] = allRsvpStatuses[v]
+	}
+
 	realizedInvitation := RealizedInvitation{
 		EncodedKey: invitationKey.Encode(),
 		Invitees:   invitees,
 		Event:      event,
+		RsvpMap:    realizedRsvpMap,
 	}
 
 	return realizedInvitation
@@ -278,7 +413,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		Invitation  RealizedInvitation
 		FormInfoMap map[*datastore.Key]PersonUpdateFormInfo
 	}{
-		Invitation:  makeRealizedInvitation(ctx, *invitationKey, invitation, true),
+		Invitation:  realizedInvitation,
 		FormInfoMap: formInfoMap,
 	}
 

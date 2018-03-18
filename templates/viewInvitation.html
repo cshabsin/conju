@@ -36,16 +36,20 @@
 <a href="invitations">All Invitations</a>
 
 <h1>Invitation for {{with .Invitation}}{{.Event.ShortName}}{{end}}</h1>
-
-<form action="saveInvitation">
+<form action="saveInvitation" method="POST">
   <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
   <table class="inviteeTable">
+    {{$Invitation := .Invitation}}
     {{$FormInfoMap := .FormInfoMap}}
     {{range .Invitation.Invitees}}
+       {{$invitee := .}}
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td>
-             <span class="invitationPersonHeading">{{.Person.FullName}}</span> <div class="invitationPersonalInfoLink"><a onclick="togglePersonalInfo('{{.Key}}')"><span id="showInfo_{{.Key}}">Edit Personal Info</span></a></div>
+	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
+             <span class="invitationPersonHeading">{{.Person.FullName}}</span> {{if $RsvpStatus.ShortDescription}}({{$RsvpStatus.LongDescription}}){{end}}
+
+        <div class="invitationPersonalInfoLink"><a onclick="togglePersonalInfo('{{.Key}}')"><span id="showInfo_{{.Key}}">Edit Personal Info</span></a></div>
 
              <input type="hidden" name="person" value="{{.Key}}">
 	     <div id="{{.Key}}" style="display:none">

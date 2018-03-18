@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	//"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -86,7 +87,7 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]datastore.
 	b := new(bytes.Buffer)
 	guestFile, err := os.Open(Import_Data_Directory + "/" + Guest_Data_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Errorf(ctx, "File error: %v", err)
 	}
 	defer guestFile.Close()
 
@@ -186,6 +187,16 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 	}
 	defer rsvpFile.Close()
 
+	q := datastore.NewQuery("Event")
+	var e []*Event
+	eventKeys, err := q.GetAll(ctx, &e)
+	eventMap := make(map[int]datastore.Key)
+
+	for i, event := range e {
+		eventMap[event.EventId] = *eventKeys[i]
+		log.Infof(ctx, "%d: %s", event.EventId, eventKeys[i].Encode())
+	}
+
 	scanner := bufio.NewScanner(rsvpFile)
 	processedHeader := false
 	for scanner.Scan() {
@@ -195,38 +206,44 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 			eventId, _ := strconv.Atoi(fields[0])
 			guestIds := strings.Split(fields[1], ",")
 			//names := strings.Split(fields[2], ",")
-			//rsvps := strings.Split(fields[3], ",")
+			rsvps := strings.Split(fields[3], ",")
 
-			q := datastore.NewQuery("Event").Filter("EventId =", eventId)
-			var e []*Event
-			eventKeys, err := q.GetAll(ctx, &e)
 			if err != nil {
 				log.Errorf(ctx, "%v", err)
 			}
 
-			eventKey := eventKeys[0]
+			eventKey := eventMap[eventId]
 
 			var invitees []Person
 			var personKeys []*datastore.Key
 
-			for _, guestId := range guestIds {
-				guestIdInt, _ := strconv.Atoi(guestId)
+			rsvpMap := make(map[*datastore.Key]RsvpStatus)
 
+			for i, guestId := range guestIds {
+				guestIdInt, _ := strconv.Atoi(guestId)
 				personKey := guestMap[guestIdInt]
 				var p Person
 				datastore.Get(ctx, &personKey, &p)
 				invitees = append(invitees, p)
 				personKeys = append(personKeys, &personKey)
+
+				rsvpChar := rsvps[i]
+				if rsvpChar != "-" {
+					rsvp := getRsvpStatusFromCode(eventId, rsvpChar)
+					rsvpMap[&personKey] = rsvp
+				}
 			}
 
 			var invitation Invitation
-			invitation.Event = eventKey
+			invitation.Event = &eventKey
 			invitation.Invitees = personKeys
+			invitation.RsvpMap = rsvpMap
 
 			invitationKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+
 			_, err = datastore.Put(ctx, invitationKey, &invitation)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Errorf(ctx, "------ %v", err)
 			}
 
 			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s: %s\n", e[0].ShortName, CollectiveAddress(invitees, Informal))))
@@ -242,6 +259,61 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	io.Copy(w, b)
 
+}
+
+func getRsvpStatusFromCode(eventId int, status string) RsvpStatus {
+
+	switch status {
+	case "n":
+		return No
+	case "m":
+		return Maybe
+	}
+
+	switch eventId {
+	case 1:
+		switch status {
+		case "y":
+			return FriSat
+		case "f":
+			return Fri
+		case "s":
+			return Sat
+		case "w":
+			return WeddingOnly
+		}
+	case 2, 3:
+		switch status {
+		case "y":
+			return FriSatSun
+		case "f":
+			return FriSat
+		case "s":
+			return SatSun
+		}
+	case 4:
+		switch status {
+		case "y":
+			return FriSat
+		case "f":
+			return ThuFriSat
+		case "s":
+			return SatSun
+		case "e":
+			return FriSatPlusEither
+		}
+	case 5:
+		switch status {
+		case "y":
+			return FriSat
+		case "f":
+			return ThuFriSat
+		case "s":
+			return SatSun
+		}
+	}
+
+	return No
 }
 
 func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]datastore.Key) {
@@ -299,7 +371,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 			var p Person
 			err := datastore.Get(ctx, &personKey, &p)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Errorf(ctx, "%v: %v - %s", err, personKey.Encode(), foodRow)
 			}
 			p.FoodRestrictions = restrictions
 			for _, rest := range restrictions {
