@@ -15,56 +15,29 @@ type CurrentEvent struct {
 }
 
 type Event struct {
-	EventId   int // this can get deleted after all the data is imported
-	Name      string
-	ShortName string
-	StartDate time.Time
-	EndDate   time.Time
-	Current   bool
+	EventId      int // this can get deleted after all the data is imported
+	Name         string
+	ShortName    string
+	StartDate    time.Time
+	EndDate      time.Time
+	RsvpStatuses []RsvpStatus
+	Current      bool
 }
 
-/*
-func CurrentEventKey(ctx context.Context) (*datastore.Key, error) {
-	ce_key := datastore.NewKey(ctx, "CurrentEvent", "current_event", 0, nil)
-	var ce CurrentEvent
-	err := datastore.Get(ctx, ce_key, &ce)
-	if err != nil {
-		k, err := CreateDefaultEvent(ctx)
-		if err != nil {
-			return nil, err
-		}
-		ce := CurrentEvent{k}
-		datastore.Put(ctx, ce_key, &ce)
-		return k, nil
-	}
-	return ce.Key, nil
-}
-*/
-func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, current bool) (*datastore.Key, error) {
+func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, rsvpStatuses []RsvpStatus, current bool) (*datastore.Key, error) {
 	e := Event{
-		EventId:   id,
-		Name:      name,
-		ShortName: shortName,
-		StartDate: startDate,
-		EndDate:   endDate,
-		Current:   current,
+		EventId:      id,
+		Name:         name,
+		ShortName:    shortName,
+		StartDate:    startDate,
+		EndDate:      endDate,
+		RsvpStatuses: rsvpStatuses,
+		Current:      current,
 	}
 	return datastore.Put(ctx, datastore.NewIncompleteKey(
 		ctx, "Event", nil), &e)
 }
 
-/*
-func CreateDefaultEvent(ctx context.Context) (*datastore.Key, error) {
-	e := Event{
-		Name:      "Purity Spring 2018",
-		StartDate: time.Date(2018, 6, 8, 0, 0, 0, 0, time.Local),
-		EndDate:   time.Date(2018, 6, 11, 0, 0, 0, 0, time.Local),
-		Current:   true,
-	}
-	return datastore.Put(ctx, datastore.NewIncompleteKey(
-		ctx, "Event", nil), &e)
-}
-*/
 // Sets up Event in the WrappedRequest.
 func EventGetter(wr *WrappedRequest) error {
 	ctx := wr.Context

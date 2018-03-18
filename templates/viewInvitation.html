@@ -41,13 +41,22 @@
   <table class="inviteeTable">
     {{$Invitation := .Invitation}}
     {{$FormInfoMap := .FormInfoMap}}
+    {{$AllRsvpStatuses := .AllRsvpStatuses}}
     {{range .Invitation.Invitees}}
        {{$invitee := .}}
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td>
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
-             <span class="invitationPersonHeading">{{.Person.FullName}}</span> {{if $RsvpStatus.ShortDescription}}({{$RsvpStatus.LongDescription}}){{end}}
+             <span class="invitationPersonHeading">{{.Person.FullName}}</span>
+	     <select>
+	       {{if not $RsvpStatus.ShortDescription}}<option value="-1" selected>Will you be joining us?</option>{{end}}
+	       {{range $Invitation.Event.RsvpStatuses}}
+	         <option value="{{.}}"
+                   {{if and $RsvpStatus.ShortDescription (eq $RsvpStatus.Status .)}}selected{{end}}
+                 >{{(index $AllRsvpStatuses .).LongDescription}}</option>
+	       {{end}}
+	     </select>
 
         <div class="invitationPersonalInfoLink"><a onclick="togglePersonalInfo('{{.Key}}')"><span id="showInfo_{{.Key}}">Edit Personal Info</span></a></div>
 

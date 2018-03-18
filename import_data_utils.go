@@ -47,6 +47,13 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	defer eventsFile.Close()
 
 	layout := "1/2/2006"
+
+	rsvpStatusMap := make(map[string]RsvpStatus)
+	allRsvpStatuses := GetAllRsvpStatuses()
+	for _, status := range allRsvpStatuses {
+		rsvpStatusMap[status.ShortDescription] = status.Status
+	}
+
 	scanner := bufio.NewScanner(eventsFile)
 	processedHeader := false
 	for scanner.Scan() {
@@ -57,7 +64,13 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			startDate, _ := time.Parse(layout, fields[3])
 			endDate, _ := time.Parse(layout, fields[4])
 			eventId, _ := strconv.Atoi(fields[0])
-			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate,
+			rsvpStatusStrings := strings.Split(fields[6], ",")
+			var rsvpStatuses []RsvpStatus
+			for _, rsvpStatusString := range rsvpStatusStrings {
+				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
+			}
+
+			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate, rsvpStatuses,
 				fields[5] == "1")
 			w.Write([]byte(fmt.Sprintf("Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))))
 		}

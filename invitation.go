@@ -410,11 +410,13 @@ func handleViewInvitation(wr WrappedRequest) {
 	}
 
 	data := struct {
-		Invitation  RealizedInvitation
-		FormInfoMap map[*datastore.Key]PersonUpdateFormInfo
+		Invitation      RealizedInvitation
+		FormInfoMap     map[*datastore.Key]PersonUpdateFormInfo
+		AllRsvpStatuses [Sat + 1]RsvpStatusInfo
 	}{
-		Invitation:  realizedInvitation,
-		FormInfoMap: formInfoMap,
+		Invitation:      realizedInvitation,
+		FormInfoMap:     formInfoMap,
+		AllRsvpStatuses: GetAllRsvpStatuses(),
 	}
 
 	functionMap := template.FuncMap{
