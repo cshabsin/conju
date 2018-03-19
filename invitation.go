@@ -382,7 +382,7 @@ func handleCopyInvitations(wr WrappedRequest) {
 		newInvitationKeys = append(newInvitationKeys, newKey)
 	}
 
-	keys, error := datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
+	_, error := datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
 	if error != nil {
 		log.Errorf(ctx, "Error in putmulti: %v", error)
 	}
