@@ -211,6 +211,8 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 		eventMap[event.EventId] = *e[i]
 	}
 
+	var invitationCount [7]int
+
 	scanner := bufio.NewScanner(rsvpFile)
 	processedHeader := false
 	for scanner.Scan() {
@@ -222,10 +224,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 			//names := strings.Split(fields[2], ",")
 			rsvps := strings.Split(fields[3], ",")
 
-			if err != nil {
-				log.Errorf(ctx, "%v", err)
-			}
-
+			invitationCount[eventId]++
 			eventKey := eventKeyMap[eventId]
 
 			var invitees []Person
@@ -235,7 +234,11 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 
 			for i, guestId := range guestIds {
 				guestIdInt, _ := strconv.Atoi(guestId)
-				personKey := guestMap[guestIdInt]
+				personKey, exists := guestMap[guestIdInt]
+				if !exists {
+					log.Infof(ctx, "Missing person in %s", fields[2])
+					continue
+				}
 				var p Person
 				datastore.Get(ctx, &personKey, &p)
 				invitees = append(invitees, p)
@@ -255,15 +258,22 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 
 			invitationKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
 
-			_, err = datastore.Put(ctx, invitationKey, &invitation)
+			invitationKey, err = datastore.Put(ctx, invitationKey, &invitation)
 			if err != nil {
-				log.Errorf(ctx, "------ %v", err)
+				log.Errorf(ctx, "RSVPs: %v -- %s", err, rsvpRow)
 			}
 
-			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s: %s\n", eventMap[eventId].ShortName, CollectiveAddress(invitees, Informal))))
+			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s\n", printInvitation(ctx, *invitationKey, invitation))))
 
 		}
 		processedHeader = true
+	}
+
+	w.Write([]byte("\n"))
+	for i, c := range invitationCount {
+		if i > 0 {
+			w.Write([]byte(fmt.Sprintf("%s: %d invitations\n", eventMap[i].ShortName, c)))
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
