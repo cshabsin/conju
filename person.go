@@ -93,7 +93,7 @@ const (
 	Full                          // Christopher (Chris) Shabsin
 )
 
-// If you change this also change PronounFromConstant
+// If you change this also change GetPronouns
 type PronounSet int
 
 const (
@@ -103,18 +103,8 @@ const (
 	Zie
 )
 
-// TODO: is there a better way to do this?
 func PronounFromConstant(pronounConstant int) PronounSet {
-	switch pronounConstant {
-	case 1:
-		return She
-	case 2:
-		return He
-	case 3:
-		return Zie
-	default:
-		return They
-	}
+	return PronounSet(pronounConstant)
 }
 
 func GetPronouns(p PronounSet) string {
