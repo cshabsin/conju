@@ -96,7 +96,7 @@ type ImportedGuest struct {
 	Pronouns      PronounSet
 }
 
-func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]datastore.Key {
+func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore.Key {
 	b := new(bytes.Buffer)
 	guestFile, err := os.Open(Import_Data_Directory + "/" + Guest_Data_File_Name)
 	if err != nil {
@@ -104,7 +104,7 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]datastore.
 	}
 	defer guestFile.Close()
 
-	guestMap := make(map[int]datastore.Key)
+	guestMap := make(map[int]*datastore.Key)
 
 	scanner := bufio.NewScanner(guestFile)
 	processedHeader := false
@@ -158,7 +158,7 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]datastore.
 
 }
 
-func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, guest ImportedGuest) (datastore.Key, error) {
+func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, guest ImportedGuest) (*datastore.Key, error) {
 	phone := guest.CellPhone
 	if phone == "" {
 		phone = guest.HomePhone
@@ -189,10 +189,10 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 	if err2 != nil {
 		log.Errorf(ctx, "%v", err2)
 	}
-	return *key, err2
+	return key, err2
 }
 
-func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]datastore.Key) {
+func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
 	b := new(bytes.Buffer)
 	rsvpFile, err := os.Open(Import_Data_Directory + "/" + RSVP_Data_File_Name)
 	if err != nil {
@@ -203,11 +203,11 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 	q := datastore.NewQuery("Event")
 	var e []*Event
 	eventKeys, err := q.GetAll(ctx, &e)
-	eventKeyMap := make(map[int]datastore.Key)
+	eventKeyMap := make(map[int]*datastore.Key)
 	eventMap := make(map[int]Event)
 
 	for i, event := range e {
-		eventKeyMap[event.EventId] = *eventKeys[i]
+		eventKeyMap[event.EventId] = eventKeys[i]
 		eventMap[event.EventId] = *e[i]
 	}
 
@@ -237,19 +237,19 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]da
 				guestIdInt, _ := strconv.Atoi(guestId)
 				personKey := guestMap[guestIdInt]
 				var p Person
-				datastore.Get(ctx, &personKey, &p)
+				datastore.Get(ctx, personKey, &p)
 				invitees = append(invitees, p)
-				personKeys = append(personKeys, &personKey)
+				personKeys = append(personKeys, personKey)
 
 				rsvpChar := rsvps[i]
 				if rsvpChar != "-" {
 					rsvp := getRsvpStatusFromCode(eventId, rsvpChar)
-					rsvpMap[&personKey] = rsvp
+					rsvpMap[personKey] = rsvp
 				}
 			}
 
 			var invitation Invitation
-			invitation.Event = &eventKey
+			invitation.Event = eventKey
 			invitation.Invitees = personKeys
 			invitation.RsvpMap = rsvpMap
 
@@ -330,7 +330,7 @@ func getRsvpStatusFromCode(eventId int, status string) RsvpStatus {
 	return No
 }
 
-func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]datastore.Key) {
+func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
 	b := new(bytes.Buffer)
 
 	allRestrictions := GetAllFoodRestrictionTags()
@@ -383,7 +383,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 
 			personKey := guestMap[guestIdInt]
 			var p Person
-			err := datastore.Get(ctx, &personKey, &p)
+			err := datastore.Get(ctx, personKey, &p)
 			if err != nil {
 				log.Errorf(ctx, "%v: %v - %s", err, personKey.Encode(), foodRow)
 			}
@@ -395,7 +395,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 			p.FoodNotes = foodNotes
 
 			w.Write([]byte(fmt.Sprintf("Restrictions for %s: %s %s\n", name, foodIssues, foodNotes)))
-			_, err = datastore.Put(ctx, &personKey, &p)
+			_, err = datastore.Put(ctx, personKey, &p)
 			if err != nil {
 				log.Errorf(ctx, "%v", err)
 			}
