@@ -32,11 +32,11 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			}
 			rsvpInt := p.Value.(int64)
 			inv.RsvpMap[personKey] = allRsvpStatuses[rsvpInt].Status
+		} else if p.Name == "Event" {
+			inv.Event = p.Value.(*datastore.Key)
+		} else if p.Name == "Invitees" {
+			inv.Invitees = append(inv.Invitees, p.Value.(*datastore.Key))
 		}
-	}
-
-	if err := datastore.LoadStruct(inv, ps); err != nil {
-		return err
 	}
 	return nil
 }
@@ -189,6 +189,21 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	return realizedInvitation
 }
 
+func printInvitation(ctx context.Context, key datastore.Key, inv Invitation) string {
+	real := makeRealizedInvitation(ctx, key, inv, true)
+	toReturn := real.Event.ShortName + ": "
+	for _, invitee := range real.Invitees {
+		toReturn += invitee.Person.FullName() + " - "
+		statusString := "???"
+		status, exists := real.RsvpMap[invitee.Key]
+		if exists {
+			statusString = status.ShortDescription
+		}
+		toReturn += statusString + ", "
+	}
+	return toReturn
+}
+
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	currentEvent := wr.Event
@@ -209,7 +224,32 @@ func handleInvitations(wr WrappedRequest) {
 
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
 	var invitationKeys []*datastore.Key
-	invitationKeys, _ = q.GetAll(ctx, &invitations)
+
+	t := q.Run(ctx)
+	for {
+		var inv Invitation
+		invKey, err := t.Next(&inv)
+		if err == datastore.Done {
+			break
+		}
+		if err != nil {
+			log.Errorf(ctx, "fetching next Invitation: %v", err)
+			continue
+		}
+
+		log.Infof(ctx, printInvitation(ctx, *invKey, inv))
+		invitationKeys = append(invitationKeys, invKey)
+		invitations = append(invitations, &inv)
+
+	}
+
+	/*
+	   	invitationKeys, err := q.GetAll(ctx, &invitations)
+	               if err != nil {
+	   	       log.Errorf(ctx, "Error in GetAll: %v", err)
+	   	    }
+	*/
+	log.Infof(ctx, "Found %d invitations", len(invitations))
 
 	var realizedInvitations []RealizedInvitation
 
@@ -342,7 +382,10 @@ func handleCopyInvitations(wr WrappedRequest) {
 		newInvitationKeys = append(newInvitationKeys, newKey)
 	}
 
-	datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
+	_, error := datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
+	if error != nil {
+		log.Errorf(ctx, "Error in putmulti: %v", error)
+	}
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 
 }
