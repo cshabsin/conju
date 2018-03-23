@@ -9,6 +9,7 @@ func init() {
 	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
 	AddSessionHandler("/reloadData", ReloadData)
+	AddSessionHandler("/clearData", ClearAllData)
 
 	AddSessionHandler("/listPeople", handleListPeople)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm)
