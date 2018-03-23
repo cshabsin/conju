@@ -126,7 +126,7 @@
            <td>
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
              <span class="invitationPersonHeading">{{.Person.FullName}}</span>
-	     <select class="rsvpStatus" onchange="processRsvpStatus({{$i}}, this.value)">
+	     <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}}, this.value)">
 	       {{if not $RsvpStatus.ShortDescription}}<option value="-1" selected>-- Will you be joining us? --</option>{{end}}
 	       {{range $Invitation.Event.RsvpStatuses}}
 	         <option value="{{.}}"

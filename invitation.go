@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 
 	"google.golang.org/appengine"
@@ -514,11 +515,18 @@ func handleSaveInvitation(wr WrappedRequest) {
 	datastore.Get(ctx, invitationKey, &invitation)
 
 	people := wr.Request.Form["person"]
+	rsvps := wr.Request.Form["rsvp"]
 	var newPeople []*datastore.Key
-	for _, person := range people {
+	var rsvpMap = make(map[*datastore.Key]RsvpStatus)
+	for i, person := range people {
 		key, _ := datastore.DecodeKey(person)
 		newPeople = append(newPeople, key)
+		rsvp, _ := strconv.Atoi(rsvps[i])
+		if rsvp >= 0 {
+			rsvpMap[key] = GetAllRsvpStatuses()[rsvp].Status
+		}
 	}
+	invitation.RsvpMap = rsvpMap
 
 	invitation.Invitees = newPeople
 	_, _ = datastore.Put(ctx, invitationKey, &invitation)
