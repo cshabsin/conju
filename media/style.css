@@ -160,7 +160,7 @@ table.listTable{margin:20px; border-collapse: collapse}
 table.listTable td{padding:5px; vertical-align:top; border-top:1px solid #1F1497; border-bottom:1px solid #1F1497;}
 
 table.formtable {margin:20px}
-.formtable td{padding:5px;vertical-align:top}
+.formtable td{padding:5px 0pxx;vertical-align:top}
 
 .addressField {width:150px;}
 .freeformTextField {width: 450px;height: 150px}
@@ -353,10 +353,11 @@ table.timespantable td.present{
 }
 
 .emphasizedSubmit{
-    width:75px;
+    width:100px;
     height:50px;
     font-size:150%;
     border-radius:10px;
+    margin-top:30px;
 }
 
 input[type="checkbox"] {margin:7px}
@@ -379,6 +380,10 @@ input[type="radio"] {margin:7px}
     padding: 10px 5px;
 }
 
+.inviteeTable .formTable td {
+    padding:0px 5px;
+}
+
 .hidden {
     display: none;
 }
@@ -396,3 +401,36 @@ input[type="radio"] {margin:7px}
 }
 
 .invitationPersonalInfoLink a:hover{    color:      #1F1497;}
+
+.food {padding: 20px;}
+.personal {padding: 20px;}
+
+.inputHighlight{color: red}
+
+.rsvpStatus {margin-left:25px}
+
+.rsvpHousing td {
+    vertical-align: top;
+}
+
+.rsvpHousing td select {
+    margin: 0px 20px 20px 0px;
+}
+
+.rsvpHousing td textarea {
+    margin-top: 15px;
+}
+
+.lodgingFormContainer {
+    margin-top:30px;
+}
+
+.rideFormContainer textarea {
+    margin-top: 15px;
+    display: block;
+}
+
+.personSupplementaryInfo {
+    border: 1px solid #1F1497;
+    margin: 10px 0px 0px 30px;
+}

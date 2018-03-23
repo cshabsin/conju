@@ -6,8 +6,18 @@
 
   <h1>{{with .FormInfo.ThisPerson}}{{.FullName}}{{end}}</h1> 
   <form action="saveUpdatePerson" method="POST">
+    <input type="hidden" name="EncodedKey" value="{{.FormInfo.EncodedKey}}">
+    <table class="formtable">
+      {{template "personInfoForm" .FormInfo}}
+      {{template "foodInfoForm" .FormInfo}}
+    </table>
 
-     {{template "updatePersonForm" .FormInfo}}
+{{/*    {{if .LoggedInPerson.IsAdmin}} */}}
+      <h3>Admin information:</h3>
+      <table class="formtable">
+	{{template "adminInfoForm" .FormInfo}}
+      </table>
+{{/* {{end}} */}}
   <input class="emphasizedSubmit" type="submit" value="Save">
 
     </form>

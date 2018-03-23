@@ -66,6 +66,19 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 	return props, nil
 }
 
+func (inv *Invitation) HasChildren(ctx context.Context) bool {
+	var event Event
+	datastore.Get(ctx, inv.Event, &event)
+	for _, personKey := range inv.Invitees {
+		var person Person
+		datastore.Get(ctx, personKey, &person)
+		if person.IsChildAtTime(event.StartDate) {
+			return true
+		}
+	}
+	return false
+}
+
 type RealizedInvitation struct {
 	EncodedKey string
 	Invitees   []PersonWithKey
@@ -93,6 +106,9 @@ type RsvpStatusInfo struct {
 	Status           RsvpStatus
 	ShortDescription string
 	LongDescription  string
+	Attending        bool
+	Undecided        bool
+	NoLodging        bool
 }
 
 func GetAllRsvpStatuses() [Sat + 1]RsvpStatusInfo {
@@ -102,51 +118,63 @@ func GetAllRsvpStatuses() [Sat + 1]RsvpStatusInfo {
 		Status:           No,
 		ShortDescription: "No",
 		LongDescription:  "Will not attend",
+		Attending:        false,
 	}
 	toReturn[Maybe] = RsvpStatusInfo{
 		Status:           Maybe,
 		ShortDescription: "Maybe",
 		LongDescription:  "Undecided",
+		Attending:        false,
+		Undecided:        true,
 	}
 	toReturn[FriSat] = RsvpStatusInfo{
 		Status:           FriSat,
 		ShortDescription: "FriSat",
-		LongDescription:  "Friday - Sunday",
+		LongDescription:  "Will attend: Friday - Sunday",
+		Attending:        true,
 	}
 	toReturn[ThuFriSat] = RsvpStatusInfo{
 		Status:           ThuFriSat,
 		ShortDescription: "ThuFriSat",
-		LongDescription:  "Thursday - Sunday",
+		LongDescription:  "Will attend: Thursday - Sunday",
+		Attending:        true,
 	}
 	toReturn[SatSun] = RsvpStatusInfo{
 		Status:           SatSun,
 		ShortDescription: "SatSun",
-		LongDescription:  "Saturday - Sunday",
+		LongDescription:  "Will attend: Saturday - Sunday",
+		Attending:        true,
 	}
 	toReturn[FriSatSun] = RsvpStatusInfo{
 		Status:           FriSatSun,
 		ShortDescription: "FriSatSun",
-		LongDescription:  "Friday - Sunday",
+		LongDescription:  "Will attend: Friday - Sunday",
+		Attending:        true,
 	}
 	toReturn[FriSatPlusEither] = RsvpStatusInfo{
 		Status:           FriSatPlusEither,
 		ShortDescription: "FriSatPlusEither",
-		LongDescription:  "Friday - Sunday, plus either Thursday or Sunday nights",
+		LongDescription:  "Will attend: Friday - Sunday, plus either Thursday or Sunday nights",
+		Attending:        true,
 	}
 	toReturn[WeddingOnly] = RsvpStatusInfo{
 		Status:           WeddingOnly,
 		ShortDescription: "WeddingOnly",
-		LongDescription:  "Wedding Only (no overnights)",
+		LongDescription:  "Will attend: Wedding Only (no overnights)",
+		Attending:        true,
+		NoLodging:        true,
 	}
 	toReturn[Fri] = RsvpStatusInfo{
 		Status:           Fri,
 		ShortDescription: "Fri",
-		LongDescription:  "Friday - Saturday",
+		LongDescription:  "Will attend: Friday - Saturday",
+		Attending:        true,
 	}
 	toReturn[Sat] = RsvpStatusInfo{
 		Status:           Sat,
 		ShortDescription: "Sat",
-		LongDescription:  "Saturday - Sunday",
+		LongDescription:  "Will attend: Saturday - Sunday",
+		Attending:        true,
 	}
 	return toReturn
 }
@@ -448,18 +476,21 @@ func handleViewInvitation(wr WrappedRequest) {
 	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
 	for _, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
-		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, true, "")
+		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, true)
 		formInfoMap[personKey] = formInfo
 	}
 
+	log.Infof(ctx, "has children? %b", invitation.HasChildren(ctx))
 	data := struct {
-		Invitation      RealizedInvitation
-		FormInfoMap     map[*datastore.Key]PersonUpdateFormInfo
-		AllRsvpStatuses [Sat + 1]RsvpStatusInfo
+		Invitation            RealizedInvitation
+		FormInfoMap           map[*datastore.Key]PersonUpdateFormInfo
+		AllRsvpStatuses       [Sat + 1]RsvpStatusInfo
+		InvitationHasChildren bool
 	}{
-		Invitation:      realizedInvitation,
-		FormInfoMap:     formInfoMap,
-		AllRsvpStatuses: GetAllRsvpStatuses(),
+		Invitation:            realizedInvitation,
+		FormInfoMap:           formInfoMap,
+		AllRsvpStatuses:       GetAllRsvpStatuses(),
+		InvitationHasChildren: invitation.HasChildren(ctx),
 	}
 
 	functionMap := template.FuncMap{

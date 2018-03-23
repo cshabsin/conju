@@ -44,15 +44,14 @@ type PersonWithKey struct {
 }
 
 type PersonUpdateFormInfo struct {
-	ThisPerson          *Person
-	EncodedKey          string
-	AllPronouns         []PronounSet
-	AllFoodRestrictions [DangerousAllergy + 1]FoodRestrictionTag
-	Ajax                bool
-	Destination         string
+	ThisPerson               *Person
+	EncodedKey               string
+	AllPronouns              []PronounSet
+	AllFoodRestrictions      [DangerousAllergy + 1]FoodRestrictionTag
+	HighlightNeededBirthdate bool
 }
 
-func makePersonUpdateFormInfo(key *datastore.Key, person Person, ajax bool, destination string) PersonUpdateFormInfo {
+func makePersonUpdateFormInfo(key *datastore.Key, person Person, highlightNeededBirthdate bool) PersonUpdateFormInfo {
 	encodedKey := ""
 	if key != nil {
 		*person.DatastoreKey = *key
@@ -60,12 +59,11 @@ func makePersonUpdateFormInfo(key *datastore.Key, person Person, ajax bool, dest
 	}
 
 	return PersonUpdateFormInfo{
-		ThisPerson:          &person,
-		EncodedKey:          encodedKey,
-		AllPronouns:         []PronounSet{They, She, He, Zie},
-		AllFoodRestrictions: GetAllFoodRestrictionTags(),
-		Ajax:                ajax,
-		Destination:         destination,
+		ThisPerson:               &person,
+		EncodedKey:               encodedKey,
+		AllPronouns:              []PronounSet{They, She, He, Zie},
+		AllFoodRestrictions:      GetAllFoodRestrictionTags(),
+		HighlightNeededBirthdate: highlightNeededBirthdate,
 	}
 }
 
@@ -266,6 +264,8 @@ func SortByLastFirstName(a, b Person) bool {
 	return strings.Compare(a.FirstName, b.FirstName) < 0
 }
 
+//const AgeOfAdulthood 16
+
 const (
 	Halfyear time.Duration = 12 * 365 * time.Hour
 	Year                   = 2 * Halfyear
@@ -273,10 +273,22 @@ const (
 
 // Returns the age of the person
 func (p Person) ApproxAge() time.Duration {
+	return p.ApproxAgeAtTime(time.Now())
+}
+
+func (p Person) ApproxAgeAtTime(dateTime time.Time) time.Duration {
 	if p.Birthdate.IsZero() {
-		return time.Duration(p.FallbackAge) * Year
+		return 0
 	}
-	return time.Now().Sub(p.Birthdate)
+	return dateTime.Sub(p.Birthdate)
+}
+
+func (p Person) IsChildAtTime(datetime time.Time) bool {
+	if p.Birthdate.IsZero() {
+		return p.NeedBirthdate
+	}
+	age := HalfYears(p.ApproxAgeAtTime(datetime))
+	return age < 16
 }
 
 // Round a duration to half-years.
@@ -385,7 +397,7 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, false, "listPeople")
+	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, false)
 	infoBundle := struct {
 		FormInfo PersonUpdateFormInfo
 	}{

@@ -1,7 +1,4 @@
-{{define "updatePersonForm"}}
-
-    <input type="hidden" name="EncodedKey" value="{{.EncodedKey}}">
-    <table class="formtable">
+{{define "personInfoForm"}}
       <tr class="personalInfo"><td>First Name:</td><td><input type="text" name="FirstName" value="{{with .ThisPerson}}{{.FirstName}}{{end}}"></td></tr>
       <tr class="personalInfo"><td>Last Name:</td><td><input type="text" name="LastName" value="{{with .ThisPerson}}{{.LastName}}{{end}}"></td></tr>
       <tr class="personalInfo"><td>Nickname:</td><td><input type="text" name="Nickname" value="{{with .ThisPerson}}{{.Nickname}}{{end}}"></td></t>
@@ -16,7 +13,13 @@
       <tr class="personalInfo"><td>Email:</td><td><input type="text" name="Email" value="{{with .ThisPerson}}{{.Email}}{{end}}"></td></tr>
       <tr class="personalInfo"><td>Telephone:</td><td><input type="text" name="Telephone" value="{{with .ThisPerson}}{{.Telephone}}{{end}}"></td></tr>
       <tr class="personalInfo"><td>Address:</td><td><textarea type="text" name="Address" class="addressField">{{with .ThisPerson}}{{.Address}}{{end}}</textarea></td></tr>
-      <tr class="personalInfo"><td>Birthdate (mm/dd/yyyy):</td><td><input type="text" name="Birthdate" value="{{with .ThisPerson}}{{if not .Birthdate.IsZero}}{{.Birthdate.Format "01/02/2006"}}{{end}}{{end}}"></td></tr>
+      <tr class="personalInfo"><td>{{if and .ThisPerson.NeedBirthdate .HighlightNeededBirthdate}}<span class="inputHighlight">**</span>{{end}}Birthdate (mm/dd/yyyy):</td><td><input type="text" name="Birthdate" value="{{with .ThisPerson}}{{if not .Birthdate.IsZero}}{{.Birthdate.Format "01/02/2006"}}{{end}}{{end}}"></td></tr>
+      {{if and .ThisPerson.NeedBirthdate .HighlightNeededBirthdate}}
+        <tr><td colspan="2" style="padding-top:0px">&nbsp;&nbsp;&nbsp;&nbsp;{{if not .ThisPerson.Birthdate.IsZero}}We guessed {{.ThisPerson.FirstName}}'s birthdate! {{end}}Birthdates for children are particularly useful so we can track their age from year to year.</td></tr>
+      {{end}}
+{{end}}
+
+{{define "foodInfoForm"}}
       {{$FoodRestrictionMap := .ThisPerson.GetFoodRestrictionMap}}
       <tr class="foodInfo"><td>Food Restrictions:</td><td>
         <table><tr><td>
@@ -29,17 +32,11 @@
           {{end}}
         </td></tr></table>
       </td></tr>
-      <tr class="foodInfo"><td>Food Preferences:</td><td><textarea type="text" name="FoodNotes" class="freeformTextField">{{with .ThisPerson}}{{.FoodNotes}}{{end}}</textarea></td></tr>
-    </table>
+      <tr class="foodInfo"><td style="width:150px">What else do we need to know to keep you fed for a weekend? </td><td><textarea type="text" name="FoodNotes" class="freeformTextField">{{with .ThisPerson}}{{.FoodNotes}}{{end}}</textarea></td></tr>
+{{end}}
 
-
-{{/*    {{if .LoggedInPerson.IsAdmin}} */}}
-      <h3>Admin information:</h3>
-      <table class="formtable">
+{{define "adminInfoForm"}}
         <tr><td>Approx age during current event:</td><td><input type="text" name="FallbackAge" value="{{with .ThisPerson}}{{.FallbackAge}}{{end}}"></td></tr>
         <tr><td>Need birthdate:</td><td><input type="checkbox" name="NeedBirthdate" {{if .ThisPerson.NeedBirthdate}}checked{{end}}></td></tr>
 	<tr><td>Private Comments:</td><td><textarea type="text" name="PrivateComments">{{with .ThisPerson}}{{.PrivateComments}}{{end}}</textarea></td></tr>
-      </table>
-{{/*    {{end}} */}}
-
 {{end}}

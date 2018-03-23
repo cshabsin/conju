@@ -3,6 +3,14 @@
 {{define "body"}}
 
 <script>
+  var allStatuses = [
+  {{range .AllRsvpStatuses}}
+ {shortDescription: "{{.ShortDescription}}", attending: {{.Attending}}, undecided: {{.Undecided}}, noLodging: {{.NoLodging }}},
+  {{end}}
+];
+
+
+
   function adjustArrows() {
     $(".listUpArrow img").show();
     $(".listUpArrow img:first").hide();
@@ -18,6 +26,73 @@
     }
   }
 
+  function needsLodging(val) {
+    var status = allStatuses[val];
+    return status.attending && !status.noLodging;
+  }
+
+  function attending(val) {
+    var status = allStatuses[val];
+    return status.attending;
+  }
+
+
+  function anyoneMeetsCriteria(criteriaChecker) {
+    return $(".rsvpStatus").map((index, status, statuses) => {
+       var val = $(status).val();
+       return val < 0 ? false : criteriaChecker(val);})
+         .get().reduce((tally, thing, index, things) => {return tally || thing;}, false); 
+  }
+
+
+  function processRsvpStatus(index, status) {
+
+    $($(".personal-intro-positive-rsvp")[index]).hide();
+    $($(".personal-intro-negative-rsvp")[index]).hide();
+    $($(".personal-intro-maybe-rsvp")[index]).hide();
+     var foodContainer = $($(".food")[index]);
+     foodContainer.hide();
+
+
+    var selectedStatus = allStatuses[status];
+    if (selectedStatus.attending) {
+      foodContainer.show();
+      $($(".personal-intro-positive-rsvp")[index]).show();
+    } else if (selectedStatus.undecided) {
+      $($(".personal-intro-maybe-rsvp")[index]).show();
+    } else {
+      $($(".personal-intro-negative-rsvp")[index]).show();
+    }
+
+    $($(".personSupplementaryInfo")[index]).show();
+    $($(".personal")[index]).show();
+
+    if (anyoneMeetsCriteria(needsLodging)) {
+      $(".lodgingFormContainer").show();
+    } else {
+      $(".lodgingFormContainer").hide();
+    }
+
+    if (anyoneMeetsCriteria(attending)) {
+      $(".rideFormContainer").show();
+    } else {
+      $(".rideFormContainer").hide();
+    }
+  }
+
+  function adjustDrivingFields(drivingStatus) {
+    if (drivingStatus > 0) {
+      $(".rideSharingOptions").show()
+      if (drivingStatus == 1 || drivingStatus == 3) {
+        $(".drivers").show();
+      } else {
+        $(".drivers").hide();
+      }
+    } else {
+      $(".rideSharingOptions").hide()
+    }
+  }
+
   $( document ).ready(function() {
     adjustArrows();
 
@@ -30,7 +105,9 @@
 
       adjustArrows();
     });
-
+  
+    $(".personal").hide();
+    $(".food").hide();
   })
 </script>
 <a href="invitations">All Invitations</a>
@@ -42,15 +119,15 @@
     {{$Invitation := .Invitation}}
     {{$FormInfoMap := .FormInfoMap}}
     {{$AllRsvpStatuses := .AllRsvpStatuses}}
-    {{range .Invitation.Invitees}}
-       {{$invitee := .}}
+    {{range  $i, $invitee := .Invitation.Invitees}}
+{{/*       {{$invitee := .}} */}}
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td>
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
              <span class="invitationPersonHeading">{{.Person.FullName}}</span>
-	     <select>
-	       {{if not $RsvpStatus.ShortDescription}}<option value="-1" selected>Will you be joining us?</option>{{end}}
+	     <select class="rsvpStatus" onchange="processRsvpStatus({{$i}}, this.value)">
+	       {{if not $RsvpStatus.ShortDescription}}<option value="-1" selected>-- Will you be joining us? --</option>{{end}}
 	       {{range $Invitation.Event.RsvpStatuses}}
 	         <option value="{{.}}"
                    {{if and $RsvpStatus.ShortDescription (eq $RsvpStatus.Status .)}}selected{{end}}
@@ -58,17 +135,103 @@
 	       {{end}}
 	     </select>
 
-        <div class="invitationPersonalInfoLink"><a onclick="togglePersonalInfo('{{.Key}}')"><span id="showInfo_{{.Key}}">Edit Personal Info</span></a></div>
+<!--        <div class="invitationPersonalInfoLink"><a onclick="togglePersonalInfo('{{.Key}}')"><span id="showInfo_{{.Key}}">Edit Personal Info</span></a></div> -->
 
              <input type="hidden" name="person" value="{{.Key}}">
-	     <div id="{{.Key}}" style="display:none">
-{{template "updatePersonForm" (index $FormInfoMap .Person.DatastoreKey)}}
-</div>
-           </td>
+	     <div class="personSupplementaryInfo hidden" id="{{.Key}}">
+	       <div class="food hidden">
+
+ 		 Hooray!  We're so glad you can join us.<br>
+		 <br>
+		 We need to make sure we'll have food for you.
+		 Please check off any food restrictions you have.
+		 <table class="formtable">
+		   {{template "foodInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
+		 </table>
+	       </div>
+
+               <div class="personal hidden">
+                 <div class="personal-intro-positive-rsvp hidden ">
+                   Please double-check the information we have for you.  The only thing we REALLY need is your email address.  A phone number can also be helpful.<br>
+                   <br>
+                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+		 </div>
+                 <div class="personal-intro-negative-rsvp hidden">
+                   We'll miss you!  But as long as you're here...<br>
+                   <br>
+                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                 </div>
+		 <div class="personal-intro-maybe-rsvp hidden">
+                   Please let us know if you'll be joining us as soon as you know!  But as long as you're here...<br>
+                   <br>
+                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                 </div>                 
+                 <table class="formTable">
+                   {{template "personInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
+                 </table>
+               </div>
+             </div>
+           </div>
+         </td>
        </tr>
     {{end}}
   </table>
-  <input type="submit" value="Save">
+
+  <div class="lodgingFormContainer hidden">
+    <h4>Housing Preferences</h4>
+    Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.<br>
+    <br> 
+
+    {{$single := (eq (len .Invitation.Invitees) 1)}}
+    <table class="rsvpHousing"><tr><td>
+    <select name="housingPreference">
+      <option value="-1">-- Select your rooming preferences --</option>
+      <option value="0"> {{if $single}}I need a room to myself.{{else}}We need a room to ourselves.{{end}}</option>
+      <option value="1"> {{if $single}}I am{{else}}We are{{end}} willing to share a room with specific people, listed below.</option>
+      <option value="2"> {{if $single}}I am{{else}}We are{{end}} willing to share a room with people {{if $single}}I{{else}}we{{end}} know.</option>
+      <option value="3"> {{if $single}}I am{{else}}We are{{end}} willing to share a room with anyone who needs a roommate.</option>
+    </select>
+    <div>What else do we need to know to assign you a room?</div>
+    <textarea type="text" name="HousingNotes" class="freeformTextField"></textarea>
+</td><td>
+  {{if .InvitationHasChildren}}
+    <div><input type="checkbox" name="preferMonitorRange">We would prefer to be within baby-monitor range of the main common room.</div>
+    <div><input type="checkbox" name="notMonitorRangeButClose">We can stay in a room in a building that is not within baby-monitor range of the main common room, but is very close by.</div>
+    <div><input type="checkbox" name="fartherBuildingsOkay">We are willing to be housed in a building that is ~100 yards away from the main common room.</div>
+    <div><input type="checkbox" name="canCrossRoad">Everyone in our party can cross a (low-traffic) road, alone, safely, even at night.</div>
+{{end}}
+    <div><input type="checkbox" name="preferFarther">{{if $single}}I{{else}}We{{end}} would <b>prefer</b> to be housed far from the main commmon room.</div>
+    <div><input type="checkbox" name="farBuildingOkay">In case of overflow, {{if $single}}I am{{else}}we are{{end}} willing to be housed in a building that is outside of our main cluster of buildings.</div>
+    <div style="font-size:smaller; padding-left:26px;font-style:italic">Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about a half mile).</div>
+    {{if not $single}}
+      <div><input type="checkbox" name="wantDoubleBed">{{if eq (len .Invitation.Invitees) 2}}We would prefer to share a bed.{{else}}We would prefer a room with a bed that sleeps 2.{{end}}</div>
+    {{end}}
+</td></tr></table>
+  </div>
+
+  <div class="rideFormContainer hidden">
+    <h4>Travel information</h4>
+    How do you feel about ride sharing?  <select id="id_driving_preference" onchange="adjustDrivingFields(this.value);" class="drivingSelect" name="driving_preference">
+<option value="-1">-- Select your ride sharing preferences --</option>
+<option value="0">{{if $single}}I{{else}}We{{end}} will drive by {{if $single}}myself{{else}}ourselves{{end}}.</option>
+<option value="1">{{if $single}}I{{else}}We{{end}} have some extra room in {{if $single}}my{{else}}our{{end}} car and would love company.</option>
+<option value="2">{{if $single}}I{{else}}We{{end}} will need a ride.</option>
+<option value="3">{{if $single}}I{{else}}We{{end}} could drive but would rather ride.</option>
+</select><br>
+    <div class="rideSharingOptions hidden">
+      <table>
+      <tr><td>Where are you starting from?</td><td><input type="text" name="leaving_from" id="id_leaving_from" /></td></tr>
+    <tr><td>When would you ideally like to leave?</td><td><input type="text" name="leaving_around" id="id_leaving_around" /></td></tr>
+    <tr class="drivers"><td>How many extra passengers can you take<br> (in addition to {{if $single}}yourself{{else}}yourselves{{end}})?</td><td style="vertical-align:top"><input type="text" name="additional_passengers" id="id_additional_passengers" /></td></tr>
+    </table>
+    </div>
+    <div style="margin-top:20px">
+    Anything else we should know about your travel plans?
+    <textarea class="freeformtextfield" id="id_travel_info" name="travel_info"></textarea>
+    </div>    
+  </div>
+
+  <input class="emphasizedSubmit" type="submit" value="Submit">
 
 </form>
 {{end}}
