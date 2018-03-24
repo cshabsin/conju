@@ -121,6 +121,7 @@
     {{$AllRsvpStatuses := .AllRsvpStatuses}}
     {{range  $i, $invitee := .Invitation.Invitees}}
 {{/*       {{$invitee := .}} */}}
+       <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td>

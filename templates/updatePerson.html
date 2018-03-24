@@ -6,7 +6,7 @@
 
   <h1>{{with .FormInfo.ThisPerson}}{{.FullName}}{{end}}</h1> 
   <form action="saveUpdatePerson" method="POST">
-    <input type="hidden" name="EncodedKey" value="{{.FormInfo.EncodedKey}}">
+    <input type="hidden" name="PersonKey" value="{{.FormInfo.EncodedKey}}">
     <table class="formtable">
       {{template "personInfoForm" .FormInfo}}
       {{template "foodInfoForm" .FormInfo}}

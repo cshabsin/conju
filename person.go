@@ -49,9 +49,10 @@ type PersonUpdateFormInfo struct {
 	AllPronouns              []PronounSet
 	AllFoodRestrictions      [DangerousAllergy + 1]FoodRestrictionTag
 	HighlightNeededBirthdate bool
+	PersonIndex              int
 }
 
-func makePersonUpdateFormInfo(key *datastore.Key, person Person, highlightNeededBirthdate bool) PersonUpdateFormInfo {
+func makePersonUpdateFormInfo(key *datastore.Key, person Person, index int, highlightNeededBirthdate bool) PersonUpdateFormInfo {
 	encodedKey := ""
 	if key != nil {
 		*person.DatastoreKey = *key
@@ -64,6 +65,7 @@ func makePersonUpdateFormInfo(key *datastore.Key, person Person, highlightNeeded
 		AllPronouns:              []PronounSet{They, She, He, Zie},
 		AllFoodRestrictions:      GetAllFoodRestrictionTags(),
 		HighlightNeededBirthdate: highlightNeededBirthdate,
+		PersonIndex:              index,
 	}
 }
 
@@ -397,7 +399,7 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, false)
+	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, 0, false)
 	infoBundle := struct {
 		FormInfo PersonUpdateFormInfo
 	}{
@@ -414,62 +416,64 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 }
 
 func handleSaveUpdatePerson(wr WrappedRequest) {
+	savePeople(wr)
+	// Where to go from here will depend on who's logged in and what they're doing
+	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+}
+
+func savePeople(wr WrappedRequest) error {
 	ctx := appengine.NewContext(wr.Request)
+
 	wr.Request.ParseForm()
+	form := wr.Request.Form
 
-	var p *Person
-	var err error
+	encodedKeys := form["PersonKey"]
 
-	if wr.Request.Form.Get("EncodedKey") != "" {
-		p, err = fetchPerson(wr, wr.Request.Form.Get("EncodedKey"))
+	for i, encodedKey := range encodedKeys {
+		p, err := fetchPerson(wr, encodedKey)
 		if err != nil {
 			log.Errorf(ctx, "%v", err)
 		}
-	} else {
-		newKey := PersonKey(ctx)
-		p = &Person{
-			NeedBirthdate: false,
+
+		//TODO: Is there an easier way to do this?
+		//TODO: Deal with errors
+		p.FirstName = form["FirstName"][i]
+		p.LastName = form["LastName"][i]
+		p.Nickname = form["Nickname"][i]
+		pronounConstant, e := strconv.Atoi(form["Pronouns"][i])
+		if e != nil {
+			pronounConstant = 0
 		}
-		p.DatastoreKey = newKey
+		p.Pronouns = PronounFromConstant(pronounConstant)
+		p.Email = form["Email"][i]
+		p.Telephone = form["Telephone"][i]
+		p.Address = form["Address"][i]
+		p.Birthdate, _ = time.Parse("01/02/2006", form["Birthdate"][i])
+		foodRestrictions := form[fmt.Sprintf("%s%d", "FoodRestrictions", i)]
+		var thisPersonRestrictions []FoodRestriction
+		allRestrictions := GetAllFoodRestrictionTags()
+		for _, restriction := range foodRestrictions {
+			restrictionInt, _ := strconv.Atoi(restriction)
+			thisPersonRestrictions = append(thisPersonRestrictions, allRestrictions[restrictionInt].Tag)
+		}
+
+		p.FoodRestrictions = thisPersonRestrictions
+		p.FoodNotes = form["FoodNotes"][i]
+
+		if len(form["FallbackAge"]) > i {
+			p.FallbackAge, _ = strconv.ParseFloat(form["FallbackAge"][i], 64)
+		}
+		if len(form["NeedBirthdate"]) > i {
+			p.NeedBirthdate = (form["NeedBirthdate"][i] == "on")
+		}
+		if len(form["PrivateComments"]) > i {
+			p.PrivateComments = form["PrivateComments"][i]
+		}
+		_, err = datastore.Put(ctx, p.DatastoreKey, p)
+		if err != nil {
+			log.Errorf(ctx, "%v", err)
+		}
+
 	}
-
-	//TODO: Is there an easier way to do this?
-	//TODO: Deal with errors
-	p.FirstName = wr.Request.Form.Get("FirstName")
-	p.LastName = wr.Request.Form.Get("LastName")
-	p.Nickname = wr.Request.Form.Get("Nickname")
-	pronounConstant, e := strconv.Atoi(wr.Request.Form.Get("Pronouns"))
-	if e != nil {
-		pronounConstant = 0
-	}
-	p.Pronouns = PronounFromConstant(pronounConstant)
-	p.Email = wr.Request.Form.Get("Email")
-	p.Telephone = wr.Request.Form.Get("Telephone")
-	p.Address = wr.Request.Form.Get("Address")
-	p.Birthdate, _ = time.Parse("01/02/2006", wr.Request.Form.Get("Birthdate"))
-	foodRestrictions := wr.Request.Form["FoodRestrictions"]
-	var thisPersonRestrictions []FoodRestriction
-	allRestrictions := GetAllFoodRestrictionTags()
-	for _, restriction := range foodRestrictions {
-		restrictionInt, _ := strconv.Atoi(restriction)
-		thisPersonRestrictions = append(thisPersonRestrictions, allRestrictions[restrictionInt].Tag)
-	}
-
-	p.FoodRestrictions = thisPersonRestrictions
-	p.FoodNotes = wr.Request.Form.Get("FoodNotes")
-
-	p.FallbackAge, _ = strconv.ParseFloat(wr.Request.Form.Get("FallbackAge"), 64)
-	p.NeedBirthdate = (wr.Request.Form.Get("NeedBirthdate") == "on")
-	p.PrivateComments = wr.Request.Form.Get("PrivateComments")
-
-	tic := time.Now()
-	_, err = datastore.Put(ctx, p.DatastoreKey, p)
-	if err != nil {
-		log.Errorf(ctx, "%v", err)
-	}
-
-	log.Infof(ctx, "Datastore insertion took %s", time.Since(tic).String())
-
-	// Where to go from here will depend on who's logged in and what they're doing
-	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+	return nil
 }

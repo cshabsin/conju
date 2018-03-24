@@ -266,18 +266,11 @@ func handleInvitations(wr WrappedRequest) {
 			continue
 		}
 
-		log.Infof(ctx, printInvitation(ctx, *invKey, inv))
 		invitationKeys = append(invitationKeys, invKey)
 		invitations = append(invitations, &inv)
 
 	}
 
-	/*
-	   	invitationKeys, err := q.GetAll(ctx, &invitations)
-	               if err != nil {
-	   	       log.Errorf(ctx, "Error in GetAll: %v", err)
-	   	    }
-	*/
 	log.Infof(ctx, "Found %d invitations", len(invitations))
 
 	var realizedInvitations []RealizedInvitation
@@ -305,7 +298,7 @@ func handleInvitations(wr WrappedRequest) {
 					statistics.AdultCount++
 				}
 			} else {
-				age := HalfYears(invitee.Person.ApproxAge())
+				age := HalfYears(invitee.Person.ApproxAgeAtTime(wr.Event.StartDate))
 				if age <= 3 {
 					statistics.BabyCount++
 				} else if age <= 10 {
@@ -475,13 +468,12 @@ func handleViewInvitation(wr WrappedRequest) {
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
 	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
-	for _, invitee := range realizedInvitation.Invitees {
+	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
-		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, true)
+		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, i, true)
 		formInfoMap[personKey] = formInfo
 	}
 
-	log.Infof(ctx, "has children? %b", invitation.HasChildren(ctx))
 	data := struct {
 		Invitation            RealizedInvitation
 		FormInfoMap           map[*datastore.Key]PersonUpdateFormInfo
@@ -530,6 +522,8 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	invitation.Invitees = newPeople
 	_, _ = datastore.Put(ctx, invitationKey, &invitation)
+
+	savePeople(wr)
 
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }

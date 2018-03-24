@@ -20,12 +20,13 @@
 {{end}}
 
 {{define "foodInfoForm"}}
+      {{$index := .PersonIndex}}
       {{$FoodRestrictionMap := .ThisPerson.GetFoodRestrictionMap}}
       <tr class="foodInfo"><td>Food Restrictions:</td><td>
         <table><tr><td>
           {{range $i, $restriction := .AllFoodRestrictions}}
             {{$RestrictionMapValue := index $FoodRestrictionMap $restriction.Tag}} 
-            <input type="checkbox" name="FoodRestrictions" value="{{.Tag}}"
+            <input type="checkbox" name="FoodRestrictions{{$index}}" value="{{.Tag}}"
             {{if eq 1 $RestrictionMapValue}}checked{{end}}
             >{{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}<br>
             {{if eq $i 4}}</td><td>{{end}}
