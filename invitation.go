@@ -6,9 +6,11 @@ import (
 	"context"
 	"html/template"
 	"net/http"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	//log2 "log"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -16,9 +18,17 @@ import (
 )
 
 type Invitation struct {
-	Event    *datastore.Key                // Event
-	Invitees []*datastore.Key              // []Person
-	RsvpMap  map[*datastore.Key]RsvpStatus // Person -> Rsvp
+	Event                     *datastore.Key                // Event
+	Invitees                  []*datastore.Key              // []Person
+	RsvpMap                   map[*datastore.Key]RsvpStatus // Person -> Rsvp
+	Housing                   HousingPreference
+	HousingNotes              string
+	HousingPreferenceBooleans int
+	Driving                   DrivingPreference
+	LeaveFrom                 string
+	LeaveTime                 string
+	AdditionalPassengers      string
+	TravelNotes               string
 }
 
 func (inv *Invitation) Load(ps []datastore.Property) error {
@@ -33,20 +43,61 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			}
 			rsvpInt := p.Value.(int64)
 			inv.RsvpMap[personKey] = allRsvpStatuses[rsvpInt].Status
-		} else if p.Name == "Event" {
-			inv.Event = p.Value.(*datastore.Key)
-		} else if p.Name == "Invitees" {
-			inv.Invitees = append(inv.Invitees, p.Value.(*datastore.Key))
 		}
 	}
+	datastore.LoadStruct(inv, ps)
 	return nil
 }
 
 func (inv *Invitation) Save() ([]datastore.Property, error) {
+
+	x := reflect.ValueOf(*inv)
+
+	//values := make([]interface{}, x.NumField())
+
+	for i := 0; i < x.NumField(); i++ {
+		//values[i] = x.Field(i).Interface()
+		//log2.Printf("%v", x.Field(i))
+	}
+
+	//	 fmt.Println(values)
+
 	props := []datastore.Property{
 		{
 			Name:  "Event",
 			Value: inv.Event,
+		},
+		{
+			Name:  "Housing",
+			Value: int64(inv.Housing),
+		},
+		{
+			Name:  "HousingNotes",
+			Value: inv.HousingNotes,
+		},
+		{
+			Name:  "HousingPreferenceBooleans",
+			Value: int64(inv.HousingPreferenceBooleans),
+		},
+		{
+			Name:  "Driving",
+			Value: int64(inv.Driving),
+		},
+		{
+			Name:  "LeaveFrom",
+			Value: inv.LeaveFrom,
+		},
+		{
+			Name:  "LeaveTime",
+			Value: inv.LeaveTime,
+		},
+		{
+			Name:  "AdditionalPassengers",
+			Value: inv.AdditionalPassengers,
+		},
+		{
+			Name:  "TravelNotes",
+			Value: inv.TravelNotes,
 		},
 	}
 
@@ -81,10 +132,18 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 }
 
 type RealizedInvitation struct {
-	EncodedKey string
-	Invitees   []PersonWithKey
-	Event      Event
-	RsvpMap    map[string]RsvpStatusInfo
+	EncodedKey                string
+	Invitees                  []PersonWithKey
+	Event                     Event
+	RsvpMap                   map[string]RsvpStatusInfo
+	Housing                   HousingPreference
+	HousingPreferenceBooleans int
+	HousingNotes              string
+	Driving                   DrivingPreference
+	LeaveFrom                 string
+	LeaveTime                 string
+	TravelNotes               string
+	AdditionalPassengers      string
 }
 
 // Each event should have a list of acceptable RSVP statuses
@@ -180,6 +239,36 @@ func GetAllRsvpStatuses() [Sat + 1]RsvpStatusInfo {
 	return toReturn
 }
 
+type HousingPreference int
+
+const (
+	NoRoommates = iota
+	SpecificRoommates
+	KnownRoommates
+	AnyRoommates
+)
+
+type DrivingPreference int
+
+const (
+	NoCarpool = iota
+	Driving
+	Riding
+	DriveIfNeeded
+)
+
+type HousingPreferenceBoolean int
+
+const (
+	MonitorRange    = 64
+	CloseBuilding   = 32
+	FarBuilding     = 16
+	CanCrossRoad    = 8
+	PreferFar       = 4
+	ShareBed        = 2
+	FartherBuilding = 1
+)
+
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
 	personKeys := invitation.Invitees
 	var invitees []PersonWithKey
@@ -209,10 +298,18 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	}
 
 	realizedInvitation := RealizedInvitation{
-		EncodedKey: invitationKey.Encode(),
-		Invitees:   invitees,
-		Event:      event,
-		RsvpMap:    realizedRsvpMap,
+		EncodedKey:                invitationKey.Encode(),
+		Invitees:                  invitees,
+		Event:                     event,
+		RsvpMap:                   realizedRsvpMap,
+		Housing:                   invitation.Housing,
+		HousingNotes:              invitation.HousingNotes,
+		HousingPreferenceBooleans: invitation.HousingPreferenceBooleans,
+		Driving:                   invitation.Driving,
+		LeaveFrom:                 invitation.LeaveFrom,
+		LeaveTime:                 invitation.LeaveTime,
+		AdditionalPassengers:      invitation.AdditionalPassengers,
+		TravelNotes:               invitation.TravelNotes,
 	}
 
 	return realizedInvitation
@@ -488,6 +585,7 @@ func handleViewInvitation(wr WrappedRequest) {
 
 	functionMap := template.FuncMap{
 		"PronounString": GetPronouns,
+		"HasPreference": HasPreference,
 	}
 
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/viewInvitation.html", "templates/updatePersonForm.html"))
@@ -495,6 +593,10 @@ func handleViewInvitation(wr WrappedRequest) {
 		log.Errorf(ctx, "%v", err)
 	}
 
+}
+
+func HasPreference(total int, mask int) bool {
+	return (total & mask) != 0
 }
 
 func handleSaveInvitation(wr WrappedRequest) {
@@ -521,7 +623,36 @@ func handleSaveInvitation(wr WrappedRequest) {
 	invitation.RsvpMap = rsvpMap
 
 	invitation.Invitees = newPeople
-	_, _ = datastore.Put(ctx, invitationKey, &invitation)
+
+	housingPreference, _ := strconv.Atoi(wr.Request.Form.Get("housingPreference"))
+	if housingPreference >= 0 {
+		invitation.Housing = HousingPreference(housingPreference)
+	}
+	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
+
+	var housingPreferenceTotal int
+	booleans := wr.Request.Form["housingPreferenceBooleans"]
+	for _, boolean := range booleans {
+		value, _ := strconv.Atoi(boolean)
+		housingPreferenceTotal += value
+	}
+	invitation.HousingPreferenceBooleans = housingPreferenceTotal
+
+	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
+	if drivingPreference >= 0 {
+		invitation.Driving = DrivingPreference(drivingPreference)
+	}
+
+	invitation.LeaveFrom = wr.Request.Form.Get("leaveFrom")
+	invitation.LeaveTime = wr.Request.Form.Get("leaveTime")
+	invitation.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
+	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
+
+	log.Infof(ctx, "%v", invitation)
+	_, err := datastore.Put(ctx, invitationKey, &invitation)
+	if err != nil {
+		log.Errorf(ctx, "%v", err)
+	}
 
 	savePeople(wr)
 
