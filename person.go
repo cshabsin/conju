@@ -448,7 +448,16 @@ func savePeople(wr WrappedRequest) error {
 		p.Email = form["Email"][i]
 		p.Telephone = form["Telephone"][i]
 		p.Address = form["Address"][i]
-		p.Birthdate, _ = time.Parse("01/02/2006", form["Birthdate"][i])
+		birthdate, dateError := time.Parse("01/02/2006", form["Birthdate"][i])
+		if dateError == nil {
+			p.Birthdate = birthdate
+			if !birthdate.IsZero() && form["birthdateChanged"][i] != "0" {
+				p.NeedBirthdate = false
+			}
+
+		} else {
+			log.Errorf(ctx, "%v", dateError)
+		}
 		foodRestrictions := form[fmt.Sprintf("%s%d", "FoodRestrictions", i)]
 		var thisPersonRestrictions []FoodRestriction
 		allRestrictions := GetAllFoodRestrictionTags()

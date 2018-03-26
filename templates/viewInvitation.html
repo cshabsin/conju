@@ -46,15 +46,14 @@
 
 
   function processRsvpStatus(index) {
-
-    var status = $($(".rsvpStatus")[index]).val();
+    var status = parseInt($($(".rsvpStatus")[index]).val());
     $($(".personal-intro-positive-rsvp")[index]).hide();
     $($(".personal-intro-negative-rsvp")[index]).hide();
     $($(".personal-intro-maybe-rsvp")[index]).hide();
      var foodContainer = $($(".food")[index]);
      foodContainer.hide();
 
-
+    if (isNaN(status) || status < 0) return;
     var selectedStatus = allStatuses[status];
     if (selectedStatus.attending) {
       foodContainer.show();
@@ -115,25 +114,65 @@
     $(".drivingPreference").val("{{with .Invitation.Driving}}{{.}}{{else}}-1{{end}}");
     for (var i=0; i < {{(len .Invitation.Invitees)}}; i++) {
         processRsvpStatus(i);
-    }
+    } 
     adjustDrivingFields();
     
   })
+
+
+function validate(form) {
+    errorMessages = "";
+
+     {{range $i, $invitee := .Invitation.Invitees}}
+      if ($($(".rsvpStatus")[{{$i}}]).val() == "-1") errorMessages += "{{$invitee.Person.FullName}} has not RSVPed.\n";
+      {{if $invitee.Person.NeedBirthdate}}
+        if ($($("input[name=birthdateChanged]")[{{$i}}]).val() == "0") {
+          errorMessages += "No birthdate for {{$invitee.Person.FullName}}.\n";
+	}
+      {{end}}
+    {{end}}
+
+    var housingPreference = $(".housingPreference").val();
+    if (anyoneMeetsCriteria(needsLodging) && (housingPreference == "-1")) {
+       errorMessages += "No housing preference selected.\n"
+    }
+    if (housingPreference == "1" && $("input[name=housingNotes]").val() == "") {
+       errorMessages += "No roommates listed.\n";
+    }
+
+    var drivingPreference = parseInt($(".drivingPreference").val())
+    if (anyoneMeetsCriteria(attending) && (drivingPreference == -1)) {
+       errorMessages += "No driving preference selected.\n"
+    }
+    if (drivingPreference > 0) {
+	if ($("input[name=leaveFrom]").val() == "") errorMessages += "No driving start location provided.\n";
+        if ($("input[name=leaveTime]").val() == "") errorMessages += "No driving start time provided.\n";
+	if (drivingPreference == 1 || drivingPreference == 3) {
+	  if ($("input[name=additionalPassengers]").val() == "") errorMessages += "No car capacity provided.\n";
+	}
+    }
+
+    if (errorMessages.length > 0) {
+	return confirm(errorMessages + "\n\nDo you still want to submit your RSVP?  You can update your RSVP at any time."); 
+    }
+    return true;
+}
+
 </script>
 <a href="invitations">All Invitations</a>
 
 <h1>Invitation for {{with .Invitation}}{{.Event.ShortName}}{{end}}</h1>
-<form action="saveInvitation" method="POST">
+<form action="saveInvitation" method="POST" onsubmit="return validate(this)">
   <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
   <table class="inviteeTable">
     {{$Invitation := .Invitation}}
     {{$FormInfoMap := .FormInfoMap}}
     {{$AllRsvpStatuses := .AllRsvpStatuses}}
     {{range  $i, $invitee := .Invitation.Invitees}}
-       <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td>
+	     <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
              <span class="invitationPersonHeading">{{.Person.FullName}}</span>
 	     <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}})">
@@ -186,7 +225,6 @@
        </tr>
     {{end}}
   </table>
-
   <div class="lodgingFormContainer hidden">
     <h4>Housing Preferences</h4>
     Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.<br>

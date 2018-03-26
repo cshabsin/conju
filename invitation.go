@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	//log2 "log"
+	//	log2 "log"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -269,6 +269,10 @@ const (
 	FartherBuilding = 1
 )
 
+func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean) bool {
+	return (inv.HousingPreferenceBooleans & int(preference)) > 0
+}
+
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
 	personKeys := invitation.Invitees
 	var invitees []PersonWithKey
@@ -367,8 +371,6 @@ func handleInvitations(wr WrappedRequest) {
 		invitations = append(invitations, &inv)
 
 	}
-
-	log.Infof(ctx, "Found %d invitations", len(invitations))
 
 	var realizedInvitations []RealizedInvitation
 
@@ -648,7 +650,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 	invitation.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
 	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
 
-	log.Infof(ctx, "%v", invitation)
 	_, err := datastore.Put(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Errorf(ctx, "%v", err)
