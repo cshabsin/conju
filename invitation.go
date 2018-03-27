@@ -4,6 +4,7 @@ package conju
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/mail"
 )
 
 type Invitation struct {
@@ -146,127 +148,14 @@ type RealizedInvitation struct {
 	AdditionalPassengers      string
 }
 
-// Each event should have a list of acceptable RSVP statuses
-type RsvpStatus int
-
-const (
-	No = iota
-	Maybe
-	FriSat
-	ThuFriSat
-	SatSun
-	FriSatSun
-	FriSatPlusEither
-	WeddingOnly
-	Fri
-	Sat
-)
-
-type RsvpStatusInfo struct {
-	Status           RsvpStatus
-	ShortDescription string
-	LongDescription  string
-	Attending        bool
-	Undecided        bool
-	NoLodging        bool
-}
-
-func GetAllRsvpStatuses() [Sat + 1]RsvpStatusInfo {
-	var toReturn [Sat + 1]RsvpStatusInfo
-
-	toReturn[No] = RsvpStatusInfo{
-		Status:           No,
-		ShortDescription: "No",
-		LongDescription:  "Will not attend",
-		Attending:        false,
-	}
-	toReturn[Maybe] = RsvpStatusInfo{
-		Status:           Maybe,
-		ShortDescription: "Maybe",
-		LongDescription:  "Undecided",
-		Attending:        false,
-		Undecided:        true,
-	}
-	toReturn[FriSat] = RsvpStatusInfo{
-		Status:           FriSat,
-		ShortDescription: "FriSat",
-		LongDescription:  "Will attend: Friday - Sunday",
-		Attending:        true,
-	}
-	toReturn[ThuFriSat] = RsvpStatusInfo{
-		Status:           ThuFriSat,
-		ShortDescription: "ThuFriSat",
-		LongDescription:  "Will attend: Thursday - Sunday",
-		Attending:        true,
-	}
-	toReturn[SatSun] = RsvpStatusInfo{
-		Status:           SatSun,
-		ShortDescription: "SatSun",
-		LongDescription:  "Will attend: Saturday - Sunday",
-		Attending:        true,
-	}
-	toReturn[FriSatSun] = RsvpStatusInfo{
-		Status:           FriSatSun,
-		ShortDescription: "FriSatSun",
-		LongDescription:  "Will attend: Friday - Sunday",
-		Attending:        true,
-	}
-	toReturn[FriSatPlusEither] = RsvpStatusInfo{
-		Status:           FriSatPlusEither,
-		ShortDescription: "FriSatPlusEither",
-		LongDescription:  "Will attend: Friday - Sunday, plus either Thursday or Sunday nights",
-		Attending:        true,
-	}
-	toReturn[WeddingOnly] = RsvpStatusInfo{
-		Status:           WeddingOnly,
-		ShortDescription: "WeddingOnly",
-		LongDescription:  "Will attend: Wedding Only (no overnights)",
-		Attending:        true,
-		NoLodging:        true,
-	}
-	toReturn[Fri] = RsvpStatusInfo{
-		Status:           Fri,
-		ShortDescription: "Fri",
-		LongDescription:  "Will attend: Friday - Saturday",
-		Attending:        true,
-	}
-	toReturn[Sat] = RsvpStatusInfo{
-		Status:           Sat,
-		ShortDescription: "Sat",
-		LongDescription:  "Will attend: Saturday - Sunday",
-		Attending:        true,
-	}
-	return toReturn
-}
-
-type HousingPreference int
-
-const (
-	NoRoommates = iota
-	SpecificRoommates
-	KnownRoommates
-	AnyRoommates
-)
-
 type DrivingPreference int
 
 const (
-	NoCarpool = iota
+	DrivingNotSet = iota
+	NoCarpool
 	Driving
 	Riding
 	DriveIfNeeded
-)
-
-type HousingPreferenceBoolean int
-
-const (
-	MonitorRange    = 64
-	CloseBuilding   = 32
-	FarBuilding     = 16
-	CanCrossRoad    = 8
-	PreferFar       = 4
-	ShareBed        = 2
-	FartherBuilding = 1
 )
 
 func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean) bool {
@@ -574,15 +463,19 @@ func handleViewInvitation(wr WrappedRequest) {
 	}
 
 	data := struct {
-		Invitation            RealizedInvitation
-		FormInfoMap           map[*datastore.Key]PersonUpdateFormInfo
-		AllRsvpStatuses       [Sat + 1]RsvpStatusInfo
-		InvitationHasChildren bool
+		Invitation                   RealizedInvitation
+		FormInfoMap                  map[*datastore.Key]PersonUpdateFormInfo
+		AllRsvpStatuses              []RsvpStatusInfo
+		AllHousingPreferences        []HousingPreferenceInfo
+		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
+		InvitationHasChildren        bool
 	}{
-		Invitation:            realizedInvitation,
-		FormInfoMap:           formInfoMap,
-		AllRsvpStatuses:       GetAllRsvpStatuses(),
-		InvitationHasChildren: invitation.HasChildren(ctx),
+		Invitation:                   realizedInvitation,
+		FormInfoMap:                  formInfoMap,
+		AllRsvpStatuses:              GetAllRsvpStatuses(),
+		AllHousingPreferences:        GetAllHousingPreferences(),
+		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
+		InvitationHasChildren:        invitation.HasChildren(ctx),
 	}
 
 	functionMap := template.FuncMap{
@@ -605,6 +498,8 @@ func handleSaveInvitation(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	wr.Request.ParseForm()
 
+	emailBody := ""
+
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 	var invitation Invitation
@@ -614,36 +509,61 @@ func handleSaveInvitation(wr WrappedRequest) {
 	rsvps := wr.Request.Form["rsvp"]
 	var newPeople []*datastore.Key
 	var rsvpMap = make(map[*datastore.Key]RsvpStatus)
-	for i, person := range people {
-		key, _ := datastore.DecodeKey(person)
+	for i, personKey := range people {
+		key, _ := datastore.DecodeKey(personKey)
+		var person Person
+		datastore.Get(ctx, key, &person)
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
+		rsvpStatusString := "No RSVP"
 		if rsvp >= 0 {
-			rsvpMap[key] = GetAllRsvpStatuses()[rsvp].Status
+			fullStatus := GetAllRsvpStatuses()[rsvp]
+			rsvpMap[key] = fullStatus.Status
+			rsvpStatusString = fullStatus.ShortDescription
 		}
+
+		emailBody += fmt.Sprintf("%s: %s\n", person.FullName(), rsvpStatusString)
 	}
+
+	emailBody += "\n\n"
 	invitation.RsvpMap = rsvpMap
 
 	invitation.Invitees = newPeople
 
 	housingPreference, _ := strconv.Atoi(wr.Request.Form.Get("housingPreference"))
 	if housingPreference >= 0 {
-		invitation.Housing = HousingPreference(housingPreference)
+		hp := HousingPreference(housingPreference)
+		invitation.Housing = hp
+		emailBody += fmt.Sprintf("Housing Preference: %s\n ", GetAllHousingPreferences()[hp].ReportDescription)
 	}
-	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
 
+	var booleanInfos = GetAllHousingPreferenceBooleans()
 	var housingPreferenceTotal int
 	booleans := wr.Request.Form["housingPreferenceBooleans"]
+
+	if len(booleans) > 0 {
+		emailBody += "Housing Flags: "
+	}
 	for _, boolean := range booleans {
 		value, _ := strconv.Atoi(boolean)
-		housingPreferenceTotal += value
+		booleanInfo := booleanInfos[value]
+		housingPreferenceTotal += booleanInfo.Bit
+
+		emailBody += booleanInfo.ReportDescription + ", "
 	}
+	if len(booleans) > 0 {
+		emailBody += "\n"
+	}
+
 	invitation.HousingPreferenceBooleans = housingPreferenceTotal
 
-	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
-	if drivingPreference >= 0 {
-		invitation.Driving = DrivingPreference(drivingPreference)
+	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
+	if invitation.HousingNotes != "" {
+		emailBody += "Housing Notes: " + invitation.HousingNotes + "\n\n"
 	}
+
+	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
+	invitation.Driving = DrivingPreference(drivingPreference)
 
 	invitation.LeaveFrom = wr.Request.Form.Get("leaveFrom")
 	invitation.LeaveTime = wr.Request.Form.Get("leaveTime")
@@ -653,6 +573,28 @@ func handleSaveInvitation(wr WrappedRequest) {
 	_, err := datastore.Put(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Errorf(ctx, "%v", err)
+	}
+
+	var invitees []Person
+	for _, personKey := range invitation.Invitees {
+		var person Person
+		datastore.Get(ctx, personKey, &person)
+		invitees = append(invitees, person)
+	}
+
+	var e Event
+	datastore.Get(ctx, invitation.Event, &e)
+	subject := fmt.Sprintf("%s: RSVP from %s", e.ShortName, CollectiveAddress(invitees, Informal))
+
+	// TODO: figure out how to set these with a properties file.
+	msg := &mail.Message{
+		Sender:  "**** email sender ****",
+		To:      []string{"**** email address ****"},
+		Subject: subject,
+		Body:    emailBody,
+	}
+	if err := mail.Send(ctx, msg); err != nil {
+		log.Errorf(ctx, "Couldn't send email: %v", err)
 	}
 
 	savePeople(wr)

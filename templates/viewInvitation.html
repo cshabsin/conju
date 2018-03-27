@@ -110,8 +110,8 @@
     $(".personal").hide();
     $(".food").hide();
 
-    $(".housingPreference").val("{{with .Invitation.Housing}}{{.}}{{else}}-1{{end}}");
-    $(".drivingPreference").val("{{with .Invitation.Driving}}{{.}}{{else}}-1{{end}}");
+    $(".housingPreference").val("{{.Invitation.Housing}}")
+    $(".drivingPreference").val("{{.Invitation.Driving}}")
     for (var i=0; i < {{(len .Invitation.Invitees)}}; i++) {
         processRsvpStatus(i);
     } 
@@ -133,7 +133,7 @@ function validate(form) {
     {{end}}
 
     var housingPreference = $(".housingPreference").val();
-    if (anyoneMeetsCriteria(needsLodging) && (housingPreference == "-1")) {
+    if (anyoneMeetsCriteria(needsLodging) && (housingPreference == "0")) {
        errorMessages += "No housing preference selected.\n"
     }
     if (housingPreference == "1" && $("input[name=housingNotes]").val() == "") {
@@ -141,7 +141,7 @@ function validate(form) {
     }
 
     var drivingPreference = parseInt($(".drivingPreference").val())
-    if (anyoneMeetsCriteria(attending) && (drivingPreference == -1)) {
+    if (anyoneMeetsCriteria(attending) && (drivingPreference == 0)) {
        errorMessages += "No driving preference selected.\n"
     }
     if (drivingPreference > 0) {
@@ -233,38 +233,46 @@ function validate(form) {
     {{$single := (eq (len .Invitation.Invitees) 1)}}
     <table class="rsvpHousing"><tr><td>
 	  <select class="housingPreference" name="housingPreference">
-      <option value="-1">-- Select your rooming preferences --</option>
-      <option value="0">{{if $single}}I need a room to myself.{{else}}We need a room to ourselves.{{end}}</option>
-      <option value="1">{{if $single}}I am{{else}}We are{{end}} willing to share a room with specific people, listed below.</option>
-      <option value="2">{{if $single}}I am{{else}}We are{{end}} willing to share a room with people {{if $single}}I{{else}}we{{end}} know.</option>
-      <option value="3">{{if $single}}I am{{else}}We are{{end}} willing to share a room with anyone who needs a roommate.</option>
+            {{range $p, $pref := .AllHousingPreferences}}
+	    <option value="{{$p}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
+            {{end}}
     </select>
     <div>What else do we need to know to assign you a room?</div>
     <textarea type="text" name="housingNotes" class="freeformTextField">{{.Invitation.HousingNotes}}</textarea>
-</td><td>
-  {{if .InvitationHasChildren}}
-    <div><input type="checkbox" name="housingPreferenceBooleans" value="64"{{if (HasPreference .Invitation.HousingPreferenceBooleans 64)}} checked{{end}}>We would prefer to be within baby-monitor range of the main common room.</div>
-    <div><input type="checkbox" name="housingPreferenceBooleans" value="32"{{if (HasPreference .Invitation.HousingPreferenceBooleans 32)}} checked{{end}}>We can stay in a room in a building that is not within baby-monitor range of the main common room, but is very close by.</div>
-    <div><input type="checkbox" name="housingPreferenceBooleans" value="16"{{if (HasPreference .Invitation.HousingPreferenceBooleans 16)}} checked{{end}}>We are willing to be housed in a building that is ~100 yards away from the main common room.</div>
-    <div><input type="checkbox" name="housingPreferenceBooleans" value="8"{{if (HasPreference .Invitation.HousingPreferenceBooleans 8)}} checked{{end}}>Everyone in our party can cross a (low-traffic) road, alone, safely, even at night.</div>
+</td>
+<td>
+  {{$InvitationHasChildren := .InvitationHasChildren}}
+  {{range $i, $pref := .AllHousingPreferenceBooleans}}
+    {{if or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples))}}
+      <div><input type="checkbox" name="housingPreferenceBooleans" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}>
+        {{if $single}}
+          {{$pref.SinglePersonDescription}}
+        {{else}}
+          {{if and (eq (len $Invitation.Invitees) 2) (ne $pref.CoupleDescription "")}}
+            {{$pref.CoupleDescription}}
+          {{else}}
+            {{$pref.MultiplePeopleDescription}}
+          {{end}}
+        {{end}}
+      </div>
+      {{if ne $pref.SupplementalInfo ""}}
+        <div style="font-size:smaller; padding-left:26px;font-style:italic">{{$pref.SupplementalInfo}}</div>
+      {{end}}
+   {{end}}
 {{end}}
-    <div><input type="checkbox" name="housingPreferenceBooleans" value="4"{{if (HasPreference .Invitation.HousingPreferenceBooleans 4)}} checked{{end}}>{{if $single}}I{{else}}We{{end}} would <b>prefer</b> to be housed far from the main commmon room.</div>
-    <div><input type="checkbox" name="housingPreferenceBooleans" value="1"{{if (HasPreference .Invitation.HousingPreferenceBooleans 1)}} checked{{end}}>In case of overflow, {{if $single}}I am{{else}}we are{{end}} willing to be housed in a building that is outside of our main cluster of buildings.</div>
-    <div style="font-size:smaller; padding-left:26px;font-style:italic">Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about a half mile).</div>
-    {{if not $single}}
-      <div><input type="checkbox"name="housingPreferenceBooleans" value="2"{{if (HasPreference .Invitation.HousingPreferenceBooleans 2)}} checked{{end}}>{{if eq (len .Invitation.Invitees) 2}}We would prefer to share a bed.{{else}}We would prefer a room with a bed that sleeps 2.{{end}}</div>
-    {{end}}
+
+
 </td></tr></table>
   </div>
 
   <div class="rideFormContainer hidden">
     <h4>Travel information</h4>
     How do you feel about ride sharing?  <select class="drivingPreference" id="id_driving_preference" onchange="adjustDrivingFields(this.value);" name="drivingPreference">
-<option value="-1">-- Select your ride sharing preferences --</option>
-<option value="0">{{if $single}}I{{else}}We{{end}} will drive by {{if $single}}myself{{else}}ourselves{{end}}.</option>
-<option value="1">{{if $single}}I{{else}}We{{end}} have some extra room in {{if $single}}my{{else}}our{{end}} car and would love company.</option>
-<option value="2">{{if $single}}I{{else}}We{{end}} will need a ride.</option>
-<option value="3">{{if $single}}I{{else}}We{{end}} could drive but would rather ride.</option>
+<option value="0">-- Select your ride sharing preferences --</option>
+<option value="1">{{if $single}}I{{else}}We{{end}} will drive by {{if $single}}myself{{else}}ourselves{{end}}.</option>
+<option value="2">{{if $single}}I{{else}}We{{end}} have some extra room in {{if $single}}my{{else}}our{{end}} car and would love company.</option>
+<option value="3">{{if $single}}I{{else}}We{{end}} will need a ride.</option>
+<option value="4">{{if $single}}I{{else}}We{{end}} could drive but would rather ride.</option>
 </select><br>
     <div class="rideSharingOptions hidden">
       <table>

@@ -47,7 +47,7 @@ type PersonUpdateFormInfo struct {
 	ThisPerson               *Person
 	EncodedKey               string
 	AllPronouns              []PronounSet
-	AllFoodRestrictions      [DangerousAllergy + 1]FoodRestrictionTag
+	AllFoodRestrictions      []FoodRestrictionTag
 	HighlightNeededBirthdate bool
 	PersonIndex              int
 }
@@ -141,51 +141,52 @@ type FoodRestrictionTag struct {
 	Supplemental string
 }
 
-func GetAllFoodRestrictionTags() [DangerousAllergy + 1]FoodRestrictionTag {
-	var toReturn [DangerousAllergy + 1]FoodRestrictionTag
-	toReturn[Vegetarian] = FoodRestrictionTag{
+func GetAllFoodRestrictionTags() []FoodRestrictionTag {
+	var toReturn []FoodRestrictionTag
+
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         Vegetarian,
 		Description: "Vegetarian",
-	}
-	toReturn[Vegan] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         Vegan,
 		Description: "Vegan",
-	}
-	toReturn[NoRedMeat] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:          NoRedMeat,
 		Description:  "No Red Meat",
 		Supplemental: "Chicken/Fish Okay",
-	}
-	toReturn[VegetarianPlusFish] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         VegetarianPlusFish,
 		Description: "Vegetarian + Fish",
-	}
-	toReturn[NoDairy] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         NoDairy,
 		Description: "No Dairy",
-	}
-	toReturn[NoGluten] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         NoGluten,
 		Description: "No Gluten",
-	}
-	toReturn[Kosher] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         Kosher,
 		Description: "Kosher",
-	}
-	toReturn[Halal] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:         Halal,
 		Description: "Halal",
-	}
-	toReturn[InconvenientAllergy] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:          InconvenientAllergy,
 		Description:  "Inconvenient Allergy",
 		Supplemental: "List your allergies below.",
-	}
-	toReturn[DangerousAllergy] = FoodRestrictionTag{
+	})
+	toReturn = append(toReturn, FoodRestrictionTag{
 		Tag:          DangerousAllergy,
 		Description:  "Dangerous Allergy",
 		Supplemental: "List your allergies below.",
-	}
+	})
 
 	return toReturn
 }
