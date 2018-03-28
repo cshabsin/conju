@@ -4,6 +4,7 @@ package conju
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/mail"
 )
 
 type Invitation struct {
@@ -496,15 +498,21 @@ func handleViewInvitation(wr WrappedRequest) {
 	}
 
 	data := struct {
-		Invitation            RealizedInvitation
-		FormInfoMap           map[*datastore.Key]PersonUpdateFormInfo
-		AllRsvpStatuses       [Sat + 1]RsvpStatusInfo
-		InvitationHasChildren bool
+		Invitation                   RealizedInvitation
+		FormInfoMap                  map[*datastore.Key]PersonUpdateFormInfo
+		AllRsvpStatuses              []RsvpStatusInfo
+		AllHousingPreferences        []HousingPreferenceInfo
+		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
+		AllDrivingPreferences        []DrivingPreferenceInfo
+		InvitationHasChildren        bool
 	}{
-		Invitation:            realizedInvitation,
-		FormInfoMap:           formInfoMap,
-		AllRsvpStatuses:       GetAllRsvpStatuses(),
-		InvitationHasChildren: invitation.HasChildren(ctx),
+		Invitation:                   realizedInvitation,
+		FormInfoMap:                  formInfoMap,
+		AllRsvpStatuses:              GetAllRsvpStatuses(),
+		AllHousingPreferences:        GetAllHousingPreferences(),
+		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
+		AllDrivingPreferences:        GetAllDrivingPreferences(),
+		InvitationHasChildren:        invitation.HasChildren(ctx),
 	}
 
 	functionMap := template.FuncMap{
@@ -527,6 +535,8 @@ func handleSaveInvitation(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	wr.Request.ParseForm()
 
+	emailBody := ""
+
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 	var invitation Invitation
@@ -536,36 +546,61 @@ func handleSaveInvitation(wr WrappedRequest) {
 	rsvps := wr.Request.Form["rsvp"]
 	var newPeople []*datastore.Key
 	var rsvpMap = make(map[*datastore.Key]RsvpStatus)
-	for i, person := range people {
-		key, _ := datastore.DecodeKey(person)
+	for i, personKey := range people {
+		key, _ := datastore.DecodeKey(personKey)
+		var person Person
+		datastore.Get(ctx, key, &person)
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
+		rsvpStatusString := "No RSVP"
 		if rsvp >= 0 {
-			rsvpMap[key] = GetAllRsvpStatuses()[rsvp].Status
+			fullStatus := GetAllRsvpStatuses()[rsvp]
+			rsvpMap[key] = fullStatus.Status
+			rsvpStatusString = fullStatus.ShortDescription
 		}
+
+		emailBody += fmt.Sprintf("%s: %s\n", person.FullName(), rsvpStatusString)
 	}
+
+	emailBody += "\n\n"
 	invitation.RsvpMap = rsvpMap
 
 	invitation.Invitees = newPeople
 
 	housingPreference, _ := strconv.Atoi(wr.Request.Form.Get("housingPreference"))
 	if housingPreference >= 0 {
-		invitation.Housing = HousingPreference(housingPreference)
+		hp := HousingPreference(housingPreference)
+		invitation.Housing = hp
+		emailBody += fmt.Sprintf("Housing Preference: %s\n ", GetAllHousingPreferences()[hp].ReportDescription)
 	}
-	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
 
+	var booleanInfos = GetAllHousingPreferenceBooleans()
 	var housingPreferenceTotal int
 	booleans := wr.Request.Form["housingPreferenceBooleans"]
+
+	if len(booleans) > 0 {
+		emailBody += "Housing Flags: "
+	}
 	for _, boolean := range booleans {
 		value, _ := strconv.Atoi(boolean)
-		housingPreferenceTotal += value
+		booleanInfo := booleanInfos[value]
+		housingPreferenceTotal += booleanInfo.Bit
+
+		emailBody += booleanInfo.ReportDescription + ", "
 	}
+	if len(booleans) > 0 {
+		emailBody += "\n"
+	}
+
 	invitation.HousingPreferenceBooleans = housingPreferenceTotal
 
-	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
-	if drivingPreference >= 0 {
-		invitation.Driving = DrivingPreference(drivingPreference)
+	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
+	if invitation.HousingNotes != "" {
+		emailBody += "Housing Notes: " + invitation.HousingNotes + "\n\n"
 	}
+
+	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
+	invitation.Driving = DrivingPreference(drivingPreference)
 
 	invitation.LeaveFrom = wr.Request.Form.Get("leaveFrom")
 	invitation.LeaveTime = wr.Request.Form.Get("leaveTime")
@@ -575,6 +610,28 @@ func handleSaveInvitation(wr WrappedRequest) {
 	_, err := datastore.Put(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Errorf(ctx, "%v", err)
+	}
+
+	var invitees []Person
+	for _, personKey := range invitation.Invitees {
+		var person Person
+		datastore.Get(ctx, personKey, &person)
+		invitees = append(invitees, person)
+	}
+
+	var e Event
+	datastore.Get(ctx, invitation.Event, &e)
+	subject := fmt.Sprintf("%s: RSVP from %s", e.ShortName, CollectiveAddress(invitees, Informal))
+
+	// TODO: figure out how to set these with a properties file.
+	msg := &mail.Message{
+		Sender:  "**** email sender ****",
+		To:      []string{"**** email address ****"},
+		Subject: subject,
+		Body:    emailBody,
+	}
+	if err := mail.Send(ctx, msg); err != nil {
+		log.Errorf(ctx, "Couldn't send email: %v", err)
 	}
 
 	savePeople(wr)
