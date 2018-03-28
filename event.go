@@ -40,6 +40,9 @@ func CreateEvent(ctx context.Context, id int, name string, shortName string, sta
 
 // Sets up Event in the WrappedRequest.
 func EventGetter(wr *WrappedRequest) error {
+	if wr.hasRunEventGetter {
+		return nil // Only retrieve once.
+	}
 	ctx := wr.Context
 	encoded_key := wr.Values["event"]
 
@@ -71,6 +74,7 @@ func EventGetter(wr *WrappedRequest) error {
 	wr.SetSessionValue("EventKey", key.Encode())
 	wr.SetSessionValue("Event", e)
 	wr.SaveSession()
+	wr.hasRunEventGetter = true
 
 	return nil
 }
