@@ -52,10 +52,12 @@ func randomLoginCodeString() string {
 
 func CreateLoginCode(ctx context.Context, event *datastore.Key,
 	invitation *datastore.Key, person *datastore.Key) (string, *datastore.Key, error) {
+	// TODO: figure out whether the person already has a login code for this invitation/event.
+	// TODO: guard against overwriting existing login codes (in case of a duplicate random value)
 	lcs := randomLoginCodeString()
-	incomplete_key := datastore.NewIncompleteKey(ctx, "LoginCode", event)
+	incomplete_key := datastore.NewKey(ctx, "LoginCode", lcs, 0, event)
 	lc := LoginCode{lcs, invitation, person}
-	key, err := datastore.Put(ctx, incomplete_key, &lc)
+	key, err := datastore.Put(ctx, incomplete_key, lc)
 	if err != nil {
 		return "", nil, err
 	}
