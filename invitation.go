@@ -131,21 +131,6 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 	return false
 }
 
-type RealizedInvitation struct {
-	EncodedKey                string
-	Invitees                  []PersonWithKey
-	Event                     Event
-	RsvpMap                   map[string]RsvpStatusInfo
-	Housing                   HousingPreference
-	HousingPreferenceBooleans int
-	HousingNotes              string
-	Driving                   DrivingPreference
-	LeaveFrom                 string
-	LeaveTime                 string
-	TravelNotes               string
-	AdditionalPassengers      string
-}
-
 // Each event should have a list of acceptable RSVP statuses
 type RsvpStatus int
 
@@ -273,67 +258,6 @@ func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean)
 	return (inv.HousingPreferenceBooleans & int(preference)) > 0
 }
 
-func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
-	personKeys := invitation.Invitees
-	var invitees []PersonWithKey
-	for _, personKey := range personKeys {
-		var person Person
-		datastore.Get(ctx, personKey, &person)
-		person.DatastoreKey = personKey
-		personWithKey := PersonWithKey{
-			Person: person,
-			Key:    personKey.Encode(),
-		}
-
-		invitees = append(invitees, personWithKey)
-	}
-
-	var event Event
-
-	if getEvent {
-		datastore.Get(ctx, invitation.Event, &event)
-	}
-
-	allRsvpStatuses := GetAllRsvpStatuses()
-	realizedRsvpMap := make(map[string]RsvpStatusInfo)
-
-	for k, v := range invitation.RsvpMap {
-		realizedRsvpMap[k.Encode()] = allRsvpStatuses[v]
-	}
-
-	realizedInvitation := RealizedInvitation{
-		EncodedKey:                invitationKey.Encode(),
-		Invitees:                  invitees,
-		Event:                     event,
-		RsvpMap:                   realizedRsvpMap,
-		Housing:                   invitation.Housing,
-		HousingNotes:              invitation.HousingNotes,
-		HousingPreferenceBooleans: invitation.HousingPreferenceBooleans,
-		Driving:                   invitation.Driving,
-		LeaveFrom:                 invitation.LeaveFrom,
-		LeaveTime:                 invitation.LeaveTime,
-		AdditionalPassengers:      invitation.AdditionalPassengers,
-		TravelNotes:               invitation.TravelNotes,
-	}
-
-	return realizedInvitation
-}
-
-func printInvitation(ctx context.Context, key datastore.Key, inv Invitation) string {
-	real := makeRealizedInvitation(ctx, key, inv, true)
-	toReturn := real.Event.ShortName + ": "
-	for _, invitee := range real.Invitees {
-		toReturn += invitee.Person.FullName() + " - "
-		statusString := "???"
-		status, exists := real.RsvpMap[invitee.Key]
-		if exists {
-			statusString = status.ShortDescription
-		}
-		toReturn += statusString + ", "
-	}
-	return toReturn
-}
-
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	currentEvent := wr.Event
@@ -372,7 +296,7 @@ func handleInvitations(wr WrappedRequest) {
 
 	}
 
-	var realizedInvitations []RealizedInvitation
+	realizedInvitations := makeRealizedInvitations(ctx, invitationKeys, invitations)
 
 	type Statistics struct {
 		BabyCount        int
@@ -386,7 +310,7 @@ func handleInvitations(wr WrappedRequest) {
 	var statistics Statistics
 	statistics.UninvitedCount = len(people)
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i], false)
+		realizedInvitation := realizedInvitations[i]
 		for _, invitee := range realizedInvitation.Invitees {
 			statistics.UninvitedCount--
 			birthdate := invitee.Person.Birthdate
@@ -410,8 +334,6 @@ func handleInvitations(wr WrappedRequest) {
 			}
 			delete(notInvitedSet, *invitee.Person.DatastoreKey)
 		}
-
-		realizedInvitations = append(realizedInvitations, realizedInvitation)
 	}
 
 	sort.Slice(realizedInvitations,
