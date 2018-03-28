@@ -133,6 +133,10 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 	return false
 }
 
+func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean) bool {
+	return (inv.HousingPreferenceBooleans & int(preference)) > 0
+}
+
 type RealizedInvitation struct {
 	EncodedKey                string
 	Invitees                  []PersonWithKey
@@ -146,20 +150,6 @@ type RealizedInvitation struct {
 	LeaveTime                 string
 	TravelNotes               string
 	AdditionalPassengers      string
-}
-
-type DrivingPreference int
-
-const (
-	DrivingNotSet = iota
-	NoCarpool
-	Driving
-	Riding
-	DriveIfNeeded
-)
-
-func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean) bool {
-	return (inv.HousingPreferenceBooleans & int(preference)) > 0
 }
 
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
@@ -468,6 +458,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllRsvpStatuses              []RsvpStatusInfo
 		AllHousingPreferences        []HousingPreferenceInfo
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
+		AllDrivingPreferences        []DrivingPreferenceInfo
 		InvitationHasChildren        bool
 	}{
 		Invitation:                   realizedInvitation,
@@ -475,6 +466,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllRsvpStatuses:              GetAllRsvpStatuses(),
 		AllHousingPreferences:        GetAllHousingPreferences(),
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
+		AllDrivingPreferences:        GetAllDrivingPreferences(),
 		InvitationHasChildren:        invitation.HasChildren(ctx),
 	}
 

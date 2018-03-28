@@ -268,11 +268,9 @@ function validate(form) {
   <div class="rideFormContainer hidden">
     <h4>Travel information</h4>
     How do you feel about ride sharing?  <select class="drivingPreference" id="id_driving_preference" onchange="adjustDrivingFields(this.value);" name="drivingPreference">
-<option value="0">-- Select your ride sharing preferences --</option>
-<option value="1">{{if $single}}I{{else}}We{{end}} will drive by {{if $single}}myself{{else}}ourselves{{end}}.</option>
-<option value="2">{{if $single}}I{{else}}We{{end}} have some extra room in {{if $single}}my{{else}}our{{end}} car and would love company.</option>
-<option value="3">{{if $single}}I{{else}}We{{end}} will need a ride.</option>
-<option value="4">{{if $single}}I{{else}}We{{end}} could drive but would rather ride.</option>
+    {{range $i, $pref := .AllDrivingPreferences}}
+       <option value="{{$i}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
+    {{end}}
 </select><br>
     <div class="rideSharingOptions hidden">
       <table>

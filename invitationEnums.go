@@ -213,7 +213,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		Boolean:                   FartherBuilding,
 		MultiplePeopleDescription: "In case of overflow, we would be willing to be housed in a building that is outside of our main cluster of buildings.",
 		SinglePersonDescription:   "In case of overflow, I would be willing to be housed in a building that is outside of our main cluster of buildings.",
-		SupplementalInfo:          "Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about a half mile).",
+		SupplementalInfo:          "Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about half a mile).",
 		ReportDescription:         "Farther Building Okay",
 		Bit:                       1,
 	})
@@ -224,6 +224,61 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Share Bed",
 		ForMultiples:              true,
 		Bit:                       2,
+	})
+
+	return toReturn
+}
+
+type DrivingPreference int
+
+const (
+	DrivingNotSet = iota
+	NoCarpool
+	Driving
+	Riding
+	DriveIfNeeded
+)
+
+type DrivingPreferenceInfo struct {
+	Preference                DrivingPreference
+	SinglePersonDescription   string
+	MultiplePeopleDescription string
+	CoupleDescription         string
+	ReportDescription         string
+}
+
+func GetAllDrivingPreferences() []DrivingPreferenceInfo {
+	var toReturn []DrivingPreferenceInfo
+
+	toReturn = append(toReturn, DrivingPreferenceInfo{
+		Preference:                DrivingNotSet,
+		SinglePersonDescription:   "-- Select your ride-sharing preferences --",
+		MultiplePeopleDescription: "-- Select your ride-sharing preferences --",
+		ReportDescription:         "Not Set",
+	})
+	toReturn = append(toReturn, DrivingPreferenceInfo{
+		Preference:                NoCarpool,
+		SinglePersonDescription:   "I will drive by myself.",
+		MultiplePeopleDescription: "We will drive by ourselves.",
+		ReportDescription:         "Alone",
+	})
+	toReturn = append(toReturn, DrivingPreferenceInfo{
+		Preference:                Driving,
+		SinglePersonDescription:   "I will have some extra room in my car and would love company.",
+		MultiplePeopleDescription: "We will have some extra room in our car and would love company.",
+		ReportDescription:         "Driving",
+	})
+	toReturn = append(toReturn, DrivingPreferenceInfo{
+		Preference:                Riding,
+		SinglePersonDescription:   "I will need a ride.",
+		MultiplePeopleDescription: "We will need a ride.",
+		ReportDescription:         "Riding",
+	})
+	toReturn = append(toReturn, DrivingPreferenceInfo{
+		Preference:                DriveIfNeeded,
+		SinglePersonDescription:   "I could drive but would rather ride.",
+		MultiplePeopleDescription: "We could drive but would rather ride.",
+		ReportDescription:         "Either",
 	})
 
 	return toReturn
