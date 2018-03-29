@@ -5,7 +5,7 @@ package conju
 import (
 	"context"
 	"fmt"
-//	"html"
+	//	"html"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -494,16 +494,16 @@ func handleSaveInvitation(wr WrappedRequest) {
 	data := struct {
 		RealInvitation               RealizedInvitation
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
-		AllPronouns		     []PronounSet
+		AllPronouns                  []PronounSet
 	}{
 		RealInvitation:               realizedInvitation,
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
-		AllPronouns:		      []PronounSet{They, She, He, Zie},
+		AllPronouns:                  []PronounSet{They, She, He, Zie},
 	}
 
 	header := MailHeaderInfo{
 		To:      []string{"**** email address ****"},
-		Sender:  "**** email sender ****
+		Sender:  "**** email sender ****",
 		Subject: subject,
 	}
 	sendMail(ctx, "rsvpconfirmation", data, functionMap, header)
