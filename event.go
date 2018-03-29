@@ -44,26 +44,26 @@ func EventGetter(wr *WrappedRequest) error {
 		return nil // Only retrieve once.
 	}
 	wr.hasRunEventGetter = true
-	ctx := wr.Context
-	key, err := wr.RetrieveKeyFromSession("event")
+	key, err := wr.RetrieveKeyFromSession("EventKey")
 	if err != nil {
-		// do something
+		// TODO: do something
+		return err
 	}
 	var e *Event
 	err = datastore.Get(wr.Context, key, e)
 	if err == nil && e != nil {
 		// We have retrieved the event successfully.
+		log.Infof(wr.Context, "retrieved event successfully.")
 		return nil
 	}
 
 	var keys []*datastore.Key
 	var events []*Event
 	q := datastore.NewQuery("Event").Filter("Current =", true)
-	keys, err = q.GetAll(ctx, &events)
+	keys, err = q.GetAll(wr.Context, &events)
 	if len(keys) > 1 {
-		log.Infof(ctx, "found %d current events", len(keys))
+		log.Infof(wr.Context, "found %d current events", len(keys))
 		return err
-
 	}
 	e = events[0]
 	key = keys[0]
@@ -71,7 +71,6 @@ func EventGetter(wr *WrappedRequest) error {
 	wr.Event = e
 	wr.EventKey = key
 	wr.SetSessionValue("EventKey", key.Encode())
-	wr.SetSessionValue("Event", e)
 	wr.SaveSession()
 
 	return nil

@@ -21,14 +21,14 @@ func init() {
 	AddSessionHandler("/saveInvitation", handleSaveInvitation)
 
 	AddSessionHandler("/needsLogin", handleIncrement).Needs(EventGetter).Needs(LoginGetter)
-
+	AddSessionHandler("/login", handleLogin).Needs(EventGetter)
 }
 
 func handleIncrement(wr WrappedRequest) {
 	if wr.Values["n"] == nil {
-		wr.Values["n"] = 0
+		wr.SetSessionValue("n", 0)
 	} else {
-		wr.Values["n"] = wr.Values["n"].(int) + 1
+		wr.SetSessionValue("n", wr.Values["n"].(int)+1)
 	}
 	wr.SaveSession()
 	ev := wr.Event
