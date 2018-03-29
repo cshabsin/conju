@@ -43,38 +43,36 @@ func EventGetter(wr *WrappedRequest) error {
 	if wr.hasRunEventGetter {
 		return nil // Only retrieve once.
 	}
+	wr.hasRunEventGetter = true
 	ctx := wr.Context
-	encoded_key := wr.Values["event"]
-
-	var key *datastore.Key = nil
-	var err error
+	key, err := wr.RetrieveKeyFromSession("event")
+	if err != nil {
+		// do something
+	}
 	var e *Event
-
-	if encoded_key != nil {
-		key, _ = datastore.DecodeKey(encoded_key.(string))
-		err = datastore.Get(wr.Context, key, e)
+	err = datastore.Get(wr.Context, key, e)
+	if err == nil && e != nil {
+		// We have retrieved the event successfully.
+		return nil
 	}
 
 	var keys []*datastore.Key
 	var events []*Event
-	if e == nil {
-		q := datastore.NewQuery("Event").Filter("Current =", true)
-		keys, err = q.GetAll(ctx, &events)
-		if len(keys) > 1 {
-			log.Infof(ctx, "found %d current events", len(keys))
-			return err
+	q := datastore.NewQuery("Event").Filter("Current =", true)
+	keys, err = q.GetAll(ctx, &events)
+	if len(keys) > 1 {
+		log.Infof(ctx, "found %d current events", len(keys))
+		return err
 
-		}
-		e = events[0]
-		key = keys[0]
 	}
+	e = events[0]
+	key = keys[0]
 
 	wr.Event = e
-	//wr.EventKey = key.Encode()
+	wr.EventKey = key
 	wr.SetSessionValue("EventKey", key.Encode())
 	wr.SetSessionValue("Event", e)
 	wr.SaveSession()
-	wr.hasRunEventGetter = true
 
 	return nil
 }
