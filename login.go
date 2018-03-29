@@ -2,6 +2,7 @@ package conju
 
 import (
 	"context"
+	"errors"
 	"math/rand"
 
 	"google.golang.org/appengine/datastore"
@@ -62,4 +63,40 @@ func CreateLoginCode(ctx context.Context, event *datastore.Key,
 		return "", nil, err
 	}
 	return lcs, key, nil
+}
+
+type LoginInfo struct {
+	InvitationKey *datastore.Key
+	*Invitation
+	PersonKey *datastore.Key
+	*Person
+}
+
+func LoginGetter(wr *WrappedRequest) error {
+	if !wr.hasRunEventGetter {
+		return errors.New("LoginGetter called without EventGetter")
+	}
+	code, ok := wr.Values["code"].(string)
+	if !ok {
+		return RedirectError{"/login"}
+	}
+	var lc *LoginCode
+	err := datastore.Get(wr.Context, datastore.NewKey(wr.Context, "LoginCode", code, 0, wr.EventKey), lc)
+	if err != nil {
+		return err
+	}
+	var invitation *Invitation
+	err = datastore.Get(wr.Context, lc.Invitation, invitation)
+	if err != nil {
+		return err
+	}
+
+	var person *Person
+	err = datastore.Get(wr.Context, lc.Person, person)
+	if err != nil {
+		return err
+	}
+
+	wr.LoginInfo = &LoginInfo{lc.Invitation, invitation, lc.Person, person}
+	return nil
 }
