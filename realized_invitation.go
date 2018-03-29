@@ -11,10 +11,10 @@ type RealizedInvitation struct {
 	Invitees                  []PersonWithKey
 	Event                     Event
 	RsvpMap                   map[string]RsvpStatusInfo
-	Housing                   HousingPreference
+	Housing                   HousingPreferenceInfo
 	HousingPreferenceBooleans int
 	HousingNotes              string
-	Driving                   DrivingPreference
+	Driving                   DrivingPreferenceInfo
 	LeaveFrom                 string
 	LeaveTime                 string
 	TravelNotes               string
@@ -54,10 +54,10 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		Invitees:                  invitees,
 		Event:                     event,
 		RsvpMap:                   realizedRsvpMap,
-		Housing:                   invitation.Housing,
+		Housing:                   GetAllHousingPreferences()[invitation.Housing],
 		HousingNotes:              invitation.HousingNotes,
 		HousingPreferenceBooleans: invitation.HousingPreferenceBooleans,
-		Driving:                   invitation.Driving,
+		Driving:                   GetAllDrivingPreferences()[invitation.Driving],
 		LeaveFrom:                 invitation.LeaveFrom,
 		LeaveTime:                 invitation.LeaveTime,
 		AdditionalPassengers:      invitation.AdditionalPassengers,
@@ -88,4 +88,8 @@ func makeRealizedInvitations(ctx context.Context, invitationKeys []*datastore.Ke
 		realizedInvitations[i] = makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i], false)
 	}
 	return realizedInvitations
+}
+
+func RealInvHasHousingPreference(inv RealizedInvitation, preference HousingPreferenceBooleanInfo) bool {
+	return (inv.HousingPreferenceBooleans & preference.Bit) > 0
 }

@@ -16,7 +16,6 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/mail"
 )
 
 type Invitation struct {
@@ -131,6 +130,10 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 		}
 	}
 	return false
+}
+
+func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean) bool {
+	return (inv.HousingPreferenceBooleans & GetAllHousingPreferenceBooleans()[preference].Bit) > 0
 }
 
 func handleInvitations(wr WrappedRequest) {
@@ -408,8 +411,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	wr.Request.ParseForm()
 
-	emailBody := ""
-
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 	var invitation Invitation
@@ -425,17 +426,12 @@ func handleSaveInvitation(wr WrappedRequest) {
 		datastore.Get(ctx, key, &person)
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
-		rsvpStatusString := "No RSVP"
 		if rsvp >= 0 {
 			fullStatus := GetAllRsvpStatuses()[rsvp]
 			rsvpMap[key] = fullStatus.Status
-			rsvpStatusString = fullStatus.ShortDescription
 		}
-
-		emailBody += fmt.Sprintf("%s: %s\n", person.FullName(), rsvpStatusString)
 	}
 
-	emailBody += "\n\n"
 	invitation.RsvpMap = rsvpMap
 
 	invitation.Invitees = newPeople
@@ -444,33 +440,21 @@ func handleSaveInvitation(wr WrappedRequest) {
 	if housingPreference >= 0 {
 		hp := HousingPreference(housingPreference)
 		invitation.Housing = hp
-		emailBody += fmt.Sprintf("Housing Preference: %s\n ", GetAllHousingPreferences()[hp].ReportDescription)
 	}
 
 	var booleanInfos = GetAllHousingPreferenceBooleans()
 	var housingPreferenceTotal int
 	booleans := wr.Request.Form["housingPreferenceBooleans"]
 
-	if len(booleans) > 0 {
-		emailBody += "Housing Flags: "
-	}
 	for _, boolean := range booleans {
 		value, _ := strconv.Atoi(boolean)
 		booleanInfo := booleanInfos[value]
 		housingPreferenceTotal += booleanInfo.Bit
-
-		emailBody += booleanInfo.ReportDescription + ", "
-	}
-	if len(booleans) > 0 {
-		emailBody += "\n"
 	}
 
 	invitation.HousingPreferenceBooleans = housingPreferenceTotal
 
 	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
-	if invitation.HousingNotes != "" {
-		emailBody += "Housing Notes: " + invitation.HousingNotes + "\n\n"
-	}
 
 	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
 	invitation.Driving = DrivingPreference(drivingPreference)
@@ -492,22 +476,35 @@ func handleSaveInvitation(wr WrappedRequest) {
 		invitees = append(invitees, person)
 	}
 
+	savePeople(wr)
+
 	var e Event
 	datastore.Get(ctx, invitation.Event, &e)
 	subject := fmt.Sprintf("%s: RSVP from %s", e.ShortName, CollectiveAddress(invitees, Informal))
 
-	// TODO: figure out how to set these with a properties file.
-	msg := &mail.Message{
-		Sender:  "**** email sender ****",
+	functionMap := template.FuncMap{
+		"HasHousingPreference": RealInvHasHousingPreference,
+	}
+
+	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
+	// TODO: escape this.
+	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
+
+	data := struct {
+		RealInvitation               RealizedInvitation
+		AllRsvpStatuses              []RsvpStatusInfo
+		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
+	}{
+		RealInvitation:               realizedInvitation,
+		AllRsvpStatuses:              GetAllRsvpStatuses(),
+		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
+	}
+
+	header := MailHeaderInfo{
 		To:      []string{"**** email address ****"},
+		Sender:  "**** email sender ****",
 		Subject: subject,
-		Body:    emailBody,
 	}
-	if err := mail.Send(ctx, msg); err != nil {
-		log.Errorf(ctx, "Couldn't send email: %v", err)
-	}
-
-	savePeople(wr)
-
+	sendMail(ctx, "rsvpconfirmation", data, functionMap, header)
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }

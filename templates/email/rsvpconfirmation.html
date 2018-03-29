@@ -1,0 +1,66 @@
+{{define "rsvpconfirmation_text"}}
+  {{/* TODO: implement text version */}}
+  {{$Invitation := .RealInvitation}}
+  {{range $i, $invitee := .RealInvitation.Invitees}}
+    {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}    
+    {{$invitee.Person.FullName}}: {{$RsvpStatus.ShortDescription}}
+  {{end}}
+{{end}}
+
+{{define "rsvpconfirmation_html"}}
+
+  <table>
+    {{$Invitation := .RealInvitation}}
+    {{range $i, $invitee := $Invitation.Invitees}}
+      {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
+      <tr>
+        <td>{{$invitee.Person.FullName}}</td>
+        <td style="padding-left:10px"><b>{{with $RsvpStatus.ShortDescription}}{{.}}{{else}}NO RSVP{{end}}</b></td>
+      </tr>
+    {{end}}
+  </table>
+
+<table style="margin-top:30px">
+<tr><td>Housing preference:</td><td><b>{{$Invitation.Housing.ReportDescription}}</b></td></tr>
+{{if gt $Invitation.HousingPreferenceBooleans 0}}
+<tr><td style="vertical-align:top">Housing questions:</td><td><b> {{range $i, $hpi := .AllHousingPreferenceBooleans}}
+    {{if (HasHousingPreference $Invitation $hpi)}}
+       {{$hpi.ReportDescription}}<br>
+    {{end}}
+  {{end}}
+ </b></td></tr>
+{{end}}
+
+{{if not (eq $Invitation.HousingNotes "")}}
+<tr><td style="vertical-align:top">Housing notes:</td><td><b>{{$Invitation.HousingNotes}}</b></td></tr>
+{{end}}
+</table>
+
+<table style="margin-top:30px">
+<tr><td>Driving Preference:</td><td><b>{{$Invitation.Driving.ReportDescription}}</b></td></tr>
+{{if not (eq $Invitation.LeaveFrom "")}}
+  <tr><td>Leave From:</td><td><b>{{$Invitation.LeaveFrom}}</b></td></tr>
+{{end}}
+{{if not (eq $Invitation.LeaveTime "")}}
+  <tr><td>Leave Time:</td><td><b>{{$Invitation.LeaveTime}}</b></td></tr>
+{{end}}
+{{if not (eq $Invitation.AdditionalPassengers "")}}
+  <tr><td>Additional Passengers:</td><td><b>{{$Invitation.AdditionalPassengers}}</b></td></tr>
+{{end}}
+  {{if not (eq $Invitation.TravelNotes "")}}
+<tr><td style="vertical-align:top">Travel notes:</td><td><b>{{$Invitation.TravelNotes}}</b></td></tr>
+{{end}}
+</table>
+{{end}}
+
+{{/*
+Invitees:
+
+{{range $i, $invitee := $Invitation.Invitees}}
+<table style="margin-top:20px"
+<tr><td>First Name:</td><td><b>{{$invitee.Person.FirstName}}</b></td></tr>
+<tr><td>Last Name:</td><td><b>{{$invitee.Person.LastName}}</b></td></tr
+<tr><td>Nickname:</td><td><b>{{$invitee.Person.NickName}}</b></td></tr>
+</table>
+{{end}}
+*/}}

@@ -84,7 +84,7 @@
     var drivingStatus = $(".drivingPreference").val()
     if (drivingStatus > 0) {
       $(".rideSharingOptions").show()
-      if (drivingStatus == 1 || drivingStatus == 3) {
+      if (drivingStatus == 2 || drivingStatus == 4) {
         $(".drivers").show();
       } else {
         $(".drivers").hide();
@@ -110,8 +110,8 @@
     $(".personal").hide();
     $(".food").hide();
 
-    $(".housingPreference").val("{{.Invitation.Housing}}")
-    $(".drivingPreference").val("{{.Invitation.Driving}}")
+    $(".housingPreference").val("{{.Invitation.Housing.Preference}}")
+    $(".drivingPreference").val("{{.Invitation.Driving.Preference}}")
     for (var i=0; i < {{(len .Invitation.Invitees)}}; i++) {
         processRsvpStatus(i);
     } 
@@ -176,7 +176,7 @@ function validate(form) {
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
              <span class="invitationPersonHeading">{{.Person.FullName}}</span>
 	     <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}})">
-	       {{if not $RsvpStatus.ShortDescription}}<option value="-1" selected>-- Will you be joining us? --</option>{{end}}
+               <option value="-1"{{if not $RsvpStatus}} selected{{end}}>-- Will you be joining us? --</option>
 	       {{range $Invitation.Event.RsvpStatuses}}
 	         <option value="{{.}}"
                    {{if and $RsvpStatus.ShortDescription (eq $RsvpStatus.Status .)}}selected{{end}}
