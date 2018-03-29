@@ -8,9 +8,10 @@
 {{end}}
 
 {{define "rsvpconfirmation_html"}}
-
-  <table>
     {{$Invitation := .RealInvitation}}
+    {{$AllPronouns := .AllPronouns}}
+  <table>
+
     {{range $i, $invitee := $Invitation.Invitees}}
       {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
       <tr>
@@ -51,16 +52,24 @@
 <tr><td style="vertical-align:top">Travel notes:</td><td><b>{{$Invitation.TravelNotes}}</b></td></tr>
 {{end}}
 </table>
-{{end}}
 
-{{/*
-Invitees:
+
+
+<h3>Invitees</h3>
 
 {{range $i, $invitee := $Invitation.Invitees}}
-<table style="margin-top:20px"
+<h4>{{$invitee.Person.FullName}}</h4>
+<table style="margin:0px 0px 20px 30px">
 <tr><td>First Name:</td><td><b>{{$invitee.Person.FirstName}}</b></td></tr>
-<tr><td>Last Name:</td><td><b>{{$invitee.Person.LastName}}</b></td></tr
-<tr><td>Nickname:</td><td><b>{{$invitee.Person.NickName}}</b></td></tr>
+<tr><td>Last Name:</td><td><b>{{$invitee.Person.LastName}}</b></td></tr>
+<tr><td>Nickname:</td><td><b>{{$invitee.Person.Nickname}}</b></td></tr>
+<tr><td>Pronouns:</td><td><b>{{index $AllPronouns $invitee.Person.Pronouns}}</b></td></tr>
+<tr><td>Email:</td><td><b>{{$invitee.Person.Email}}</b></td></tr>
+<tr><td>Telephone:</td><td><b>{{$invitee.Person.Telephone}}</b></td></tr>
+<tr><td>Address:</td><td><b>{{$invitee.Person.Address}}</b></td></tr>
+<tr><td></td><td><b></b></td></tr>
+<tr><td></td><td><b></b></td></tr>
 </table>
 {{end}}
-*/}}
+
+{{end}}
