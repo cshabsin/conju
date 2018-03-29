@@ -43,7 +43,7 @@ func (re RedirectError) Error() string {
 func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 	getters := Getters{make([]Getter, 0)}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-		wrw := WrappedResponseWriter{w, false}
+		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
 		if err != nil {
 			http.Error(wrw, err.Error(), http.StatusInternalServerError)
@@ -76,7 +76,7 @@ func (g *Getters) Needs(getter Getter) *Getters {
 // already written the header (in which case emit a warning or
 // something since the change to the value will not be saved.
 func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
-	if w.ResponseWriter.HasWrittenHeader {
+	if w.ResponseWriter.HasWrittenHeader() {
 		log.Errorf(w.Context, "SetSessionValue called after header written. key %s, value %v", key, value)
 	}
 	w.Session.Values[key] = value
@@ -84,7 +84,7 @@ func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
 
 // Call SaveSession before writing any output to writer.
 func (w *WrappedRequest) SaveSession() error {
-	if w.ResponseWriter.HasWrittenHeader {
+	if w.ResponseWriter.HasWrittenHeader() {
 		log.Errorf(w.Context, "SaveSession called after header written.")
 	}
 	return w.Session.Save(w.Request, w.ResponseWriter)
@@ -110,11 +110,17 @@ func (w *WrappedRequest) RetrieveKeyFromSession(values_field string) (*datastore
 /// WrappedResponseWriter simply records when the header has been
 /// written, so SetSessionValue can check and error when this has
 /// occurred.
-//
-// TODO(cshabsin): Figure out if this is working at all - I think it's not.
 type WrappedResponseWriter struct {
 	http.ResponseWriter
-	HasWrittenHeader bool
+	stats *responseWriterStats
+}
+
+type responseWriterStats struct {
+	hasWrittenHeader bool
+}
+
+func NewWrappedResponseWriter(w http.ResponseWriter) WrappedResponseWriter {
+	return WrappedResponseWriter{w, &responseWriterStats{false}}
 }
 
 func (wrw WrappedResponseWriter) Header() http.Header {
@@ -122,11 +128,15 @@ func (wrw WrappedResponseWriter) Header() http.Header {
 }
 
 func (wrw WrappedResponseWriter) Write(b []byte) (int, error) {
-	wrw.HasWrittenHeader = true
+	wrw.stats.hasWrittenHeader = true
 	return wrw.ResponseWriter.Write(b)
 }
 
 func (wrw WrappedResponseWriter) WriteHeader(statuscode int) {
-	wrw.HasWrittenHeader = true
+	wrw.stats.hasWrittenHeader = true
 	wrw.ResponseWriter.WriteHeader(statuscode)
+}
+
+func (wrw WrappedResponseWriter) HasWrittenHeader() bool {
+	return wrw.stats.hasWrittenHeader
 }
