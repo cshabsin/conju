@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/sessions"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 // TODO(cshabsin): Figure out how to store the secret in the datastore
@@ -15,7 +16,7 @@ import (
 var store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
 
 type WrappedRequest struct {
-	http.ResponseWriter
+	ResponseWriter WrappedResponseWriter
 	*http.Request
 	context.Context
 	*sessions.Session
@@ -42,21 +43,22 @@ func (re RedirectError) Error() string {
 func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 	getters := Getters{make([]Getter, 0)}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(wrw, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		ctx := appengine.NewContext(r)
-		wr := WrappedRequest{w, r, ctx, sess, false, nil, nil, nil}
+		wr := WrappedRequest{wrw, r, ctx, sess, false, nil, nil, nil}
 		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
-					http.Redirect(w, r, redirect.Target, http.StatusFound)
+					http.Redirect(wrw, r, redirect.Target, http.StatusFound)
 					return
 				}
 				// TODO: Probably not internal server error
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(wrw, err.Error(), http.StatusInternalServerError)
 				return
 			}
 		}
@@ -74,11 +76,17 @@ func (g *Getters) Needs(getter Getter) *Getters {
 // already written the header (in which case emit a warning or
 // something since the change to the value will not be saved.
 func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
-	w.Values[key] = value
+	if w.ResponseWriter.HasWrittenHeader() {
+		log.Errorf(w.Context, "SetSessionValue called after header written. key %s, value %v", key, value)
+	}
+	w.Session.Values[key] = value
 }
 
 // Call SaveSession before writing any output to writer.
 func (w *WrappedRequest) SaveSession() error {
+	if w.ResponseWriter.HasWrittenHeader() {
+		log.Errorf(w.Context, "SaveSession called after header written.")
+	}
 	return w.Session.Save(w.Request, w.ResponseWriter)
 }
 
@@ -97,4 +105,38 @@ func (w *WrappedRequest) RetrieveKeyFromSession(values_field string) (*datastore
 	}
 	return datastore.DecodeKey(encoded_key)
 
+}
+
+/// WrappedResponseWriter simply records when the header has been
+/// written, so SetSessionValue can check and error when this has
+/// occurred.
+type WrappedResponseWriter struct {
+	http.ResponseWriter
+	stats *responseWriterStats
+}
+
+type responseWriterStats struct {
+	hasWrittenHeader bool
+}
+
+func NewWrappedResponseWriter(w http.ResponseWriter) WrappedResponseWriter {
+	return WrappedResponseWriter{w, &responseWriterStats{false}}
+}
+
+func (wrw WrappedResponseWriter) Header() http.Header {
+	return wrw.ResponseWriter.Header()
+}
+
+func (wrw WrappedResponseWriter) Write(b []byte) (int, error) {
+	wrw.stats.hasWrittenHeader = true
+	return wrw.ResponseWriter.Write(b)
+}
+
+func (wrw WrappedResponseWriter) WriteHeader(statuscode int) {
+	wrw.stats.hasWrittenHeader = true
+	wrw.ResponseWriter.WriteHeader(statuscode)
+}
+
+func (wrw WrappedResponseWriter) HasWrittenHeader() bool {
+	return wrw.stats.hasWrittenHeader
 }
