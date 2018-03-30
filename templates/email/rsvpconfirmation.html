@@ -10,6 +10,7 @@
 {{define "rsvpconfirmation_html"}}
     {{$Invitation := .RealInvitation}}
     {{$AllPronouns := .AllPronouns}}
+    {{$AllFoodRestrictions := .AllFoodRestrictions}}
   <table>
 
     {{range $i, $invitee := $Invitation.Invitees}}
@@ -58,18 +59,21 @@
 <h3>Invitees</h3>
 
 {{range $i, $invitee := $Invitation.Invitees}}
-<h4>{{$invitee.Person.FullName}}</h4>
-<table style="margin:0px 0px 20px 30px">
-<tr><td>First Name:</td><td><b>{{$invitee.Person.FirstName}}</b></td></tr>
-<tr><td>Last Name:</td><td><b>{{$invitee.Person.LastName}}</b></td></tr>
-<tr><td>Nickname:</td><td><b>{{$invitee.Person.Nickname}}</b></td></tr>
-<tr><td>Pronouns:</td><td><b>{{index $AllPronouns $invitee.Person.Pronouns}}</b></td></tr>
-<tr><td>Email:</td><td><b>{{$invitee.Person.Email}}</b></td></tr>
-<tr><td>Telephone:</td><td><b>{{$invitee.Person.Telephone}}</b></td></tr>
-<tr><td>Address:</td><td><b>{{$invitee.Person.Address}}</b></td></tr>
-<tr><td></td><td><b></b></td></tr>
-<tr><td></td><td><b></b></td></tr>
-</table>
+  {{with $invitee.Person}}
+    <h4>{{.FullName}}</h4>
+    <table style="margin:0px 0px 20px 30px">
+      <tr><td>First Name:</td><td><b>{{.FirstName}}</b></td></tr>
+      <tr><td>Last Name:</td><td><b>{{.LastName}}</b></td></tr>
+      <tr><td>Nickname:</td><td><b>{{.Nickname}}</b></td></tr>
+      <tr><td>Pronouns:</td><td><b>{{PronounString .Pronouns}}</b></td></tr>
+      <tr><td>Email:</td><td><b>{{.Email}}</b></td></tr>
+      <tr><td>Telephone:</td><td><b>{{.Telephone}}</b></td></tr>
+      <tr><td>Address:</td><td><b>{{.Address}}</b></td></tr>
+      <tr><td>Birthdate:</td><td><b>{{if not .Birthdate.IsZero}}{{.Birthdate.Format "01/02/2006"}}{{end}}{{if .NeedBirthdate}} NEED BIRTHDATE{{end}}</b></td></tr>
+      <tr><td>Food Restrictions:</td><td><b>{{range $i, $restriction := .FoodRestrictions}}{{with (index $AllFoodRestrictions $restriction)}}{{.Description}}{{end}}{{end}}</b></td></tr>
+      <tr><td>Food Notes:</td><td>{{.FoodNotes}}</td></tr>
+    </table>
+  {{end}}
 {{end}}
 
 {{end}}

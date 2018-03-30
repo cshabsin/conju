@@ -485,6 +485,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	functionMap := template.FuncMap{
 		"HasHousingPreference": RealInvHasHousingPreference,
+		"PronounString":        GetPronouns,
 	}
 
 	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
@@ -495,10 +496,12 @@ func handleSaveInvitation(wr WrappedRequest) {
 		RealInvitation               RealizedInvitation
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllPronouns                  []PronounSet
+		AllFoodRestrictions          []FoodRestrictionTag
 	}{
 		RealInvitation:               realizedInvitation,
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllPronouns:                  []PronounSet{They, She, He, Zie},
+		AllFoodRestrictions:          GetAllFoodRestrictionTags(),
 	}
 
 	header := MailHeaderInfo{
