@@ -11,8 +11,19 @@
     {{$Invitation := .RealInvitation}}
     {{$AllPronouns := .AllPronouns}}
     {{$AllFoodRestrictions := .AllFoodRestrictions}}
-  <table>
 
+{{if gt (len .AdditionalPeople) 0}} 
+<table style="margin-bottom:20px"><tr>
+<td style="vertical-align:top">Requested additional guests:</td>
+<td>  
+  {{range .AdditionalPeople}}
+    <b>{{.Name}}</b> -- {{.Description}}<br>
+  {{end}}
+</td>
+</tr></table>
+{{end}}
+
+  <table>
     {{range $i, $invitee := $Invitation.Invitees}}
       {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
       <tr>
@@ -68,10 +79,10 @@
       <tr><td>Pronouns:</td><td><b>{{PronounString .Pronouns}}</b></td></tr>
       <tr><td>Email:</td><td><b>{{.Email}}</b></td></tr>
       <tr><td>Telephone:</td><td><b>{{.Telephone}}</b></td></tr>
-      <tr><td>Address:</td><td><b>{{.Address}}</b></td></tr>
+      <tr><td style="vertical-align:top">Address:</td><td><b>{{.Address}}</b></td></tr>
       <tr><td>Birthdate:</td><td><b>{{if not .Birthdate.IsZero}}{{.Birthdate.Format "01/02/2006"}}{{end}}{{if .NeedBirthdate}} NEED BIRTHDATE{{end}}</b></td></tr>
       <tr><td>Food Restrictions:</td><td><b>{{range $i, $restriction := .FoodRestrictions}}{{with (index $AllFoodRestrictions $restriction)}}{{.Description}}{{end}}{{end}}</b></td></tr>
-      <tr><td>Food Notes:</td><td>{{.FoodNotes}}</td></tr>
+      <tr><td style="vertical-align:top">Food Notes:</td><td>{{.FoodNotes}}</td></tr>
     </table>
   {{end}}
 {{end}}

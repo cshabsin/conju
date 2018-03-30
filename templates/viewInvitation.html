@@ -94,6 +94,26 @@
     }
   }
 
+  function addNewPersonContainer() {
+    $("#newPersonCollectionContainer").append("<div class=\"newPersonContainer\">" + 
+      "Name: <input type=\"text\" name=\"newPersonName\">" +
+      "Who is this person? <input type=\"text\" name=\"newPersonDescription\"/></div>");
+      adjustAddPersonInputs();
+  }
+
+  function adjustAddPersonInputs() {
+      $("#newPersonCollectionContainer").show();
+      if ($(".newPersonContainer").length == 0) return;
+      if ($(".newPersonContainer").length > 1) {
+        $(".newPersonInstructionsSingular").hide();
+        $(".newPersonInstructionsPlural").show();
+      } else {
+        $(".newPersonCollectionContainer").append($("#newPersonContainer").clone())
+        $(".newPersonInstructionsPlural").hide();
+        $(".newPersonInstructionsSingular").show();    
+      }
+  }
+
   $( document ).ready(function() {
     adjustArrows();
 
@@ -109,6 +129,8 @@
   
     $(".personal").hide();
     $(".food").hide();
+
+    adjustAddPersonInputs();
 
     $(".housingPreference").val("{{.Invitation.Housing.Preference}}")
     $(".drivingPreference").val("{{.Invitation.Driving.Preference}}")
@@ -223,6 +245,13 @@ function validate(form) {
        </tr>
     {{end}}
   </table>
+
+  <div id="newPersonCollectionContainer" class="hidden"></div> 
+  <div class="newPersonInstructionsSingular hidden">We'll let you know when this person has been added to your invitation.</div>
+  <div class="newPersonInstructionsPlural hidden">We'll let you know when these people have been added to your invitation.</div>
+
+  <input type="button" class="addNewPersonButton" onclick="addNewPersonContainer()" value="Add someone to your invitation"><br>
+
   <div class="lodgingFormContainer hidden">
     <h4>Housing Preferences</h4>
     Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.<br>

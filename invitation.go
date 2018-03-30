@@ -479,9 +479,26 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	savePeople(wr)
 
+	type NewPersonInfo struct {
+		Name        string
+		Description string
+	}
+	newPeopleNames := wr.Request.Form["newPersonName"]
+	newPeopleDescs := wr.Request.Form["newPersonDescription"]
+
+	var additionalPeople []NewPersonInfo
+	for i, name := range newPeopleNames {
+		additionalPeople = append(additionalPeople, NewPersonInfo{Name: name, Description: newPeopleDescs[i]})
+	}
+
+	newPeopleSubjectFragment := ""
+	if len(additionalPeople) > 0 {
+		newPeopleSubjectFragment = " ADDITION REQUESTED,"
+	}
+
 	var e Event
 	datastore.Get(ctx, invitation.Event, &e)
-	subject := fmt.Sprintf("%s: RSVP from %s", e.ShortName, CollectiveAddress(invitees, Informal))
+	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
 	functionMap := template.FuncMap{
 		"HasHousingPreference": RealInvHasHousingPreference,
@@ -497,11 +514,13 @@ func handleSaveInvitation(wr WrappedRequest) {
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllPronouns                  []PronounSet
 		AllFoodRestrictions          []FoodRestrictionTag
+		AdditionalPeople             []NewPersonInfo
 	}{
 		RealInvitation:               realizedInvitation,
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllPronouns:                  []PronounSet{They, She, He, Zie},
 		AllFoodRestrictions:          GetAllFoodRestrictionTags(),
+		AdditionalPeople:             additionalPeople,
 	}
 
 	header := MailHeaderInfo{
