@@ -74,9 +74,9 @@
     }
 
     if (anyoneMeetsCriteria(attending)) {
-      $(".rideFormContainer").show();
+      $(".anyAttendeesContainer").show();
     } else {
-      $(".rideFormContainer").hide();
+      $(".anyAttendeesContainer").hide();
     }
   }
 
@@ -85,12 +85,17 @@
     if (drivingStatus > 1) {
       $(".rideSharingOptions").show()
       if (drivingStatus == 2 || drivingStatus == 4) {
-        $(".drivers").show();
+        $(".sharingDrivers").show();
       } else {
-        $(".drivers").hide();
+        $(".sharingDrivers").hide();
       }
     } else {
       $(".rideSharingOptions").hide()
+    }
+    if (drivingStatus != 3 && drivingStatus != 0) {
+      $(".allDrivers").show()
+    } else {
+      $(".allDrivers").hide()
     }
   }
 
@@ -134,6 +139,7 @@
 
     $(".housingPreference").val("{{.Invitation.Housing.Preference}}")
     $(".drivingPreference").val("{{.Invitation.Driving.Preference}}")
+    $("#parking_{{.Invitation.Parking.Parking}}").prop("checked", true);
     for (var i=0; i < {{(len .Invitation.Invitees)}}; i++) {
         processRsvpStatus(i);
     } 
@@ -190,6 +196,7 @@ function validate(form) {
     {{$Invitation := .Invitation}}
     {{$FormInfoMap := .FormInfoMap}}
     {{$AllRsvpStatuses := .AllRsvpStatuses}}
+    {{$AllParkingTypes := .AllParkingTypes}}
     {{range  $i, $invitee := .Invitation.Invitees}}
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
@@ -292,7 +299,7 @@ function validate(form) {
 </td></tr></table>
   </div>
 
-  <div class="rideFormContainer hidden">
+  <div class="anyAttendeesContainer hidden">
     <h4>Travel information</h4>
     How do you feel about ride sharing?  <select class="drivingPreference" id="id_driving_preference" onchange="adjustDrivingFields(this.value);" name="drivingPreference">
     {{range $i, $pref := .AllDrivingPreferences}}
@@ -301,16 +308,27 @@ function validate(form) {
 </select><br>
     <div class="rideSharingOptions hidden">
       <table>
-      <tr><td>Where are you starting from?</td><td><input type="text" name="leaveFrom" id="id_leaving_from" value="{{$Invitation.LeaveFrom}}"/></td></tr>
-    <tr><td>When would you ideally like to leave?</td><td><input type="text" name="leaveTime" id="id_leaving_around" value="{{$Invitation.LeaveTime}}" /></td></tr>
-    <tr class="drivers"><td>How many extra passengers can you take<br> (in addition to {{if $single}}yourself{{else}}yourselves{{end}})?</td><td style="vertical-align:top">
-     <input type="text" name="additionalPassengers" id="id_additional_passengers" value="{{$Invitation.AdditionalPassengers}}" /></td></tr>
-    </table>
+        <tr><td>Where are you starting from?</td><td><input type="text" name="leaveFrom" id="id_leaving_from" value="{{$Invitation.LeaveFrom}}"/></td></tr>
+        <tr><td>When would you ideally like to leave?</td><td><input type="text" name="leaveTime" id="id_leaving_around" value="{{$Invitation.LeaveTime}}" /></td></tr>
+        <tr class="sharingDrivers"><td>How many extra passengers can you take<br> (in addition to {{if $single}}yourself{{else}}yourselves{{end}})?</td><td style="vertical-align:top">
+          <input type="text" name="additionalPassengers" id="id_additional_passengers" value="{{$Invitation.AdditionalPassengers}}" /></td></tr>
+      </table>
     </div>
+    <div class="allDrivers hidden">
+      {{range $i, $parking := $AllParkingTypes}}
+      <input type="radio" id="parking_{{$i}}" name="parking" value="{{.Parking}}">{{if $single}}{{$parking.SinglePersonDescription}}{{else}}{{$parking.MultiplePeopleDescription}}{{end}}<br>
+      {{end}}
+    </div>
+
     <div style="margin-top:20px">
-    Anything else we should know about your travel plans?
+      Anything else we should know about your travel plans?
+    </div>
     <textarea class="freeformtextfield" id="id_travel_info" name="travelNotes">{{$Invitation.TravelNotes}}</textarea>
-    </div>    
+
+    <h4>Anything else?</h4>
+    Anything else you'd like us to know in advance of the weekend?<br>
+    <textarea class="freeformtextfield" name="otherInfo">{{$Invitation.OtherInfo}}</textarea>
+  <div class="invitationCloser">{{$Invitation.Event.InvitationClosingText}}</div>
   </div>
 
   <input class="emphasizedSubmit" type="submit" value="Submit">

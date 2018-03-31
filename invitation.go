@@ -27,10 +27,12 @@ type Invitation struct {
 	HousingNotes              string
 	HousingPreferenceBooleans int
 	Driving                   DrivingPreference
+	Parking                   ParkingType
 	LeaveFrom                 string
 	LeaveTime                 string
 	AdditionalPassengers      string
 	TravelNotes               string
+	OtherInfo                 string
 }
 
 func (inv *Invitation) Load(ps []datastore.Property) error {
@@ -86,6 +88,10 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 			Value: int64(inv.Driving),
 		},
 		{
+			Name:  "Parking",
+			Value: int64(inv.Parking),
+		},
+		{
 			Name:  "LeaveFrom",
 			Value: inv.LeaveFrom,
 		},
@@ -100,6 +106,9 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		{
 			Name:  "TravelNotes",
 			Value: inv.TravelNotes,
+		},
+		{Name: "OtherInfo",
+			Value: inv.OtherInfo,
 		},
 	}
 
@@ -381,6 +390,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllHousingPreferences        []HousingPreferenceInfo
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllDrivingPreferences        []DrivingPreferenceInfo
+		AllParkingTypes              []ParkingTypeInfo
 		InvitationHasChildren        bool
 	}{
 		Invitation:                   realizedInvitation,
@@ -389,6 +399,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllHousingPreferences:        GetAllHousingPreferences(),
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllDrivingPreferences:        GetAllDrivingPreferences(),
+		AllParkingTypes:              GetAllParkingTypes(),
 		InvitationHasChildren:        invitation.HasChildren(ctx),
 	}
 
@@ -460,10 +471,17 @@ func handleSaveInvitation(wr WrappedRequest) {
 	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
 	invitation.Driving = DrivingPreference(drivingPreference)
 
+	parkingType, _ := strconv.Atoi(wr.Request.Form.Get("parking"))
+	if parkingType >= 0 {
+		pt := ParkingType(parkingType)
+		invitation.Parking = pt
+	}
+
 	invitation.LeaveFrom = wr.Request.Form.Get("leaveFrom")
 	invitation.LeaveTime = wr.Request.Form.Get("leaveTime")
 	invitation.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
 	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
+	invitation.OtherInfo = wr.Request.Form.Get("otherInfo")
 
 	_, err := datastore.Put(ctx, invitationKey, &invitation)
 	if err != nil {

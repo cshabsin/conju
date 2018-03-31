@@ -15,24 +15,26 @@ type CurrentEvent struct {
 }
 
 type Event struct {
-	EventId      int // this can get deleted after all the data is imported
-	Name         string
-	ShortName    string
-	StartDate    time.Time
-	EndDate      time.Time
-	RsvpStatuses []RsvpStatus
-	Current      bool
+	EventId               int // this can get deleted after all the data is imported
+	Name                  string
+	ShortName             string
+	StartDate             time.Time
+	EndDate               time.Time
+	RsvpStatuses          []RsvpStatus
+	InvitationClosingText string
+	Current               bool
 }
 
-func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, rsvpStatuses []RsvpStatus, current bool) (*datastore.Key, error) {
+func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, rsvpStatuses []RsvpStatus, invitationClosingText string, current bool) (*datastore.Key, error) {
 	e := Event{
-		EventId:      id,
-		Name:         name,
-		ShortName:    shortName,
-		StartDate:    startDate,
-		EndDate:      endDate,
-		RsvpStatuses: rsvpStatuses,
-		Current:      current,
+		EventId:               id,
+		Name:                  name,
+		ShortName:             shortName,
+		StartDate:             startDate,
+		EndDate:               endDate,
+		RsvpStatuses:          rsvpStatuses,
+		InvitationClosingText: invitationClosingText,
+		Current:               current,
 	}
 	return datastore.Put(ctx, datastore.NewIncompleteKey(
 		ctx, "Event", nil), &e)
