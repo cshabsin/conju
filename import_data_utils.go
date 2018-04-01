@@ -215,6 +215,10 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 
 	scanner := bufio.NewScanner(rsvpFile)
 	processedHeader := false
+
+	all_lcs := make([]LoginCode, 0)
+	all_lc_keys := make([]*datastore.Key, 0)
+
 	for scanner.Scan() {
 		if processedHeader {
 			rsvpRow := scanner.Text()
@@ -264,9 +268,20 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			}
 
 			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s\n", printInvitation(ctx, *invitationKey, invitation))))
+			if eventMap[eventId].Current {
+				for _, personKey := range personKeys {
+					lc_key, lc := MakeLoginCode(ctx, eventKey, invitationKey, personKey)
+					all_lcs = append(all_lcs, *lc)
+					all_lc_keys = append(all_lc_keys, lc_key)
+				}
+			}
 
 		}
 		processedHeader = true
+	}
+	_, err = datastore.PutMulti(ctx, all_lc_keys, all_lcs)
+	if err != nil {
+		log.Errorf(ctx, "PutMulti(LoginKeys): %v", err)
 	}
 
 	w.Write([]byte("\n"))

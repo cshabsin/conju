@@ -3,6 +3,7 @@ package conju
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 
 	"google.golang.org/appengine/datastore"
@@ -51,18 +52,23 @@ func randomLoginCodeString() string {
 	return string(b)
 }
 
-func CreateLoginCode(ctx context.Context, event *datastore.Key,
-	invitation *datastore.Key, person *datastore.Key) (string, *datastore.Key, error) {
+func MakeLoginCode(ctx context.Context, event *datastore.Key,
+	invitation *datastore.Key, person *datastore.Key) (*datastore.Key, *LoginCode) {
+	lcs := randomLoginCodeString()
+	lc := LoginCode{lcs, invitation, person}
+	return datastore.NewKey(ctx, "LoginCode", lcs, 0, event), &lc
+}
+
+func CreateAndSaveLoginCode(ctx context.Context, event *datastore.Key,
+	invitation *datastore.Key, person *datastore.Key) (*LoginCode, *datastore.Key, error) {
 	// TODO: figure out whether the person already has a login code for this invitation/event.
 	// TODO: guard against overwriting existing login codes (in case of a duplicate random value)
-	lcs := randomLoginCodeString()
-	incomplete_key := datastore.NewKey(ctx, "LoginCode", lcs, 0, event)
-	lc := LoginCode{lcs, invitation, person}
-	key, err := datastore.Put(ctx, incomplete_key, lc)
+	lc_key, lc := MakeLoginCode(ctx, event, invitation, person)
+	lc_key, err := datastore.Put(ctx, lc_key, lc)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
-	return lcs, key, nil
+	return lc, lc_key, nil
 }
 
 type LoginInfo struct {
@@ -80,23 +86,24 @@ func LoginGetter(wr *WrappedRequest) error {
 	if !ok {
 		return RedirectError{"/login"}
 	}
-	var lc *LoginCode
-	err := datastore.Get(wr.Context, datastore.NewKey(wr.Context, "LoginCode", code, 0, wr.EventKey), lc)
+	var lc LoginCode
+	k := datastore.NewKey(wr.Context, "LoginCode", code, 0, wr.EventKey)
+	err := datastore.Get(wr.Context, k, &lc)
 	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("LoginGetter.GetLoginCode (%s, %v, %s): %v", code, wr.EventKey, k.Encode(), err))
 	}
-	var invitation *Invitation
-	err = datastore.Get(wr.Context, lc.Invitation, invitation)
+	var invitation Invitation
+	err = datastore.Get(wr.Context, lc.Invitation, &invitation)
 	if err != nil {
-		return err
-	}
-
-	var person *Person
-	err = datastore.Get(wr.Context, lc.Person, person)
-	if err != nil {
-		return err
+		return errors.New(fmt.Sprintf("LoginGetter.GetInvitation: %v", err))
 	}
 
-	wr.LoginInfo = &LoginInfo{lc.Invitation, invitation, lc.Person, person}
+	var person Person
+	err = datastore.Get(wr.Context, lc.Person, &person)
+	if err != nil {
+		return errors.New(fmt.Sprintf("LoginGetter.GetPerson: %v", err))
+	}
+
+	wr.LoginInfo = &LoginInfo{lc.Invitation, &invitation, lc.Person, &person}
 	return nil
 }

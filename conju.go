@@ -1,8 +1,6 @@
 package conju
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func init() {
 	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html")).Needs(EventGetter)
@@ -22,6 +20,7 @@ func init() {
 
 	AddSessionHandler("/needsLogin", handleIncrement).Needs(EventGetter).Needs(LoginGetter)
 	AddSessionHandler("/login", handleLogin).Needs(EventGetter)
+	AddSessionHandler("/checkLogin", checkLogin).Needs(EventGetter).Needs(LoginGetter)
 }
 
 func handleIncrement(wr WrappedRequest) {
