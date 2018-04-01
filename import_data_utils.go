@@ -69,7 +69,10 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			for _, rsvpStatusString := range rsvpStatusStrings {
 				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
 			}
-			invitationClosingText := fields[7]
+			invitationClosingText, ok := fields[7]
+			if !ok {
+				invitationClosingText = ""
+			}
 
 			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate, rsvpStatuses, invitationClosingText,
 				fields[5] == "1")
