@@ -4,6 +4,8 @@ package conju
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"google.golang.org/appengine/datastore"
@@ -63,7 +65,7 @@ func EventGetter(wr *WrappedRequest) error {
 	keys, err = q.GetAll(wr.Context, &events)
 	if len(keys) > 1 {
 		log.Infof(wr.Context, "found %d current events", len(keys))
-		return err
+		return errors.New(fmt.Sprintf("found more than one current event (%d)", len(keys)))
 	}
 	e = events[0]
 	key = keys[0]
