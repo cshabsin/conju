@@ -434,3 +434,37 @@ input[type="radio"] {margin:7px}
     border: 1px solid #1F1497;
     margin: 10px 0px 0px 30px;
 }
+
+.newPersonContainer {
+    margin: 10px 0px;
+}
+
+.newPersonContainer input:nth-of-type(1) {
+    margin-right: 30px;
+}
+
+
+#newPersonCollectionContainer {
+    margin: 40px 0px 20px 0px;
+}
+
+.newPersonInstructionsSingular, .newPersonInstructionsPlural {
+    margin-top:20px;
+    margin-bottom:20px;
+}
+
+.addNewPersonButton {
+    font-size: 120%;
+}
+
+.allDrivers {
+    margin-top:20px;
+}
+
+.anyAttendeesContainer textarea {
+    margin-top:15px;
+}
+
+.invitationCloser {
+    margin-top:30px;
+}

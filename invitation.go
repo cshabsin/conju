@@ -27,10 +27,12 @@ type Invitation struct {
 	HousingNotes              string
 	HousingPreferenceBooleans int
 	Driving                   DrivingPreference
+	Parking                   ParkingType
 	LeaveFrom                 string
 	LeaveTime                 string
 	AdditionalPassengers      string
 	TravelNotes               string
+	OtherInfo                 string
 }
 
 func (inv *Invitation) Load(ps []datastore.Property) error {
@@ -86,6 +88,10 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 			Value: int64(inv.Driving),
 		},
 		{
+			Name:  "Parking",
+			Value: int64(inv.Parking),
+		},
+		{
 			Name:  "LeaveFrom",
 			Value: inv.LeaveFrom,
 		},
@@ -100,6 +106,9 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		{
 			Name:  "TravelNotes",
 			Value: inv.TravelNotes,
+		},
+		{Name: "OtherInfo",
+			Value: inv.OtherInfo,
 		},
 	}
 
@@ -381,6 +390,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllHousingPreferences        []HousingPreferenceInfo
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllDrivingPreferences        []DrivingPreferenceInfo
+		AllParkingTypes              []ParkingTypeInfo
 		InvitationHasChildren        bool
 	}{
 		Invitation:                   realizedInvitation,
@@ -389,6 +399,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllHousingPreferences:        GetAllHousingPreferences(),
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllDrivingPreferences:        GetAllDrivingPreferences(),
+		AllParkingTypes:              GetAllParkingTypes(),
 		InvitationHasChildren:        invitation.HasChildren(ctx),
 	}
 
@@ -460,10 +471,17 @@ func handleSaveInvitation(wr WrappedRequest) {
 	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
 	invitation.Driving = DrivingPreference(drivingPreference)
 
+	parkingType, _ := strconv.Atoi(wr.Request.Form.Get("parking"))
+	if parkingType >= 0 {
+		pt := ParkingType(parkingType)
+		invitation.Parking = pt
+	}
+
 	invitation.LeaveFrom = wr.Request.Form.Get("leaveFrom")
 	invitation.LeaveTime = wr.Request.Form.Get("leaveTime")
 	invitation.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
 	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
+	invitation.OtherInfo = wr.Request.Form.Get("otherInfo")
 
 	_, err := datastore.Put(ctx, invitationKey, &invitation)
 	if err != nil {
@@ -479,12 +497,30 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	savePeople(wr)
 
+	type NewPersonInfo struct {
+		Name        string
+		Description string
+	}
+	newPeopleNames := wr.Request.Form["newPersonName"]
+	newPeopleDescs := wr.Request.Form["newPersonDescription"]
+
+	var additionalPeople []NewPersonInfo
+	for i, name := range newPeopleNames {
+		additionalPeople = append(additionalPeople, NewPersonInfo{Name: name, Description: newPeopleDescs[i]})
+	}
+
+	newPeopleSubjectFragment := ""
+	if len(additionalPeople) > 0 {
+		newPeopleSubjectFragment = " ADDITION REQUESTED,"
+	}
+
 	var e Event
 	datastore.Get(ctx, invitation.Event, &e)
-	subject := fmt.Sprintf("%s: RSVP from %s", e.ShortName, CollectiveAddress(invitees, Informal))
+	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
 	functionMap := template.FuncMap{
 		"HasHousingPreference": RealInvHasHousingPreference,
+		"PronounString":        GetPronouns,
 	}
 
 	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
@@ -495,10 +531,14 @@ func handleSaveInvitation(wr WrappedRequest) {
 		RealInvitation               RealizedInvitation
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllPronouns                  []PronounSet
+		AllFoodRestrictions          []FoodRestrictionTag
+		AdditionalPeople             []NewPersonInfo
 	}{
 		RealInvitation:               realizedInvitation,
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllPronouns:                  []PronounSet{They, She, He, Zie},
+		AllFoodRestrictions:          GetAllFoodRestrictionTags(),
+		AdditionalPeople:             additionalPeople,
 	}
 
 	header := MailHeaderInfo{

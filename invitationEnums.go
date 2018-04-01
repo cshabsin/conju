@@ -283,3 +283,43 @@ func GetAllDrivingPreferences() []DrivingPreferenceInfo {
 
 	return toReturn
 }
+
+type ParkingType int
+
+const (
+	NoElectric = iota
+	PluginHybrid
+	PureElectric
+)
+
+type ParkingTypeInfo struct {
+	Parking                   ParkingType
+	SinglePersonDescription   string
+	MultiplePeopleDescription string
+	ReportDescription         string
+}
+
+func GetAllParkingTypes() []ParkingTypeInfo {
+	var toReturn []ParkingTypeInfo
+
+	toReturn = append(toReturn, ParkingTypeInfo{
+		Parking:                   NoElectric,
+		SinglePersonDescription:   "My vehicle doesn't need to be charged.",
+		MultiplePeopleDescription: "Our vehicle doesn't need to be charged.",
+		ReportDescription:         "No Electric",
+	})
+	toReturn = append(toReturn, ParkingTypeInfo{
+		Parking:                   PluginHybrid,
+		SinglePersonDescription:   "I have a plug-in hybrid and would prefer to charge my car at some point over the weekend.",
+		MultiplePeopleDescription: "We have a plug-in hybrid and would prefer to charge our car at some point over the weekend.",
+		ReportDescription:         "Want Electric",
+	})
+	toReturn = append(toReturn, ParkingTypeInfo{
+		Parking:                   PureElectric,
+		SinglePersonDescription:   "I have a fully-electric vehicle and will need to charge it at some point over the weekend.",
+		MultiplePeopleDescription: "We have a fully-electric vehicle and will need to charge it at some point over the weekend.",
+		ReportDescription:         "Need Electric",
+	})
+
+	return toReturn
+}

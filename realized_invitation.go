@@ -15,10 +15,12 @@ type RealizedInvitation struct {
 	HousingPreferenceBooleans int
 	HousingNotes              string
 	Driving                   DrivingPreferenceInfo
+	Parking                   ParkingTypeInfo
 	LeaveFrom                 string
 	LeaveTime                 string
 	TravelNotes               string
 	AdditionalPassengers      string
+	OtherInfo                 string
 }
 
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
@@ -58,10 +60,12 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		HousingNotes:              invitation.HousingNotes,
 		HousingPreferenceBooleans: invitation.HousingPreferenceBooleans,
 		Driving:                   GetAllDrivingPreferences()[invitation.Driving],
+		Parking:                   GetAllParkingTypes()[invitation.Parking],
 		LeaveFrom:                 invitation.LeaveFrom,
 		LeaveTime:                 invitation.LeaveTime,
 		AdditionalPassengers:      invitation.AdditionalPassengers,
 		TravelNotes:               invitation.TravelNotes,
+		OtherInfo:                 invitation.OtherInfo,
 	}
 
 	return realizedInvitation
