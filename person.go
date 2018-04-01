@@ -32,6 +32,7 @@ type Person struct {
 	FallbackAge      float64
 	NeedBirthdate    bool
 	PrivateComments  string
+	LoginCode        string
 	// these fields can be removed after all the data is ported
 	OldGuestId    int
 	OldInviteeId  int

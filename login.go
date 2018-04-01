@@ -1,8 +1,6 @@
 package conju
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 
@@ -10,31 +8,7 @@ import (
 )
 
 // A LoginCode is a secret string we send to users as part of their
-// Login link. The LoginCode datastore entry is keyed under the
-// StringId "login/<codestring>", with a parent id of an Event
-// ID. That way, an invitation link can continue to work even when
-// the string value is copied from a previous event.
-//
-// When a user navigates to the login link and provides the given code
-// string, the system puts the code string, the Person Key, and the
-// Invitation Key into the associated Session. In subsequent requests,
-// Handlers can apply one of two Getter functions to act on these fields:
-//
-//  - the LoginGetter retrieves the Person and Invitation objects
-//    associated with the session and stores pointers to them in the
-//    WrappedRequest.
-//
-//  - the LoginValidateGetter simply verifies that the LoginCode is
-//    still present in the datastore.
-//
-// Either of these getters will redirect to the login screen if the
-// LoginCode has been removed from the database.
-type LoginCode struct {
-	Code       string
-	Invitation *datastore.Key
-	Person     *datastore.Key
-}
-
+// Login link. It's stored as a string field in the Person object.
 const loginCodeLength = 12
 
 func randomLoginCodeString() string {
@@ -52,25 +26,6 @@ func randomLoginCodeString() string {
 	return string(b)
 }
 
-func MakeLoginCode(ctx context.Context, event *datastore.Key,
-	invitation *datastore.Key, person *datastore.Key) (*datastore.Key, *LoginCode) {
-	lcs := randomLoginCodeString()
-	lc := LoginCode{lcs, invitation, person}
-	return datastore.NewKey(ctx, "LoginCode", "login/"+lcs, 0, event), &lc
-}
-
-func CreateAndSaveLoginCode(ctx context.Context, event *datastore.Key,
-	invitation *datastore.Key, person *datastore.Key) (*LoginCode, *datastore.Key, error) {
-	// TODO: figure out whether the person already has a login code for this invitation/event.
-	// TODO: guard against overwriting existing login codes (in case of a duplicate random value)
-	lc_key, lc := MakeLoginCode(ctx, event, invitation, person)
-	lc_key, err := datastore.Put(ctx, lc_key, lc)
-	if err != nil {
-		return nil, nil, err
-	}
-	return lc, lc_key, nil
-}
-
 type LoginInfo struct {
 	InvitationKey *datastore.Key
 	*Invitation
@@ -78,32 +33,84 @@ type LoginInfo struct {
 	*Person
 }
 
+const loginPage = "/login"
+
+// When a user navigates to the login link and provides the given code
+// string, the system validates the login code against the Person
+// table, and either puts the login code into the session, or writes
+// an error.
+func handleLogin(wr WrappedRequest) {
+	url_q := wr.URL.Query()
+	lc, ok := url_q["loginCode"]
+	if !ok {
+		wr.ResponseWriter.Write([]byte("Please use the link from your email to log in."))
+		return
+	}
+	count, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).Count(wr.Context)
+	if err != nil {
+		wr.ResponseWriter.Write([]byte("Login not recognized."))
+		return
+	}
+	if count == 0 {
+		wr.ResponseWriter.Write([]byte("Login not recognized."))
+		return
+	}
+	wr.SetSessionValue("code", lc[0])
+	wr.SaveSession()
+	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Got loginCode: %s\n", lc[0])))
+}
+
+// LoginGetter validates the login code from the session, looking up
+// the Person with the matching code. Then it finds the Invitation in
+// the current Event (per the WrappedRequest field Event) that
+// references that person. It stores the Person and Invitation (key
+// and value) into the WrappedRequest's LoginInfo.  This getter will
+// redirect to the login screen if the LoginCode is not found in the
+// database.
+//
+// If EventGetter has not been called, LoginGetter calls it.
 func LoginGetter(wr *WrappedRequest) error {
 	if !wr.hasRunEventGetter {
-		return errors.New("LoginGetter called without EventGetter")
+		err := EventGetter(wr)
+		if err != nil {
+			return err
+		}
 	}
 	code, ok := wr.Values["code"].(string)
 	if !ok {
-		return RedirectError{"/login"}
+		return RedirectError{loginPage}
 	}
-	var lc LoginCode
-	k := datastore.NewKey(wr.Context, "LoginCode", "login/"+code, 0, wr.EventKey)
-	err := datastore.Get(wr.Context, k, &lc)
+	var people []Person
+	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(wr.Context, &people)
 	if err != nil {
-		return errors.New(fmt.Sprintf("LoginGetter.GetLoginCode (%s, %v, %s): %v", code, wr.EventKey, k.Encode(), err))
+		return err
 	}
-	var invitation Invitation
-	err = datastore.Get(wr.Context, lc.Invitation, &invitation)
-	if err != nil {
-		return errors.New(fmt.Sprintf("LoginGetter.GetInvitation: %v", err))
+	if len(people) == 0 {
+		return RedirectError{loginPage + "?message=Person not found for loginCode."}
+	} else if len(people) > 1 {
+		return RedirectError{loginPage + "?message=DB Error: loginCode collision."}
 	}
 
-	var person Person
-	err = datastore.Get(wr.Context, lc.Person, &person)
+	var invitations []Invitation
+	invitationKeys, err := datastore.NewQuery("Invitation").
+		Filter("Invitees =", peopleKeys[0]).
+		Filter("Event =", wr.EventKey).
+		GetAll(wr.Context, &invitations)
 	if err != nil {
-		return errors.New(fmt.Sprintf("LoginGetter.GetPerson: %v", err))
+		return err
+	}
+	if len(invitations) == 0 {
+		return RedirectError{loginPage + "?message=No invitation found for currently selected event."}
+	} else if len(invitations) > 1 {
+		return RedirectError{loginPage + "?message=DB Error: multiple invitations found."}
 	}
 
-	wr.LoginInfo = &LoginInfo{lc.Invitation, &invitation, lc.Person, &person}
+	wr.LoginInfo = &LoginInfo{invitationKeys[0], &invitations[0], peopleKeys[0], &people[0]}
 	return nil
+}
+
+// Simple URL handler that prints out the invitation retrieved by
+// LoginGetter, for testing.
+func checkLogin(wr WrappedRequest) {
+	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(wr.Context, *wr.LoginInfo.InvitationKey, *wr.LoginInfo.Invitation))))
 }

@@ -69,13 +69,14 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			for _, rsvpStatusString := range rsvpStatusStrings {
 				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
 			}
-			invitationClosingText, ok := fields[7]
-			if !ok {
-				invitationClosingText = ""
+			var invitationClosingText string
+			if len(fields) > 7 {
+				invitationClosingText = fields[7]
 			}
 
-			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate, rsvpStatuses, invitationClosingText,
-				fields[5] == "1")
+			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2],
+				startDate, endDate, rsvpStatuses,
+				invitationClosingText, fields[5] == "1")
 			w.Write([]byte(fmt.Sprintf("Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))))
 		}
 		processedHeader = true
@@ -186,6 +187,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 		Birthdate:     guest.Birthdate,
 		NeedBirthdate: guest.NeedBirthdate,
 		Address:       guest.Address,
+		LoginCode:     randomLoginCodeString(),
 	}
 
 	w.Write([]byte(fmt.Sprintf("Adding person: %s\n", p.FullName())))
@@ -219,9 +221,6 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 
 	scanner := bufio.NewScanner(rsvpFile)
 	processedHeader := false
-
-	all_lcs := make([]LoginCode, 0)
-	all_lc_keys := make([]*datastore.Key, 0)
 
 	for scanner.Scan() {
 		if processedHeader {
@@ -272,20 +271,9 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			}
 
 			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s\n", printInvitation(ctx, *invitationKey, invitation))))
-			if eventMap[eventId].Current {
-				for _, personKey := range personKeys {
-					lc_key, lc := MakeLoginCode(ctx, eventKey, invitationKey, personKey)
-					all_lcs = append(all_lcs, *lc)
-					all_lc_keys = append(all_lc_keys, lc_key)
-				}
-			}
 
 		}
 		processedHeader = true
-	}
-	_, err = datastore.PutMulti(ctx, all_lc_keys, all_lcs)
-	if err != nil {
-		log.Errorf(ctx, "PutMulti(LoginKeys): %v", err)
 	}
 
 	w.Write([]byte("\n"))

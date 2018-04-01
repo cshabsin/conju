@@ -18,9 +18,10 @@ func init() {
 	AddSessionHandler("/viewInvitation", handleViewInvitation)
 	AddSessionHandler("/saveInvitation", handleSaveInvitation)
 
-	AddSessionHandler("/needsLogin", handleIncrement).Needs(EventGetter).Needs(LoginGetter)
 	AddSessionHandler("/login", handleLogin).Needs(EventGetter)
-	AddSessionHandler("/checkLogin", checkLogin).Needs(EventGetter).Needs(LoginGetter)
+
+	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
+	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
 }
 
 func handleIncrement(wr WrappedRequest) {
