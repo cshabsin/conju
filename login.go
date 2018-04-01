@@ -56,7 +56,7 @@ func MakeLoginCode(ctx context.Context, event *datastore.Key,
 	invitation *datastore.Key, person *datastore.Key) (*datastore.Key, *LoginCode) {
 	lcs := randomLoginCodeString()
 	lc := LoginCode{lcs, invitation, person}
-	return datastore.NewKey(ctx, "LoginCode", lcs, 0, event), &lc
+	return datastore.NewKey(ctx, "LoginCode", "login/"+lcs, 0, event), &lc
 }
 
 func CreateAndSaveLoginCode(ctx context.Context, event *datastore.Key,
@@ -87,7 +87,7 @@ func LoginGetter(wr *WrappedRequest) error {
 		return RedirectError{"/login"}
 	}
 	var lc LoginCode
-	k := datastore.NewKey(wr.Context, "LoginCode", code, 0, wr.EventKey)
+	k := datastore.NewKey(wr.Context, "LoginCode", "login/"+code, 0, wr.EventKey)
 	err := datastore.Get(wr.Context, k, &lc)
 	if err != nil {
 		return errors.New(fmt.Sprintf("LoginGetter.GetLoginCode (%s, %v, %s): %v", code, wr.EventKey, k.Encode(), err))
