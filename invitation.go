@@ -328,7 +328,10 @@ func handleInvitations(wr WrappedRequest) {
 	var eventsWithKeys []EventWithKey
 	if len(invitations) == 0 {
 		var allEvents []*Event
-		eventKeys, _ := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+		eventKeys, err := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+		if err != nil {
+			log.Errorf(ctx, "Error listing events for copyInvitations: %v", err)
+		}
 		for i := 0; i < len(eventKeys); i++ {
 			ewk := EventWithKey{
 				Key: eventKeys[i].Encode(),
