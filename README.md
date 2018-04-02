@@ -53,6 +53,27 @@ Add to ~/.emacs.d/init.el:
 (require 'go-mode)
 ```
 
+## Prod stuff
+
+Make sure to get real_import_data into place from the Drive
+folder. Also replace placeholder email addresses hard-coded in source
+before deploying (look for `****` in at least `email.go` and
+`invitations.go`).
+
+To deploy to AppEngine, use
+
+```
+$ gcloud app deploy
+```
+
+(Add `--project project-id` if needed.)
+
+Make sure you also deploy the datastore indexes:
+
+```
+$ gcloud datastore create-indexes index.yaml
+```
+
 ## Useful Links
 
 Useful Go tutorial: http://tour.golang.org/  
