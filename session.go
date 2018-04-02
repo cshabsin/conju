@@ -33,12 +33,22 @@ type Getters struct {
 	Getters []Getter
 }
 
+// Getters should return this error to generate a HTTP redirect.
 type RedirectError struct {
 	Target string
 }
 
 func (re RedirectError) Error() string {
 	return fmt.Sprintf("Redirect to %s", re.Target)
+}
+
+// Getters should return this error to indicate an error has occurred
+// that has been reported cleanly.
+type DoneProcessingError struct {
+}
+
+func (dpe DoneProcessingError) Error() string {
+	return fmt.Sprintf("Done processing, do not continue.")
 }
 
 func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
@@ -56,6 +66,9 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 			if err = getter(&wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
 					http.Redirect(wrw, r, redirect.Target, http.StatusFound)
+					return
+				}
+				if _, ok := err.(DoneProcessingError); ok {
 					return
 				}
 				// TODO: Probably not internal server error

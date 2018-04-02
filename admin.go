@@ -1,7 +1,6 @@
 package conju
 
 import (
-	"errors"
 	"fmt"
 
 	"google.golang.org/appengine/user"
@@ -11,14 +10,16 @@ type AdminInfo struct {
 	*user.User
 }
 
+// TODO(cshabsin): Replace error pages with templates.
 func AdminGetter(wr *WrappedRequest) error {
 	u := user.Current(wr.Context)
 	if u == nil {
 		url, _ := user.LoginURL(wr.Context, wr.URL.RequestURI())
-		fmt.Fprintf(wr.ResponseWriter, `<a href="%s">Sign in or register</a>`, url)
-		return errors.New("Not Admin.")
+		wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(wr.ResponseWriter, `This page requires administrator access. Please <a href="%s">Sign in</a>.`, url)
+		return DoneProcessingError{}
 	}
-	if u.Admin { // u.Email == "cshabsin@gmail.com" || u.Email == "dana.m.scott@gmail.com" {
+	if u.Admin {
 		wr.AdminInfo = &AdminInfo{u}
 		return nil
 	}
@@ -26,7 +27,10 @@ func AdminGetter(wr *WrappedRequest) error {
 	if err != nil {
 		return err
 	}
-	return errors.New(fmt.Sprintf(
-		`User %s is not an authorized administrator. <a href="%s">Click to sign out</a>.`,
-		u.Email, logout_url))
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(
+		wr.ResponseWriter,
+		`This page requires administrator access.<br>User <code>&lt;%s&gt;</code> is not an authorized administrator.<p>Please <a href="%s">sign out</a> to try another account.`,
+		u.Email, logout_url)
+	return DoneProcessingError{}
 }
