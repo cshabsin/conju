@@ -131,7 +131,6 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 
 			invitationClosingText := fields[7]
 			allActivities := fields[8]
-			log.Infof(ctx, "|%s|", allActivities)
 			activities := strings.Split(allActivities, ",")
 			var activityKeys []*datastore.Key
 			for _, activity := range activities {
@@ -139,13 +138,11 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 					continue
 				}
 				activityKey := activityMap[activity]
-				log.Infof(ctx, "%s -> %v", activity, activityKey)
 				//if activityKey != nil {
 				activityKeys = append(activityKeys, activityKey)
 				//}
 			}
 
-			log.Infof(ctx, "%d activities", len(activityKeys))
 			_, err = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate, rsvpStatuses, invitationClosingText,
 				activityKeys, fields[5] == "1")
 			if err != nil {
