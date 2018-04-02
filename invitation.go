@@ -461,7 +461,7 @@ func handleViewInvitation(wr WrappedRequest) {
 	datastore.Get(ctx, invitationKey, &invitation)
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
-	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
+	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation)
 	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
 		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, i, true)
@@ -481,6 +481,7 @@ func handleViewInvitation(wr WrappedRequest) {
 	}
 
 	data := struct {
+		CurrentEvent                 Event
 		Invitation                   RealizedInvitation
 		FormInfoMap                  map[*datastore.Key]PersonUpdateFormInfo
 		AllRsvpStatuses              []RsvpStatusInfo
@@ -491,6 +492,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllParkingTypes              []ParkingTypeInfo
 		InvitationHasChildren        bool
 	}{
+		CurrentEvent:                 *wr.Event,
 		Invitation:                   realizedInvitation,
 		FormInfoMap:                  formInfoMap,
 		AllRsvpStatuses:              GetAllRsvpStatuses(),
@@ -652,7 +654,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		"PronounString":        GetPronouns,
 	}
 
-	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
+	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
