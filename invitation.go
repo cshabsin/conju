@@ -364,7 +364,7 @@ func handleInvitations(wr WrappedRequest) {
 		},
 	}
 
-	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/invitations.html"))
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/invitations.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "invitations.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
@@ -507,7 +507,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		"HasPreference": HasPreference,
 	}
 
-	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/viewInvitation.html", "templates/updatePersonForm.html"))
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
@@ -678,7 +678,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	header := MailHeaderInfo{
 		To:      []string{"**** email address ****"},
-		Sender:  "**** email sender ****",
 		Subject: subject,
 	}
 	sendMail(ctx, "rsvpconfirmation", data, functionMap, header)

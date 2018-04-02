@@ -13,7 +13,6 @@ type MailHeaderInfo struct {
 	To      []string
 	Cc      []string
 	Bcc     []string
-	Sender  string
 	Subject string
 }
 
@@ -31,7 +30,7 @@ func sendMail(ctx context.Context, templatePrefix string, data interface{}, func
 	}
 
 	msg := &mail.Message{
-		Sender:   headerData.Sender,
+		Sender:   "**** sender address ****",
 		To:       headerData.To,
 		Subject:  headerData.Subject,
 		Body:     text.String(),

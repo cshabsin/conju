@@ -1,27 +1,25 @@
 package conju
 
-import (
-	"fmt"
-)
+import "fmt"
 
 func init() {
-	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html")).Needs(EventGetter)
-	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
-	AddSessionHandler("/reloadData", ReloadData)
-	AddSessionHandler("/clearData", ClearAllData)
+	AddSessionHandler("/reloadData", ReloadData).Needs(AdminGetter)
+	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
 
-	AddSessionHandler("/listPeople", handleListPeople)
-	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm)
-	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson)
-	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter)
-	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(EventGetter)
-	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(EventGetter)
+	AddSessionHandler("/listPeople", handleListPeople).Needs(AdminGetter)
+	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(AdminGetter)
+	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(AdminGetter)
+	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter).Needs(AdminGetter)
+	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(EventGetter).Needs(AdminGetter)
+	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(EventGetter).Needs(AdminGetter)
 	AddSessionHandler("/viewInvitation", handleViewInvitation)
 	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(EventGetter)
 
-	AddSessionHandler("/needsLogin", handleIncrement).Needs(EventGetter).Needs(LoginGetter)
 	AddSessionHandler("/login", handleLogin).Needs(EventGetter)
+
+	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
+	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
 }
 
 func handleIncrement(wr WrappedRequest) {

@@ -1,7 +1,7 @@
-{{template "test.html" .}}
+{{template "main.html" .}}
 {{define "body"}}
 
-<h1>Invitations for {{with .CurrentEvent}}{{.ShortName}}{{end}}</h1>
+<h1>Invitations for {{.CurrentEvent.ShortName}}</h1>
 {{with .Stats}}
   {{.AdultCount}} adults<br>
   {{.BabyCount}} babies (0-3) <br>
@@ -29,7 +29,7 @@
 <a href="viewInvitation?invitation={{.EncodedKey}}">{{ListInvitees .Invitees}}</a><br>
 {{end}}
 
-<h3>Not Invited to {{with .CurrentEvent}}{{.ShortName}}{{end}}</h3>
+<h3>Not Invited to {{.CurrentEvent.ShortName}}</h3>
 
 {{range .NotInvitedList}}
  <input name="person" type="checkbox" value="{{.Key}}"> {{.Person.FullName}}<br>

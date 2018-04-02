@@ -114,6 +114,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			for _, rsvpStatusString := range rsvpStatusStrings {
 				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
 			}
+
 			invitationClosingText := fields[7]
 			allActivities := fields[8]
 			log.Infof(ctx, "|%s|", allActivities)
@@ -247,6 +248,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 		Birthdate:     guest.Birthdate,
 		NeedBirthdate: guest.NeedBirthdate,
 		Address:       guest.Address,
+		LoginCode:     randomLoginCodeString(),
 	}
 
 	w.Write([]byte(fmt.Sprintf("Adding person: %s\n", p.FullName())))
@@ -280,6 +282,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 
 	scanner := bufio.NewScanner(rsvpFile)
 	processedHeader := false
+
 	for scanner.Scan() {
 		if processedHeader {
 			rsvpRow := scanner.Text()
