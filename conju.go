@@ -12,7 +12,7 @@ func init() {
 	AddSessionHandler("/listPeople", handleListPeople)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm)
 	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson)
-	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter)
+	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter).Needs(AdminGetter)
 	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(EventGetter)
 	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(EventGetter)
 	AddSessionHandler("/viewInvitation", handleViewInvitation)

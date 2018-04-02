@@ -23,6 +23,7 @@ type WrappedRequest struct {
 	hasRunEventGetter bool
 	EventKey          *datastore.Key // TODO: stick these in EventInfo
 	*Event
+	*AdminInfo
 	*LoginInfo
 }
 
@@ -50,7 +51,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 			return
 		}
 		ctx := appengine.NewContext(r)
-		wr := WrappedRequest{wrw, r, ctx, sess, false, nil, nil, nil}
+		wr := WrappedRequest{wrw, r, ctx, sess, false, nil, nil, nil, nil}
 		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
