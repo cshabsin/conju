@@ -345,9 +345,11 @@ func handleListPeople(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := struct {
-		People []*Person
+		People       []*Person
+		CurrentEvent Event
 	}{
-		People: allPeople,
+		People:       allPeople,
+		CurrentEvent: *wr.Event,
 	}
 
 	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/listPeople.html"))

@@ -4,10 +4,11 @@ import "fmt"
 
 func init() {
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
-	AddSessionHandler("/reloadData", ReloadData).Needs(AdminGetter)
+	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
+	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
 	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
 
-	AddSessionHandler("/listPeople", handleListPeople).Needs(AdminGetter)
+	AddSessionHandler("/listPeople", handleListPeople).Needs(EventGetter).Needs(AdminGetter)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(AdminGetter)
 	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(AdminGetter)
 	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter).Needs(AdminGetter)

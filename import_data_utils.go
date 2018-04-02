@@ -27,6 +27,11 @@ const Events_Data_File_Name = "events.tsv"
 const Food_File_Name = "food.tsv"
 
 func ReloadData(wr WrappedRequest) {
+	if wr.Method != "POST" {
+		http.Error(wr.ResponseWriter, "Invalid GET on reload.",
+			http.StatusBadRequest)
+		return
+	}
 	// TODO: print out report of what got imported
 	ClearAllData(wr)
 	wr.ResponseWriter.Write([]byte("\n\n"))
@@ -37,6 +42,15 @@ func ReloadData(wr WrappedRequest) {
 	ImportRsvps(wr.ResponseWriter, wr.Context, guestMap)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	ImportFoodPreferences(wr.ResponseWriter, wr.Context, guestMap)
+}
+
+func AskReloadData(wr WrappedRequest) {
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(wr.ResponseWriter, `
+<form method="POST" action="/doReloadData">
+<input type="submit" value="Do it">
+</form>
+`)
 }
 
 func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
