@@ -350,7 +350,7 @@ func handleListPeople(wr WrappedRequest) {
 		People: allPeople,
 	}
 
-	tpl := template.Must(template.ParseFiles("templates/test.html", "templates/listPeople.html"))
+	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/listPeople.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
@@ -411,7 +411,7 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 		"PronounString": GetPronouns,
 	}
 
-	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/test.html", "templates/updatePerson.html", "templates/updatePersonForm.html"))
+	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/updatePerson.html", "templates/updatePersonForm.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", infoBundle); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}

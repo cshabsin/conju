@@ -3,8 +3,6 @@ package conju
 import "fmt"
 
 func init() {
-	AddSessionHandler("/test2", makeTemplateHandler("test.html", "test2.html")).Needs(EventGetter)
-	AddSessionHandler("/test3", makeTemplateHandler("test.html", "test3.html"))
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
 	AddSessionHandler("/reloadData", ReloadData).Needs(AdminGetter)
 	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
