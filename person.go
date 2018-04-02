@@ -405,9 +405,11 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 
 	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, 0, false)
 	infoBundle := struct {
-		FormInfo PersonUpdateFormInfo
+		FormInfo     PersonUpdateFormInfo
+		CurrentEvent Event
 	}{
-		FormInfo: formInfo,
+		FormInfo:     formInfo,
+		CurrentEvent: *wr.Event,
 	}
 	functionMap := template.FuncMap{
 		"PronounString": GetPronouns,
@@ -434,9 +436,21 @@ func savePeople(wr WrappedRequest) error {
 	encodedKeys := form["PersonKey"]
 
 	for i, encodedKey := range encodedKeys {
-		p, err := fetchPerson(wr, encodedKey)
-		if err != nil {
-			log.Errorf(ctx, "%v", err)
+		var p *Person
+		var err error
+
+		var key *datastore.Key
+		if encodedKey != "" {
+			p, err = fetchPerson(wr, encodedKey)
+			if err != nil {
+				log.Errorf(ctx, "%v", err)
+			}
+			key, err = datastore.DecodeKey(encodedKey)
+		} else {
+			key = PersonKey(ctx)
+			p = &Person{
+				NeedBirthdate: false,
+			}
 		}
 
 		//TODO: Is there an easier way to do this?
@@ -482,9 +496,10 @@ func savePeople(wr WrappedRequest) error {
 		if len(form["PrivateComments"]) > i {
 			p.PrivateComments = form["PrivateComments"][i]
 		}
-		_, err = datastore.Put(ctx, p.DatastoreKey, p)
+
+		_, err = datastore.Put(ctx, key, p)
 		if err != nil {
-			log.Errorf(ctx, "%v", err)
+			log.Errorf(ctx, "------ %v", err)
 		}
 
 	}

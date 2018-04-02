@@ -9,7 +9,7 @@ func init() {
 	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
 
 	AddSessionHandler("/listPeople", handleListPeople).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(AdminGetter)
+	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(EventGetter).Needs(AdminGetter)
 	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(AdminGetter)
 	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter).Needs(AdminGetter)
 	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(EventGetter).Needs(AdminGetter)
