@@ -25,6 +25,7 @@ const Guest_Data_File_Name = "Guests_to_Import.tsv"
 const RSVP_Data_File_Name = "rsvps.tsv"
 const Events_Data_File_Name = "events.tsv"
 const Food_File_Name = "food.tsv"
+const Activities_File_Name = "activities.tsv"
 
 func ReloadData(wr WrappedRequest) {
 	if wr.Method != "POST" {
@@ -35,13 +36,49 @@ func ReloadData(wr WrappedRequest) {
 	// TODO: print out report of what got imported
 	ClearAllData(wr)
 	wr.ResponseWriter.Write([]byte("\n\n"))
-	SetupEvents(wr.ResponseWriter, wr.Context)
+	SetupActivities(wr.ResponseWriter, wr.Context)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	guestMap := ImportGuests(wr.ResponseWriter, wr.Context)
 	wr.ResponseWriter.Write([]byte("\n\n"))
-	ImportRsvps(wr.ResponseWriter, wr.Context, guestMap)
+	SetupEvents(wr.ResponseWriter, wr.Context)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	ImportFoodPreferences(wr.ResponseWriter, wr.Context, guestMap)
+	wr.ResponseWriter.Write([]byte("\n\n"))
+	ImportRsvps(wr.ResponseWriter, wr.Context, guestMap)
+}
+
+func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
+	activitiesFile, err := os.Open(Import_Data_Directory + "/" + Activities_File_Name)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
+	defer activitiesFile.Close()
+
+	scanner := bufio.NewScanner(activitiesFile)
+	processedHeader := false
+	for scanner.Scan() {
+		if processedHeader {
+			activityRow := scanner.Text()
+			fields := strings.Split(activityRow, "\t")
+			keyword := fields[0]
+			description := fields[2]
+			needsLeader := fields[1] == "TRUE"
+
+			activity := Activity{
+				Keyword:     keyword,
+				Description: description,
+				NeedsLeader: needsLeader,
+			}
+
+			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Activity", nil), &activity)
+			if err != nil {
+				log.Errorf(ctx, "%v", err)
+			}
+			w.Write([]byte(fmt.Sprintf("Loading activity %s\n", fields[0])))
+		}
+		processedHeader = true
+	}
+	return err
 }
 
 func AskReloadData(wr WrappedRequest) {
@@ -68,6 +105,14 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 		rsvpStatusMap[status.ShortDescription] = status.Status
 	}
 
+	activityMap := make(map[string]*datastore.Key)
+	var activities []Activity
+	q := datastore.NewQuery("Activity")
+	keys, err := q.GetAll(ctx, &activities)
+	for i, activityKey := range keys {
+		activityMap[(activities[i]).Keyword] = activityKey
+	}
+
 	scanner := bufio.NewScanner(eventsFile)
 	processedHeader := false
 	for scanner.Scan() {
@@ -83,14 +128,30 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			for _, rsvpStatusString := range rsvpStatusStrings {
 				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
 			}
-			var invitationClosingText string
-			if len(fields) > 7 {
-				invitationClosingText = fields[7]
+
+			invitationClosingText := fields[7]
+			allActivities := fields[8]
+			log.Infof(ctx, "|%s|", allActivities)
+			activities := strings.Split(allActivities, ",")
+			var activityKeys []*datastore.Key
+			for _, activity := range activities {
+				if activity == "" {
+					continue
+				}
+				activityKey := activityMap[activity]
+				log.Infof(ctx, "%s -> %v", activity, activityKey)
+				//if activityKey != nil {
+				activityKeys = append(activityKeys, activityKey)
+				//}
 			}
 
-			_, _ = CreateEvent(ctx, eventId, fields[1], fields[2],
-				startDate, endDate, rsvpStatuses,
-				invitationClosingText, fields[5] == "1")
+			log.Infof(ctx, "%d activities", len(activityKeys))
+			_, err = CreateEvent(ctx, eventId, fields[1], fields[2], startDate, endDate, rsvpStatuses, invitationClosingText,
+				activityKeys, fields[5] == "1")
+			if err != nil {
+				log.Infof(ctx, "%v", err)
+			}
+
 			w.Write([]byte(fmt.Sprintf("Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))))
 		}
 		processedHeader = true

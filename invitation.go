@@ -7,12 +7,12 @@ import (
 	"fmt"
 	//	"html"
 	"html/template"
+	log2 "log"
 	"net/http"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
-	//	log2 "log"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -23,6 +23,8 @@ type Invitation struct {
 	Event                     *datastore.Key                // Event
 	Invitees                  []*datastore.Key              // []Person
 	RsvpMap                   map[*datastore.Key]RsvpStatus // Person -> Rsvp
+	ActivityMap               map[*datastore.Key](map[*datastore.Key]ActivityRanking)
+	ActivityLeaderMap         map[*datastore.Key](map[*datastore.Key]bool)
 	Housing                   HousingPreference
 	HousingNotes              string
 	HousingPreferenceBooleans int
@@ -39,6 +41,8 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 	allRsvpStatuses := GetAllRsvpStatuses()
 
 	inv.RsvpMap = make(map[*datastore.Key]RsvpStatus)
+	inv.ActivityMap = make(map[*datastore.Key](map[*datastore.Key]ActivityRanking))
+	inv.ActivityLeaderMap = make(map[*datastore.Key](map[*datastore.Key]bool))
 	for _, p := range ps {
 		if strings.HasPrefix(p.Name, "RsvpMap.") {
 			personKey, err := datastore.DecodeKey(p.Name[8:])
@@ -47,6 +51,67 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			}
 			rsvpInt := p.Value.(int64)
 			inv.RsvpMap[personKey] = allRsvpStatuses[rsvpInt].Status
+		}
+
+		if strings.HasPrefix(p.Name, "ActivityMap.") {
+
+			underscore := strings.Index(p.Name, "_")
+			personKeyString := p.Name[12:underscore]
+			personKey, err := datastore.DecodeKey(personKeyString)
+			if err != nil {
+				log2.Printf("person lookup error: %v")
+			}
+
+			mapForPerson := make(map[*datastore.Key]ActivityRanking)
+			// Ewwwwww
+			for person, m := range inv.ActivityMap {
+				if *person == *personKey {
+					mapForPerson = m
+					break
+				}
+			}
+
+			inv.ActivityMap[personKey] = mapForPerson
+
+			activityKeyString := p.Name[underscore+1:]
+
+			activityKey, err := datastore.DecodeKey(activityKeyString)
+			if err != nil {
+				return err
+			}
+
+			activityRankingInt := p.Value.(int64)
+			mapForPerson[activityKey] = ActivityRanking(activityRankingInt)
+		}
+
+		if strings.HasPrefix(p.Name, "ActivityLeaderMap.") {
+
+			underscore := strings.Index(p.Name, "_")
+			personKeyString := p.Name[18:underscore]
+			personKey, err := datastore.DecodeKey(personKeyString)
+			if err != nil {
+				log2.Printf("person lookup error: %v")
+			}
+
+			mapForPerson := make(map[*datastore.Key]bool)
+			// Ewwwwww
+			for person, m := range inv.ActivityLeaderMap {
+				if *person == *personKey {
+					mapForPerson = m
+					break
+				}
+			}
+
+			inv.ActivityLeaderMap[personKey] = mapForPerson
+
+			activityKeyString := p.Name[underscore+1:]
+
+			activityKey, err := datastore.DecodeKey(activityKeyString)
+			if err != nil {
+				return err
+			}
+
+			mapForPerson[activityKey] = p.Value.(bool)
 		}
 	}
 	datastore.LoadStruct(inv, ps)
@@ -126,6 +191,26 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		encodedKey := (*k).Encode()
 		props = append(props, datastore.Property{Name: "RsvpMap." + encodedKey, Value: int64(v)})
 	}
+
+	activityMap := inv.ActivityMap
+	for p, m := range activityMap {
+		personEncodedKey := (*p).Encode()
+		partialName := "ActivityMap." + personEncodedKey
+		for a, v := range m {
+			totalKey := partialName + "_" + (*a).Encode()
+			props = append(props, datastore.Property{Name: totalKey, Value: int64(v)})
+		}
+	}
+	activityLeaderMap := inv.ActivityLeaderMap
+	for p, m := range activityLeaderMap {
+		personEncodedKey := (*p).Encode()
+		partialName := "ActivityLeaderMap." + personEncodedKey
+		for a, v := range m {
+			totalKey := partialName + "_" + (*a).Encode()
+			props = append(props, datastore.Property{Name: totalKey, Value: v})
+		}
+	}
+
 	return props, nil
 }
 
@@ -383,10 +468,23 @@ func handleViewInvitation(wr WrappedRequest) {
 		formInfoMap[personKey] = formInfo
 	}
 
+	activityKeys := realizedInvitation.Event.Activities
+	var activities = make([]*Activity, len(activityKeys))
+	err := datastore.GetMulti(ctx, activityKeys, activities)
+	if err != nil {
+		log.Infof(ctx, "%v", err)
+	}
+
+	var realActivities []Activity
+	for _, activity := range activities {
+		realActivities = append(realActivities, *activity)
+	}
+
 	data := struct {
 		Invitation                   RealizedInvitation
 		FormInfoMap                  map[*datastore.Key]PersonUpdateFormInfo
 		AllRsvpStatuses              []RsvpStatusInfo
+		Activities                   []Activity
 		AllHousingPreferences        []HousingPreferenceInfo
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllDrivingPreferences        []DrivingPreferenceInfo
@@ -396,6 +494,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		Invitation:                   realizedInvitation,
 		FormInfoMap:                  formInfoMap,
 		AllRsvpStatuses:              GetAllRsvpStatuses(),
+		Activities:                   realActivities,
 		AllHousingPreferences:        GetAllHousingPreferences(),
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllDrivingPreferences:        GetAllDrivingPreferences(),
@@ -432,6 +531,8 @@ func handleSaveInvitation(wr WrappedRequest) {
 	rsvps := wr.Request.Form["rsvp"]
 	var newPeople []*datastore.Key
 	var rsvpMap = make(map[*datastore.Key]RsvpStatus)
+	var activityMap = make(map[*datastore.Key](map[*datastore.Key]ActivityRanking))
+	var activityLeaderMap = make(map[*datastore.Key](map[*datastore.Key]bool))
 	for i, personKey := range people {
 		key, _ := datastore.DecodeKey(personKey)
 		var person Person
@@ -442,9 +543,25 @@ func handleSaveInvitation(wr WrappedRequest) {
 			fullStatus := GetAllRsvpStatuses()[rsvp]
 			rsvpMap[key] = fullStatus.Status
 		}
+
+		var activityMapForPerson = make(map[*datastore.Key]ActivityRanking)
+		var activityLeaderMapForPerson = make(map[*datastore.Key]bool)
+		for a, activityKey := range wr.Event.Activities {
+			ranking := wr.Request.Form.Get(strings.Join([]string{"activity_", strconv.Itoa(i), "_", strconv.Itoa(a)}, ""))
+			rankingInt, _ := strconv.Atoi(ranking)
+			activityMapForPerson[activityKey] = ActivityRanking(rankingInt)
+			leader := wr.Request.Form.Get(strings.Join([]string{"activity_", strconv.Itoa(i), "_", strconv.Itoa(a), "_leader"}, ""))
+			if leader == "on" {
+				activityLeaderMapForPerson[activityKey] = true
+			}
+		}
+		activityMap[key] = activityMapForPerson
+		activityLeaderMap[key] = activityLeaderMapForPerson
 	}
 
 	invitation.RsvpMap = rsvpMap
+	invitation.ActivityMap = activityMap
+	invitation.ActivityLeaderMap = activityLeaderMap
 
 	invitation.Invitees = newPeople
 
@@ -514,6 +631,18 @@ func handleSaveInvitation(wr WrappedRequest) {
 		newPeopleSubjectFragment = " ADDITION REQUESTED,"
 	}
 
+	anyAttending := false
+	var isAttending []bool
+	for _, invitee := range invitation.Invitees {
+		if rsvp, present := rsvpMap[invitee]; present {
+			attending := GetAllRsvpStatuses()[rsvp].Attending
+			isAttending = append(isAttending, attending)
+			anyAttending = anyAttending || attending
+		} else {
+			isAttending = append(isAttending, false)
+		}
+	}
+
 	var e Event
 	datastore.Get(ctx, invitation.Event, &e)
 	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
@@ -527,18 +656,24 @@ func handleSaveInvitation(wr WrappedRequest) {
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
+	log.Infof(ctx, "isAttending: %v, anyAttending: %v", isAttending, anyAttending)
+
 	data := struct {
 		RealInvitation               RealizedInvitation
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllPronouns                  []PronounSet
 		AllFoodRestrictions          []FoodRestrictionTag
 		AdditionalPeople             []NewPersonInfo
+		AnyAttending                 bool
+		IsAttending                  []bool
 	}{
 		RealInvitation:               realizedInvitation,
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllPronouns:                  []PronounSet{They, She, He, Zie},
 		AllFoodRestrictions:          GetAllFoodRestrictionTags(),
 		AdditionalPeople:             additionalPeople,
+		AnyAttending:                 anyAttending,
+		IsAttending:                  isAttending,
 	}
 
 	header := MailHeaderInfo{

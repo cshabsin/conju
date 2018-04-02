@@ -3,6 +3,8 @@ package conju
 // Each event should have a list of acceptable RSVP statuses
 type RsvpStatus int
 
+// TODO: move most of these to the datastore.
+
 const (
 	No = iota
 	Maybe
@@ -306,12 +308,12 @@ func GetAllParkingTypes() []ParkingTypeInfo {
 		Parking:                   NoElectric,
 		SinglePersonDescription:   "My vehicle doesn't need to be charged.",
 		MultiplePeopleDescription: "Our vehicle doesn't need to be charged.",
-		ReportDescription:         "No Electric",
+		ReportDescription:         "No Electricity Needed",
 	})
 	toReturn = append(toReturn, ParkingTypeInfo{
 		Parking:                   PluginHybrid,
-		SinglePersonDescription:   "I have a plug-in hybrid and would prefer to charge my car at some point over the weekend.",
-		MultiplePeopleDescription: "We have a plug-in hybrid and would prefer to charge our car at some point over the weekend.",
+		SinglePersonDescription:   "I have a plug-in hybrid and would prefer to charge it at some point over the weekend.",
+		MultiplePeopleDescription: "We have a plug-in hybrid and would prefer to charge it at some point over the weekend.",
 		ReportDescription:         "Want Electric",
 	})
 	toReturn = append(toReturn, ParkingTypeInfo{
@@ -323,3 +325,11 @@ func GetAllParkingTypes() []ParkingTypeInfo {
 
 	return toReturn
 }
+
+type ActivityRanking int
+
+const (
+	ActivityNo = iota
+	ActivityMaybe
+	ActivityDefinitely
+)

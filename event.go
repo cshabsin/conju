@@ -16,6 +16,7 @@ type CurrentEvent struct {
 	Key *datastore.Key
 }
 
+// TODO: add object that's a map of string names to values and attach one to every event
 type Event struct {
 	EventId               int // this can get deleted after all the data is imported
 	Name                  string
@@ -24,10 +25,11 @@ type Event struct {
 	EndDate               time.Time
 	RsvpStatuses          []RsvpStatus
 	InvitationClosingText string
+	Activities            []*datastore.Key
 	Current               bool
 }
 
-func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, rsvpStatuses []RsvpStatus, invitationClosingText string, current bool) (*datastore.Key, error) {
+func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, rsvpStatuses []RsvpStatus, invitationClosingText string, activityKeys []*datastore.Key, current bool) (*datastore.Key, error) {
 	e := Event{
 		EventId:               id,
 		Name:                  name,
@@ -36,6 +38,7 @@ func CreateEvent(ctx context.Context, id int, name string, shortName string, sta
 		EndDate:               endDate,
 		RsvpStatuses:          rsvpStatuses,
 		InvitationClosingText: invitationClosingText,
+		Activities:            activityKeys,
 		Current:               current,
 	}
 	return datastore.Put(ctx, datastore.NewIncompleteKey(

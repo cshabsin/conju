@@ -11,7 +11,7 @@
     {{$Invitation := .RealInvitation}}
     {{$AllPronouns := .AllPronouns}}
     {{$AllFoodRestrictions := .AllFoodRestrictions}}
-
+    {{$IsAttending := .IsAttending}}
 {{if gt (len .AdditionalPeople) 0}} 
 <table style="margin-bottom:20px"><tr>
 <td style="vertical-align:top">Requested additional guests:</td>
@@ -33,6 +33,7 @@
     {{end}}
   </table>
 
+{{if .AnyAttending}}
 <table style="margin-top:30px">
 <tr><td>Housing preference:</td><td><b>{{$Invitation.Housing.ReportDescription}}</b></td></tr>
 {{if gt $Invitation.HousingPreferenceBooleans 0}}
@@ -66,10 +67,34 @@
 {{end}}
 </table>
 
+<div style="margin-top:50px;">
+{{range $i, $invitee := $Invitation.Invitees}}
+  {{if (index $IsAttending $i)}}  
+<div style="margin-bottom:15px"><b>{{$invitee.Person.FullName}}</b>
+  <table style="border-collapse:collapse">
+<tr><td></td><td style="width:75px;font-weight:bold;text-align:center">No</td><td style="width:75px;font-weight:bold;text-align:center">Maybe</td><td style="width:75px;font-weight:bold;text-align:center">Definitely</td><td style="width:150px;font-weight:bold;text-align:center">Lead?</td></tr>
+{{range $a, $activity := $Invitation.Activities}}
+  {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}} 
+  {{$activityLead := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}} 
+<tr>
+<td style="padding-right:15px">{{$activity.Activity.Keyword}}</td>
+<td style="border:1px solid black; text-align:center">{{if eq $activityRanking 1}}X{{end}}</td>
+<td style="border:1px solid black; text-align:center">{{if eq $activityRanking 2}}X{{end}}</td>
+<td style="border:1px solid black; text-align:center">{{if eq $activityRanking 3}}X{{end}}</td>
+<td style="border:1px solid black; text-align:center">{{if $activityLead}}X{{end}}</td>
+</tr>
+{{end}}
+</table></div>
+{{end}}
+{{end}}
+
+
 <table style="margin-top:30px">
   <tr><td style="vertical-align:top">Other Info:</td><td><b>{{$Invitation.OtherInfo}}</b></td></tr>
 </table>
+</div>
 
+{{end}}
 
 <h3>Invitees</h3>
 
@@ -85,7 +110,7 @@
       <tr><td>Telephone:</td><td><b>{{.Telephone}}</b></td></tr>
       <tr><td style="vertical-align:top">Address:</td><td><b>{{.Address}}</b></td></tr>
       <tr><td>Birthdate:</td><td><b>{{if not .Birthdate.IsZero}}{{.Birthdate.Format "01/02/2006"}}{{end}}{{if .NeedBirthdate}} NEED BIRTHDATE{{end}}</b></td></tr>
-      <tr><td>Food Restrictions:</td><td><b>{{range $i, $restriction := .FoodRestrictions}}{{with (index $AllFoodRestrictions $restriction)}}{{.Description}}{{end}}{{end}}</b></td></tr>
+      <tr><td>Food Restrictions:</td><td><b>{{range $i, $restriction := .FoodRestrictions}}{{with (index $AllFoodRestrictions $restriction)}}{{.Description}} {{end}}{{end}}</b></td></tr>
       <tr><td style="vertical-align:top">Food Notes:</td><td>{{.FoodNotes}}</td></tr>
     </table>
   {{end}}
