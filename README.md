@@ -74,6 +74,18 @@ Make sure you also deploy the datastore indexes:
 $ gcloud datastore create-indexes index.yaml
 ```
 
+Go to http://console.cloud.google.com/ to look over the status of
+things. Some useful spots:
+
+ * AppEngine
+   * Dashboard for overall usage
+   * Services has a handy link to Logs under "Tools"
+   * Settings -> Email senders to add additional accounts the app is
+     capable of sending mail as.
+ * Datastore (view entities and indexes)
+ * IAM - administer Gmail accounts that can administer the site.
+ * Debug - view the "local" filesystem as AppEngine sees it.
+
 ## Useful Links
 
 Useful Go tutorial: http://tour.golang.org/  
