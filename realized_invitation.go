@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 type RealizedInvitation struct {
@@ -26,7 +27,7 @@ type RealizedInvitation struct {
 	OtherInfo                 string
 }
 
-func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation, getEvent bool) RealizedInvitation {
+func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation) RealizedInvitation {
 	personKeys := invitation.Invitees
 	var invitees []PersonWithKey
 	for _, personKey := range personKeys {
@@ -42,10 +43,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	}
 
 	var event Event
-
-	if getEvent {
-		datastore.Get(ctx, invitation.Event, &event)
-	}
+	datastore.Get(ctx, invitation.Event, &event)
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 	realizedRsvpMap := make(map[string]RsvpStatusInfo)
@@ -55,7 +53,10 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	}
 
 	var activities []ActivityWithKey
-	for _, activityKey := range event.Activities {
+	for i, activityKey := range event.Activities {
+		if activityKey == nil {
+			log.Errorf(ctx, "nil activityKey in event %v (index %d) (list %v)", event, i, event.Activities)
+		}
 		var activity Activity
 		datastore.Get(ctx, activityKey, &activity)
 		encodedKey := activityKey.Encode()
@@ -107,7 +108,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 }
 
 func printInvitation(ctx context.Context, key datastore.Key, inv Invitation) string {
-	real := makeRealizedInvitation(ctx, key, inv, true)
+	real := makeRealizedInvitation(ctx, key, inv)
 	toReturn := real.Event.ShortName + ": "
 	for _, invitee := range real.Invitees {
 		toReturn += invitee.Person.FullName() + " - "
@@ -124,7 +125,7 @@ func printInvitation(ctx context.Context, key datastore.Key, inv Invitation) str
 func makeRealizedInvitations(ctx context.Context, invitationKeys []*datastore.Key, invitations []*Invitation) []RealizedInvitation {
 	realizedInvitations := make([]RealizedInvitation, len(invitations))
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitations[i] = makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i], false)
+		realizedInvitations[i] = makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i])
 	}
 	return realizedInvitations
 }

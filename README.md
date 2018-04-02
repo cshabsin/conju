@@ -53,6 +53,39 @@ Add to ~/.emacs.d/init.el:
 (require 'go-mode)
 ```
 
+## Prod stuff
+
+Make sure to get real_import_data into place from the Drive
+folder. Also replace placeholder email addresses hard-coded in source
+before deploying (look for `****` in at least `email.go` and
+`invitations.go`).
+
+To deploy to AppEngine, use
+
+```
+$ gcloud app deploy
+```
+
+(Add `--project project-id` if needed.)
+
+Make sure you also deploy the datastore indexes:
+
+```
+$ gcloud datastore create-indexes index.yaml
+```
+
+Go to http://console.cloud.google.com/ to look over the status of
+things. Some useful spots:
+
+ * AppEngine
+   * Dashboard for overall usage
+   * Services has a handy link to Logs under "Tools"
+   * Settings -> Email senders to add additional accounts the app is
+     capable of sending mail as.
+ * Datastore (view entities and indexes)
+ * IAM - administer Gmail accounts that can administer the site.
+ * Debug - view the "local" filesystem as AppEngine sees it.
+
 ## Useful Links
 
 Useful Go tutorial: http://tour.golang.org/  

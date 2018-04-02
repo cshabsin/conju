@@ -328,7 +328,10 @@ func handleInvitations(wr WrappedRequest) {
 	var eventsWithKeys []EventWithKey
 	if len(invitations) == 0 {
 		var allEvents []*Event
-		eventKeys, _ := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+		eventKeys, err := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+		if err != nil {
+			log.Errorf(ctx, "Error listing events for copyInvitations: %v", err)
+		}
 		for i := 0; i < len(eventKeys); i++ {
 			ewk := EventWithKey{
 				Key: eventKeys[i].Encode(),
@@ -461,7 +464,7 @@ func handleViewInvitation(wr WrappedRequest) {
 	datastore.Get(ctx, invitationKey, &invitation)
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
-	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
+	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation)
 	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
 		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, i, true)
@@ -481,6 +484,7 @@ func handleViewInvitation(wr WrappedRequest) {
 	}
 
 	data := struct {
+		CurrentEvent                 Event
 		Invitation                   RealizedInvitation
 		FormInfoMap                  map[*datastore.Key]PersonUpdateFormInfo
 		AllRsvpStatuses              []RsvpStatusInfo
@@ -491,6 +495,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllParkingTypes              []ParkingTypeInfo
 		InvitationHasChildren        bool
 	}{
+		CurrentEvent:                 *wr.Event,
 		Invitation:                   realizedInvitation,
 		FormInfoMap:                  formInfoMap,
 		AllRsvpStatuses:              GetAllRsvpStatuses(),
@@ -652,7 +657,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		"PronounString":        GetPronouns,
 	}
 
-	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation, true)
+	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 

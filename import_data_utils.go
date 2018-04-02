@@ -33,6 +33,7 @@ func ReloadData(wr WrappedRequest) {
 			http.StatusBadRequest)
 		return
 	}
+	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	// TODO: print out report of what got imported
 	ClearAllData(wr)
 	wr.ResponseWriter.Write([]byte("\n\n"))
@@ -138,6 +139,9 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 					continue
 				}
 				activityKey := activityMap[activity]
+				if activityKey == nil {
+					log.Errorf(ctx, "nil activityKey for activity %s", activity)
+				}
 				//if activityKey != nil {
 				activityKeys = append(activityKeys, activityKey)
 				//}
@@ -342,7 +346,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 				log.Errorf(ctx, "RSVPs: %v -- %s", err, rsvpRow)
 			}
 
-			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s\n", printInvitation(ctx, *invitationKey, invitation))))
+			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s (%v)\n", printInvitation(ctx, *invitationKey, invitation), *invitationKey)))
 
 		}
 		processedHeader = true
