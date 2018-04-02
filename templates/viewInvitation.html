@@ -58,6 +58,7 @@
     if (selectedStatus.attending) {
       foodContainer.show();
       $($(".personal-intro-positive-rsvp")[index]).show();
+      $($(".activities")[index]).show();
     } else if (selectedStatus.undecided) {
       $($(".personal-intro-maybe-rsvp")[index]).show();
     } else {
@@ -133,6 +134,7 @@
     });
   
     $(".personal").hide();
+    $(".activities").hide();
     $(".food").hide();
 
     adjustAddPersonInputs();
@@ -197,6 +199,7 @@ function validate(form) {
     {{$FormInfoMap := .FormInfoMap}}
     {{$AllRsvpStatuses := .AllRsvpStatuses}}
     {{$AllParkingTypes := .AllParkingTypes}}
+    {{$Activities := .Invitation.Activities}}
     {{range  $i, $invitee := .Invitation.Invitees}}
        <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
            <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
@@ -224,6 +227,28 @@ function validate(form) {
 		 <table class="formtable">
 		   {{template "foodInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
 		 </table>
+	       </div>
+
+	       <div class="activities hidden">
+		 <div class="activityHeader">We will have some organized (perhaps "organized") activities at the weekend.  Attendance at some of the organized activities has been low in the past couple of years, so we want to make sure there there's interest before we schedule something.  If you are waffling between choices pick the less committal option.  Also, if you are willing to organize one of the activities (selecting a hike, DMing a role-playing game, etc) please check the corresponding box. </div> 
+
+		 <table class="activityTable">
+		   <tr><td><b>Would you attend this activity?</b></td><td class="ranking"><b>No</b></td><td class="ranking"><b>Maybe</b></td><td class="ranking"><b>Definitely</b></td><td class="leader"><b>Willing to Organize?</b></td></t> 
+  		   {{range $a, $activity := $Activities}}
+                     {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}} 
+		     <tr>
+		       <td>{{$activity.Activity.Keyword}}: {{$activity.Activity.Description}}</td>
+		       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="1"{{if eq $activityRanking 1}} checked {{end}}></td>
+                       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="2"{{if eq $activityRanking 2}} checked {{end}}></td>
+                       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="3"{{if eq $activityRanking 3}} checked {{end}}></td>
+                       {{if $activity.Activity.NeedsLeader}}
+                         {{$activityLeader := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}} 
+		         <td class="leader"><input type="checkbox" name="activity_{{$i}}_{{$a}}_leader" {{if $activityLeader}} checked{{end}}></td>
+		       {{end}}
+		     </tr>
+ 
+		   {{end}}
+		 </table>  
 	       </div>
 
                <div class="personal hidden">

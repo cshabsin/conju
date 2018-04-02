@@ -186,6 +186,7 @@ table.infotable2 tr, table.infotable2 td, table.infotable2 th {
     text-align: left;
 }
 
+/*
 table.activitytable{
     width:75%;
 }
@@ -195,7 +196,7 @@ table.activitytable td{
     padding:10px;
     vertical-align:top;
 }
-
+*/
 table.timespantable{
     border-collapse:collapse;
     margin-bottom:50px;
@@ -467,4 +468,29 @@ input[type="radio"] {margin:7px}
 
 .invitationCloser {
     margin-top:30px;
+}
+.activityHeader {
+    margin: 20px;
+}
+
+.activityTable {
+    margin: 0px 0px 40px 40px;
+}
+.activityTable td {
+    border-collapse: collapse;
+    padding: 0px;
+}
+
+.activityTable input[type="radio"] {
+    padding: 0px;
+}
+
+.activityTable .leader {
+    padding-left: 25px;
+    text-align:center;
+}
+
+.ranking {
+    width:75px;
+    text-align: center;
 }

@@ -14,6 +14,9 @@ type RealizedInvitation struct {
 	Housing                   HousingPreferenceInfo
 	HousingPreferenceBooleans int
 	HousingNotes              string
+	Activities                []ActivityWithKey
+	ActivitiesMap             map[string](map[string]ActivityRanking)
+	ActivitiesLeadersMap      map[string](map[string]bool)
 	Driving                   DrivingPreferenceInfo
 	Parking                   ParkingTypeInfo
 	LeaveFrom                 string
@@ -51,11 +54,43 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		realizedRsvpMap[k.Encode()] = allRsvpStatuses[v]
 	}
 
+	var activities []ActivityWithKey
+	for _, activityKey := range event.Activities {
+		var activity Activity
+		datastore.Get(ctx, activityKey, &activity)
+		encodedKey := activityKey.Encode()
+		activities = append(activities, ActivityWithKey{Activity: activity, EncodedKey: encodedKey})
+	}
+
+	realizedActivityMap := make(map[string](map[string]ActivityRanking))
+	for p, m := range invitation.ActivityMap {
+
+		personMap := make(map[string]ActivityRanking)
+		for a, r := range m {
+			personMap[a.Encode()] = r
+		}
+
+		realizedActivityMap[p.Encode()] = personMap
+	}
+	realizedActivityLeadersMap := make(map[string](map[string]bool))
+	for p, m := range invitation.ActivityLeaderMap {
+
+		personMap := make(map[string]bool)
+		for a, r := range m {
+			personMap[a.Encode()] = r
+		}
+
+		realizedActivityLeadersMap[p.Encode()] = personMap
+	}
+
 	realizedInvitation := RealizedInvitation{
 		EncodedKey:                invitationKey.Encode(),
 		Invitees:                  invitees,
 		Event:                     event,
 		RsvpMap:                   realizedRsvpMap,
+		Activities:                activities,
+		ActivitiesMap:             realizedActivityMap,
+		ActivitiesLeadersMap:      realizedActivityLeadersMap,
 		Housing:                   GetAllHousingPreferences()[invitation.Housing],
 		HousingNotes:              invitation.HousingNotes,
 		HousingPreferenceBooleans: invitation.HousingPreferenceBooleans,
