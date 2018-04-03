@@ -629,6 +629,23 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	savePeople(wr)
 
+	log.Infof(wr.Context, "-------%v", wr.AdminInfo)
+	if !wr.User.Admin {
+
+		data := struct {
+			AnyAttending bool
+		}{
+			AnyAttending: true,
+		}
+
+		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
+		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
+			log.Errorf(wr.Context, "%v", err)
+		}
+
+		return
+	}
+
 	type NewPersonInfo struct {
 		Name        string
 		Description string
