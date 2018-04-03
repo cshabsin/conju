@@ -341,20 +341,13 @@ func handleInvitations(wr WrappedRequest) {
 		}
 	}
 
-	data := struct {
-		CurrentEvent        Event
-		Invitations         []*Invitation
-		RealizedInvitations []RealizedInvitation
-		NotInvitedList      []PersonWithKey
-		EventsWithKeys      []EventWithKey
-		Stats               Statistics
-	}{
-		CurrentEvent:        *currentEvent,
-		Invitations:         invitations,
-		RealizedInvitations: realizedInvitations,
-		NotInvitedList:      notInvitedList,
-		EventsWithKeys:      eventsWithKeys,
-		Stats:               statistics,
+	data := map[string]interface{}{
+		"CurrentEvent":        *currentEvent,
+		"Invitations":         invitations,
+		"RealizedInvitations": realizedInvitations,
+		"NotInvitedList":      notInvitedList,
+		"EventsWithKeys":      eventsWithKeys,
+		"Stats":               statistics,
 	}
 
 	functionMap := template.FuncMap{
@@ -497,28 +490,17 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		realActivities = append(realActivities, *activity)
 	}
 
-	data := struct {
-		CurrentEvent                 Event
-		Invitation                   RealizedInvitation
-		FormInfoMap                  map[*datastore.Key]PersonUpdateFormInfo
-		AllRsvpStatuses              []RsvpStatusInfo
-		Activities                   []Activity
-		AllHousingPreferences        []HousingPreferenceInfo
-		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
-		AllDrivingPreferences        []DrivingPreferenceInfo
-		AllParkingTypes              []ParkingTypeInfo
-		InvitationHasChildren        bool
-	}{
-		CurrentEvent:                 *wr.Event,
-		Invitation:                   realizedInvitation,
-		FormInfoMap:                  formInfoMap,
-		AllRsvpStatuses:              GetAllRsvpStatuses(),
-		Activities:                   realActivities,
-		AllHousingPreferences:        GetAllHousingPreferences(),
-		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
-		AllDrivingPreferences:        GetAllDrivingPreferences(),
-		AllParkingTypes:              GetAllParkingTypes(),
-		InvitationHasChildren:        invitation.HasChildren(wr.Context),
+	data := map[string]interface{}{
+		"CurrentEvent":                 *wr.Event,
+		"Invitation":                   realizedInvitation,
+		"FormInfoMap":                  formInfoMap,
+		"AllRsvpStatuses":              GetAllRsvpStatuses(),
+		"Activities":                   realActivities,
+		"AllHousingPreferences":        GetAllHousingPreferences(),
+		"AllHousingPreferenceBooleans": GetAllHousingPreferenceBooleans(),
+		"AllDrivingPreferences":        GetAllDrivingPreferences(),
+		"AllParkingTypes":              GetAllParkingTypes(),
+		"InvitationHasChildren":        invitation.HasChildren(wr.Context),
 	}
 
 	functionMap := template.FuncMap{
