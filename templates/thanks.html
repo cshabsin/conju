@@ -1,0 +1,15 @@
+{{template "main.html" .}}
+{{define "body"}}
+<h1>{{.CurrentEvent.Name}}</h1>
+<div style="margin-top:50px">
+Thanks for your response!
+{{if .AnyUndecided}}
+  Please let us know if you'll be joining us as soon as you can.
+{{else if .AnyAttending}}
+  See you in New Hampshire.
+{{else}}
+  We'll miss you.
+{{end}}
+</div>
+<div style="padding:50px 0px 0px 300px">&mdash; Chris, Dana & Lydia</div>
+{{end}}

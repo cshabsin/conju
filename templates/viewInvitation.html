@@ -166,7 +166,8 @@ function validate(form) {
     if (anyoneMeetsCriteria(needsLodging) && (housingPreference == "0")) {
        errorMessages += "No housing preference selected.\n"
     }
-    if (housingPreference == "1" && $("input[name=housingNotes]").val() == "") {
+
+    if (housingPreference == "2" && $("textarea[name=housingNotes]").val() == "") {
        errorMessages += "No roommates listed.\n";
     }
 
@@ -177,7 +178,7 @@ function validate(form) {
     if (drivingPreference > 1) {
 	if ($("input[name=leaveFrom]").val() == "") errorMessages += "No driving start location provided.\n";
         if ($("input[name=leaveTime]").val() == "") errorMessages += "No driving start time provided.\n";
-	if (drivingPreference == 1 || drivingPreference == 3) {
+	if (drivingPreference == 2 || drivingPreference == 4) {
 	  if ($("input[name=additionalPassengers]").val() == "") errorMessages += "No car capacity provided.\n";
 	}
     }
