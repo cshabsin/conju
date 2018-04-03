@@ -63,13 +63,22 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 			return
 		}
 		ctx := appengine.NewContext(r)
+		u := user.Current(ctx)
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
 			Context:        ctx,
 			Session:        sess,
-			User:           user.Current(ctx),
-			TemplateData:   make(map[string]interface{}),
+			User:           u,
+			TemplateData: map[string]interface{}{
+				"User": u,
+			},
+		}
+		if u != nil {
+			logoutUrl, err := user.LogoutURL(ctx, wr.URL.RequestURI())
+			if err == nil {
+				wr.TemplateData["LogoutLink"] = logoutUrl
+			}
 		}
 		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
