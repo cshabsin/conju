@@ -6,10 +6,6 @@ import (
 	"google.golang.org/appengine/user"
 )
 
-type AdminInfo struct {
-	*user.User
-}
-
 // TODO(cshabsin): Replace error pages with templates.
 func AdminGetter(wr *WrappedRequest) error {
 	if wr.IsAdminUser() {

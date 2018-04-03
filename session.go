@@ -24,7 +24,7 @@ type WrappedRequest struct {
 	hasRunEventGetter bool
 	EventKey          *datastore.Key // TODO: stick these in EventInfo
 	*Event
-	*AdminInfo
+	*user.User
 	*LoginInfo
 }
 
@@ -62,13 +62,12 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 			return
 		}
 		ctx := appengine.NewContext(r)
-		u := user.Current(ctx)
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
 			Context:        ctx,
 			Session:        sess,
-			AdminInfo:      &AdminInfo{u},
+			User:           user.Current(ctx),
 		}
 		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
