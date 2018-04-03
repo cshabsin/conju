@@ -636,26 +636,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	savePeople(wr)
 
-	if !wr.IsAdminUser() {
-
-		data := struct {
-			AnyAttending bool
-			AnyUndecided bool
-			CurrentEvent Event
-		}{
-			AnyAttending: invitation.AnyAttending(),
-			AnyUndecided: invitation.AnyUndecided(),
-			CurrentEvent: *wr.Event,
-		}
-
-		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
-			log.Errorf(wr.Context, "%v", err)
-		}
-
-		return
-	}
-
 	type NewPersonInfo struct {
 		Name        string
 		Description string
@@ -719,5 +699,26 @@ func handleSaveInvitation(wr WrappedRequest) {
 		Subject: subject,
 	}
 	sendMail(wr.Context, "rsvpconfirmation", data, functionMap, header)
+
+	if !wr.IsAdminUser() {
+
+		data := struct {
+			AnyAttending bool
+			AnyUndecided bool
+			CurrentEvent Event
+		}{
+			AnyAttending: invitation.AnyAttending(),
+			AnyUndecided: invitation.AnyUndecided(),
+			CurrentEvent: *wr.Event,
+		}
+
+		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
+		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
+			log.Errorf(wr.Context, "%v", err)
+		}
+
+		return
+	}
+
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
