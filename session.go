@@ -129,6 +129,13 @@ func (w *WrappedRequest) RetrieveKeyFromSession(values_field string) (*datastore
 
 }
 
+func (w WrappedRequest) IsAdminUser() bool {
+	if w.User == nil {
+		return false
+	}
+	return w.User.Admin
+}
+
 /// WrappedResponseWriter simply records when the header has been
 /// written, so SetSessionValue can check and error when this has
 /// occurred.
