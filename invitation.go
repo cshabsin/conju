@@ -59,7 +59,7 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			personKeyString := p.Name[12:underscore]
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
-				log2.Printf("person lookup error: %v")
+				log2.Printf("person lookup error: %v", err)
 			}
 
 			mapForPerson := make(map[*datastore.Key]ActivityRanking)
@@ -90,7 +90,7 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			personKeyString := p.Name[18:underscore]
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
-				log2.Printf("person lookup error: %v")
+				log2.Printf("person lookup error: %v", err)
 			}
 
 			mapForPerson := make(map[*datastore.Key]bool)
@@ -454,23 +454,26 @@ func handleAddInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
+// handleViewInvitationUser handles /viewInvitation URLs.
 func handleViewInvitationAdmin(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
 	if err != nil {
+		http.Error(wr.ResponseWriter,
+			fmt.Sprintf("Error decoding invitation key: %v", err),
+			http.StatusBadRequest)
 	}
-	if err = handleViewInvitation(wr, invitationKey); err != nil {
-	}
+	handleViewInvitation(wr, invitationKey)
 }
 
+// handleViewInvitationUser handles /rsvp URLs.
 func handleViewInvitationUser(wr WrappedRequest) {
-	if err := handleViewInvitation(wr, wr.InvitationKey); err != nil {
-	}
+	handleViewInvitation(wr, wr.InvitationKey)
 }
 
-func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) error {
+func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	var invitation Invitation
 	datastore.Get(wr.Context, invitationKey, &invitation)
 
@@ -527,7 +530,6 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) error
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
-	return nil
 }
 
 func HasPreference(total int, mask int) bool {
