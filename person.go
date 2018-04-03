@@ -344,12 +344,9 @@ func handleListPeople(wr WrappedRequest) {
 
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	data := struct {
-		People       []*Person
-		CurrentEvent Event
-	}{
-		People:       allPeople,
-		CurrentEvent: *wr.Event,
+	data := map[string]interface{}{
+		"People":       allPeople,
+		"CurrentEvent": *wr.Event,
 	}
 
 	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/listPeople.html"))
@@ -404,19 +401,16 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	formInfo := makePersonUpdateFormInfo(person.DatastoreKey, *person, 0, false)
-	infoBundle := struct {
-		FormInfo     PersonUpdateFormInfo
-		CurrentEvent Event
-	}{
-		FormInfo:     formInfo,
-		CurrentEvent: *wr.Event,
+	data := map[string]interface{}{
+		"FormInfo":     formInfo,
+		"CurrentEvent": *wr.Event,
 	}
 	functionMap := template.FuncMap{
 		"PronounString": GetPronouns,
 	}
 
 	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/updatePerson.html", "templates/updatePersonForm.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", infoBundle); err != nil {
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
 }
