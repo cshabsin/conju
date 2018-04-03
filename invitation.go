@@ -214,6 +214,34 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 	return props, nil
 }
 
+func (inv *Invitation) AnyAttending() bool {
+	allStatuses := GetAllRsvpStatuses()
+	for _, invitee := range inv.Invitees {
+		if rsvp, present := inv.RsvpMap[invitee]; present {
+			attending := allStatuses[rsvp].Attending
+			if attending {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (inv *Invitation) AnyUndecided() bool {
+	allStatuses := GetAllRsvpStatuses()
+	for _, invitee := range inv.Invitees {
+		if rsvp, present := inv.RsvpMap[invitee]; present {
+			undecided := allStatuses[rsvp].Undecided
+			if undecided {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+	return false
+}
+
 func (inv *Invitation) HasChildren(ctx context.Context) bool {
 	var event Event
 	datastore.Get(ctx, inv.Event, &event)
@@ -631,17 +659,20 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	savePeople(wr)
 
-	log.Infof(wr.Context, "-------%v", wr.AdminInfo)
-	if !wr.User.Admin {
+	if !wr.IsAdminUser() {
 
 		data := struct {
 			AnyAttending bool
+			AnyUndecided bool
+			CurrentEvent Event
 		}{
-			AnyAttending: true,
+			AnyAttending: invitation.AnyAttending(),
+			AnyUndecided: invitation.AnyUndecided(),
+			CurrentEvent: *wr.Event,
 		}
 
 		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
+		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
 			log.Errorf(wr.Context, "%v", err)
 		}
 
@@ -665,13 +696,11 @@ func handleSaveInvitation(wr WrappedRequest) {
 		newPeopleSubjectFragment = " ADDITION REQUESTED,"
 	}
 
-	anyAttending := false
 	var isAttending []bool
 	for _, invitee := range invitation.Invitees {
 		if rsvp, present := rsvpMap[invitee]; present {
 			attending := GetAllRsvpStatuses()[rsvp].Attending
 			isAttending = append(isAttending, attending)
-			anyAttending = anyAttending || attending
 		} else {
 			isAttending = append(isAttending, false)
 		}
@@ -690,8 +719,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
-	log.Infof(wr.Context, "isAttending: %v, anyAttending: %v", isAttending, anyAttending)
-
 	data := struct {
 		RealInvitation               RealizedInvitation
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
@@ -706,7 +733,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		AllPronouns:                  []PronounSet{They, She, He, Zie},
 		AllFoodRestrictions:          GetAllFoodRestrictionTags(),
 		AdditionalPeople:             additionalPeople,
-		AnyAttending:                 anyAttending,
+		AnyAttending:                 invitation.AnyAttending(),
 		IsAttending:                  isAttending,
 	}
 
