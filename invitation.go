@@ -454,17 +454,28 @@ func handleAddInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
-func handleViewInvitation(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleViewInvitationAdmin(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
-	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
+	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
+	if err != nil {
+	}
+	if err = handleViewInvitation(wr, invitationKey); err != nil {
+	}
+}
+
+func handleViewInvitationUser(wr WrappedRequest) {
+	if err := handleViewInvitation(wr, wr.InvitationKey); err != nil {
+	}
+}
+
+func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) error {
 	var invitation Invitation
-	datastore.Get(ctx, invitationKey, &invitation)
+	datastore.Get(wr.Context, invitationKey, &invitation)
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
-	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKey, invitation)
 	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
 		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, i, true)
@@ -473,9 +484,9 @@ func handleViewInvitation(wr WrappedRequest) {
 
 	activityKeys := realizedInvitation.Event.Activities
 	var activities = make([]*Activity, len(activityKeys))
-	err := datastore.GetMulti(ctx, activityKeys, activities)
+	err := datastore.GetMulti(wr.Context, activityKeys, activities)
 	if err != nil {
-		log.Infof(ctx, "%v", err)
+		log.Infof(wr.Context, "%v", err)
 	}
 
 	var realActivities []Activity
@@ -504,7 +515,7 @@ func handleViewInvitation(wr WrappedRequest) {
 		AllHousingPreferenceBooleans: GetAllHousingPreferenceBooleans(),
 		AllDrivingPreferences:        GetAllDrivingPreferences(),
 		AllParkingTypes:              GetAllParkingTypes(),
-		InvitationHasChildren:        invitation.HasChildren(ctx),
+		InvitationHasChildren:        invitation.HasChildren(wr.Context),
 	}
 
 	functionMap := template.FuncMap{
@@ -514,9 +525,9 @@ func handleViewInvitation(wr WrappedRequest) {
 
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Errorf(wr.Context, "%v", err)
 	}
-
+	return nil
 }
 
 func HasPreference(total int, mask int) bool {
@@ -524,13 +535,12 @@ func HasPreference(total int, mask int) bool {
 }
 
 func handleSaveInvitation(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 	var invitation Invitation
-	datastore.Get(ctx, invitationKey, &invitation)
+	datastore.Get(wr.Context, invitationKey, &invitation)
 
 	people := wr.Request.Form["person"]
 	rsvps := wr.Request.Form["rsvp"]
@@ -541,7 +551,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	for i, personKey := range people {
 		key, _ := datastore.DecodeKey(personKey)
 		var person Person
-		datastore.Get(ctx, key, &person)
+		datastore.Get(wr.Context, key, &person)
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
 		if rsvp >= 0 {
@@ -605,15 +615,15 @@ func handleSaveInvitation(wr WrappedRequest) {
 	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
 	invitation.OtherInfo = wr.Request.Form.Get("otherInfo")
 
-	_, err := datastore.Put(ctx, invitationKey, &invitation)
+	_, err := datastore.Put(wr.Context, invitationKey, &invitation)
 	if err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Errorf(wr.Context, "%v", err)
 	}
 
 	var invitees []Person
 	for _, personKey := range invitation.Invitees {
 		var person Person
-		datastore.Get(ctx, personKey, &person)
+		datastore.Get(wr.Context, personKey, &person)
 		invitees = append(invitees, person)
 	}
 
@@ -649,7 +659,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	}
 
 	var e Event
-	datastore.Get(ctx, invitation.Event, &e)
+	datastore.Get(wr.Context, invitation.Event, &e)
 	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
 	functionMap := template.FuncMap{
@@ -657,11 +667,11 @@ func handleSaveInvitation(wr WrappedRequest) {
 		"PronounString":        GetPronouns,
 	}
 
-	realizedInvitation := makeRealizedInvitation(ctx, *invitationKey, invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKey, invitation)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
-	log.Infof(ctx, "isAttending: %v, anyAttending: %v", isAttending, anyAttending)
+	log.Infof(wr.Context, "isAttending: %v, anyAttending: %v", isAttending, anyAttending)
 
 	data := struct {
 		RealInvitation               RealizedInvitation
@@ -685,6 +695,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 		To:      []string{"**** email address ****"},
 		Subject: subject,
 	}
-	sendMail(ctx, "rsvpconfirmation", data, functionMap, header)
+	sendMail(wr.Context, "rsvpconfirmation", data, functionMap, header)
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }

@@ -12,7 +12,7 @@ type AdminInfo struct {
 
 // TODO(cshabsin): Replace error pages with templates.
 func AdminGetter(wr *WrappedRequest) error {
-	u := user.Current(wr.Context)
+	u := wr.AdminInfo.User
 	if u == nil {
 		url, _ := user.LoginURL(wr.Context, wr.URL.RequestURI())
 		wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -20,7 +20,6 @@ func AdminGetter(wr *WrappedRequest) error {
 		return DoneProcessingError{}
 	}
 	if u.Admin {
-		wr.AdminInfo = &AdminInfo{u}
 		return nil
 	}
 	logout_url, err := user.LogoutURL(wr.Context, wr.URL.RequestURI())

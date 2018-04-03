@@ -25,8 +25,8 @@
 
 <form action="addInvitation" method="POST">
 {{range .RealizedInvitations}}
-<input type="radio" name="invitation" value="{{.EncodedKey}}">
-<a href="viewInvitation?invitation={{.EncodedKey}}">{{ListInvitees .Invitees}}</a><br>
+  <input type="radio" name="invitation" value="{{.EncodedKey}}">
+  <a href="viewInvitation?invitation={{.EncodedKey}}">{{ListInvitees .Invitees}}</a><br>
 {{end}}
 
 <h3>Not Invited to {{.CurrentEvent.ShortName}}</h3>
