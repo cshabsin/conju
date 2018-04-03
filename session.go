@@ -9,6 +9,7 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/user"
 )
 
 // TODO(cshabsin): Figure out how to store the secret in the datastore
@@ -61,7 +62,14 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 			return
 		}
 		ctx := appengine.NewContext(r)
-		wr := WrappedRequest{wrw, r, ctx, sess, false, nil, nil, nil, nil}
+		u := user.Current(ctx)
+		wr := WrappedRequest{
+			ResponseWriter: wrw,
+			Request:        r,
+			Context:        ctx,
+			Session:        sess,
+			AdminInfo:      &AdminInfo{u},
+		}
 		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {

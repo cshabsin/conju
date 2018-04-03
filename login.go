@@ -3,6 +3,7 @@ package conju
 import (
 	"fmt"
 	"math/rand"
+	"net/http"
 
 	"google.golang.org/appengine/datastore"
 )
@@ -35,11 +36,17 @@ type LoginInfo struct {
 
 const loginPage = "/login"
 
+func handleLogin(urlTarget string) func(wr WrappedRequest) {
+	return func(wr WrappedRequest) {
+		handleLoginInner(wr, urlTarget)
+	}
+}
+
 // When a user navigates to the login link and provides the given code
 // string, the system validates the login code against the Person
 // table, and either puts the login code into the session, or writes
 // an error.
-func handleLogin(wr WrappedRequest) {
+func handleLoginInner(wr WrappedRequest, urlTarget string) {
 	url_q := wr.URL.Query()
 	lc, ok := url_q["loginCode"]
 	if !ok {
@@ -57,7 +64,7 @@ func handleLogin(wr WrappedRequest) {
 	}
 	wr.SetSessionValue("code", lc[0])
 	wr.SaveSession()
-	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Got loginCode: %s\n", lc[0])))
+	http.Redirect(wr.ResponseWriter, wr.Request, urlTarget, http.StatusFound)
 }
 
 // LoginGetter validates the login code from the session, looking up
