@@ -9,7 +9,6 @@ import (
 	"html/template"
 	log2 "log"
 	"net/http"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -119,18 +118,6 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 }
 
 func (inv *Invitation) Save() ([]datastore.Property, error) {
-
-	x := reflect.ValueOf(*inv)
-
-	//values := make([]interface{}, x.NumField())
-
-	for i := 0; i < x.NumField(); i++ {
-		//values[i] = x.Field(i).Interface()
-		//log2.Printf("%v", x.Field(i))
-	}
-
-	//	 fmt.Println(values)
-
 	props := []datastore.Property{
 		{
 			Name:  "Event",
@@ -637,15 +624,10 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	if !wr.IsAdminUser() {
 
-		data := struct {
-			AnyAttending bool
-			AnyUndecided bool
-			CurrentEvent Event
-		}{
-			AnyAttending: invitation.AnyAttending(),
-			AnyUndecided: invitation.AnyUndecided(),
-			CurrentEvent: *wr.Event,
-		}
+		data := wr.MakeTemplateData(map[string]interface{}{
+			"AnyAttending": invitation.AnyAttending(),
+			"AnyUndecided": invitation.AnyUndecided(),
+		})
 
 		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
 		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
