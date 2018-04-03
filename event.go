@@ -76,6 +76,7 @@ func EventGetter(wr *WrappedRequest) error {
 	key = keys[0]
 
 	wr.Event = e
+	wr.TemplateData["CurrentEvent"] = e
 	wr.EventKey = key
 	wr.SetSessionValue("EventKey", key.Encode())
 	wr.SaveSession()

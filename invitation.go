@@ -233,7 +233,6 @@ func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean)
 
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEvent := wr.Event
 	currentEventKeyEncoded := wr.Values["EventKey"].(string)
 	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
 
@@ -341,14 +340,13 @@ func handleInvitations(wr WrappedRequest) {
 		}
 	}
 
-	data := map[string]interface{}{
-		"CurrentEvent":        *currentEvent,
+	data := wr.MakeTemplateData(map[string]interface{}{
 		"Invitations":         invitations,
 		"RealizedInvitations": realizedInvitations,
 		"NotInvitedList":      notInvitedList,
 		"EventsWithKeys":      eventsWithKeys,
 		"Stats":               statistics,
-	}
+	})
 
 	functionMap := template.FuncMap{
 		"ListInvitees": func(peopleWithKeys []PersonWithKey) string {
@@ -368,9 +366,7 @@ func handleInvitations(wr WrappedRequest) {
 
 func handleCopyInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	//currentEvent := wr.Event
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
 	baseEventKeyEncoded := wr.Request.Form.Get("baseEvent")
@@ -404,8 +400,7 @@ func handleCopyInvitations(wr WrappedRequest) {
 
 func handleAddInvitation(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -490,8 +485,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		realActivities = append(realActivities, *activity)
 	}
 
-	data := map[string]interface{}{
-		"CurrentEvent":                 *wr.Event,
+	data := wr.MakeTemplateData(map[string]interface{}{
 		"Invitation":                   realizedInvitation,
 		"FormInfoMap":                  formInfoMap,
 		"AllRsvpStatuses":              GetAllRsvpStatuses(),
@@ -501,7 +495,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		"AllDrivingPreferences":        GetAllDrivingPreferences(),
 		"AllParkingTypes":              GetAllParkingTypes(),
 		"InvitationHasChildren":        invitation.HasChildren(wr.Context),
-	}
+	})
 
 	functionMap := template.FuncMap{
 		"PronounString": GetPronouns,
