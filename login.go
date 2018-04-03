@@ -47,6 +47,8 @@ func handleLogin(urlTarget string) func(wr WrappedRequest) {
 // table, and either puts the login code into the session, or writes
 // an error.
 func handleLoginInner(wr WrappedRequest, urlTarget string) {
+	// TODO(cshabsin): Read "message" CGI arg if present and
+	// display it. Prettify this page in general, using templates.
 	url_q := wr.URL.Query()
 	lc, ok := url_q["loginCode"]
 	if !ok {
