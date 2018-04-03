@@ -190,9 +190,9 @@ function validate(form) {
 }
 
 </script>
-<a href="invitations">All Invitations</a>
+{{if .IsAdminUser}}<a href="invitations">All Invitations</a>{{end}}
 
-<h1>Invitation for {{with .Invitation}}{{.Event.ShortName}}{{end}}</h1>
+<h1>{{with .Invitation}}{{.Event.Name}}{{end}}</h1>
 <form action="saveInvitation" method="POST" onsubmit="return validate(this)">
   <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
   <table class="inviteeTable">
@@ -201,9 +201,13 @@ function validate(form) {
     {{$AllRsvpStatuses := .AllRsvpStatuses}}
     {{$AllParkingTypes := .AllParkingTypes}}
     {{$Activities := .Invitation.Activities}}
+    {{$IsAdminUser := .IsAdminUser}}
     {{range  $i, $invitee := .Invitation.Invitees}}
-       <tr><td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
-           <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
+       <tr>
+           {{if $IsAdminUser}}
+               <td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
+               <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
+           {{end}}  
            <td>
 	     <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}

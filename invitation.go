@@ -510,6 +510,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		"AllDrivingPreferences":        GetAllDrivingPreferences(),
 		"AllParkingTypes":              GetAllParkingTypes(),
 		"InvitationHasChildren":        invitation.HasChildren(wr.Context),
+		"IsAdminUser":                  wr.IsAdminUser(),
 	})
 
 	functionMap := template.FuncMap{
@@ -622,21 +623,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	savePeople(wr)
 
-	if !wr.IsAdminUser() {
-
-		data := wr.MakeTemplateData(map[string]interface{}{
-			"AnyAttending": invitation.AnyAttending(),
-			"AnyUndecided": invitation.AnyUndecided(),
-		})
-
-		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
-			log.Errorf(wr.Context, "%v", err)
-		}
-
-		return
-	}
-
 	type NewPersonInfo struct {
 		Name        string
 		Description string
@@ -700,5 +686,21 @@ func handleSaveInvitation(wr WrappedRequest) {
 		Subject: subject,
 	}
 	sendMail(wr.Context, "rsvpconfirmation", data, functionMap, header)
+
+	if !wr.IsAdminUser() {
+
+		data := wr.MakeTemplateData(map[string]interface{}{
+			"AnyAttending": invitation.AnyAttending(),
+			"AnyUndecided": invitation.AnyUndecided(),
+		})
+
+		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
+		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
+			log.Errorf(wr.Context, "%v", err)
+		}
+
+		return
+	}
+
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
