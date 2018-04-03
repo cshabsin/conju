@@ -26,6 +26,7 @@ type WrappedRequest struct {
 	*Event
 	*user.User
 	*LoginInfo
+	TemplateData map[string]interface{}
 }
 
 type Getter func(*WrappedRequest) error
@@ -62,12 +63,22 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 			return
 		}
 		ctx := appengine.NewContext(r)
+		u := user.Current(ctx)
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
 			Context:        ctx,
 			Session:        sess,
-			User:           user.Current(ctx),
+			User:           u,
+			TemplateData: map[string]interface{}{
+				"User": u,
+			},
+		}
+		if u != nil {
+			logoutUrl, err := user.LogoutURL(ctx, wr.URL.RequestURI())
+			if err == nil {
+				wr.TemplateData["LogoutLink"] = logoutUrl
+			}
 		}
 		for _, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
@@ -133,6 +144,14 @@ func (w WrappedRequest) IsAdminUser() bool {
 		return false
 	}
 	return w.User.Admin
+}
+
+func (w WrappedRequest) MakeTemplateData(extraVals map[string]interface{}) map[string]interface{} {
+	vals := w.TemplateData
+	for k, v := range extraVals {
+		vals[k] = v
+	}
+	return vals
 }
 
 /// WrappedResponseWriter simply records when the header has been

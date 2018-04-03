@@ -7,6 +7,11 @@
 </head>
 
 <body link="#ff9999" vlink="#9999ff" >
-  {{block "body" .}}Default Body{{end}}
+  <div id="wrap">
+    <div id="header">
+      {{if .User}}<a href="{{.LogoutLink}}" id="login">Logout Admin</a>{{end}}
+    </div>
+    {{block "body" .}}Default Body{{end}}
+  </div>
 </body>
 </html>
