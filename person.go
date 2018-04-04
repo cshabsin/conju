@@ -345,7 +345,7 @@ func handleListPeople(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"CurrentEvent": *wr.Event,
+		"People": allPeople,
 	})
 
 	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/listPeople.html"))
