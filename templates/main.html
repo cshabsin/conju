@@ -7,9 +7,21 @@
 </head>
 
 <body link="#ff9999" vlink="#9999ff" >
-  <div id="wrap">
+  <div>
     <div id="header">
-      {{if .User}}<a href="{{.LogoutLink}}" id="login">Logout Admin</a>{{end}}
+      <div id="headerLinks">
+	{{if .User}}
+	  <div><a href="listPeople">People</a></div>
+	  <div><a href="invitations">Invitations</a></div>
+	{{end}}
+	  <div><a href="index.html">Home</a></div>
+	  <div><a href="rsvp">RSVP</a></div>
+      </div>
+      {{if .User}}
+        <div id="logoutLink">
+          <a href="{{.LogoutLink}}" id="login">Logout Admin</a>
+        </div>
+      {{end}}
     </div>
     {{block "body" .}}Default Body{{end}}
   </div>

@@ -190,7 +190,6 @@ function validate(form) {
 }
 
 </script>
-{{if .IsAdminUser}}<a href="invitations">All Invitations</a>{{end}}
 
 <h1>{{with .Invitation}}{{.Event.Name}}{{end}}</h1>
 <form action="saveInvitation" method="POST" onsubmit="return validate(this)">
