@@ -2,7 +2,7 @@
   {{/* TODO: implement text version */}}
   {{$Invitation := .RealInvitation}}
   {{range $i, $invitee := .RealInvitation.Invitees}}
-    {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}    
+    {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
     {{$invitee.Person.FullName}}: {{$RsvpStatus.ShortDescription}}
   {{end}}
 {{end}}
@@ -12,10 +12,10 @@
     {{$AllPronouns := .AllPronouns}}
     {{$AllFoodRestrictions := .AllFoodRestrictions}}
     {{$IsAttending := .IsAttending}}
-{{if gt (len .AdditionalPeople) 0}} 
+{{if gt (len .AdditionalPeople) 0}}
 <table style="margin-bottom:20px"><tr>
 <td style="vertical-align:top">Requested additional guests:</td>
-<td>  
+<td>
   {{range .AdditionalPeople}}
     <b>{{.Name}}</b> -- {{.Description}}<br>
   {{end}}
@@ -69,13 +69,13 @@
 
 <div style="margin-top:50px;">
 {{range $i, $invitee := $Invitation.Invitees}}
-  {{if (index $IsAttending $i)}}  
+  {{if (index $IsAttending $i)}}
 <div style="margin-bottom:15px"><b>{{$invitee.Person.FullName}}</b>
   <table style="border-collapse:collapse">
 <tr><td></td><td style="width:75px;font-weight:bold;text-align:center">No</td><td style="width:75px;font-weight:bold;text-align:center">Maybe</td><td style="width:75px;font-weight:bold;text-align:center">Definitely</td><td style="width:150px;font-weight:bold;text-align:center">Lead?</td></tr>
 {{range $a, $activity := $Invitation.Activities}}
-  {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}} 
-  {{$activityLead := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}} 
+  {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}}
+  {{$activityLead := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}}
 <tr>
 <td style="padding-right:15px">{{$activity.Activity.Keyword}}</td>
 <td style="border:1px solid black; text-align:center">{{if eq $activityRanking 1}}X{{end}}</td>

@@ -531,6 +531,9 @@ func HasPreference(total int, mask int) bool {
 func handleSaveInvitation(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
+	// TODO: verify user is admin, or logged in from the same
+	// invitation.
+
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 	var invitation Invitation
