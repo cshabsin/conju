@@ -2,6 +2,7 @@ package conju
 
 import (
 	"context"
+	"time"
 
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -25,6 +26,8 @@ type RealizedInvitation struct {
 	TravelNotes               string
 	AdditionalPassengers      string
 	OtherInfo                 string
+	LastUpdatedPerson         PersonWithKey
+	LastUpdatedTimestamp      time.Time
 }
 
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation) RealizedInvitation {
@@ -40,6 +43,19 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		}
 
 		invitees = append(invitees, personWithKey)
+	}
+
+	var person Person
+	var lastUpdatedPerson PersonWithKey
+	err := datastore.Get(ctx, invitation.LastUpdatedPerson, &person)
+	if err != nil {
+		//log.Infof(ctx, "%v", err)
+	} else {
+		person.DatastoreKey = invitation.LastUpdatedPerson
+		lastUpdatedPerson = PersonWithKey{
+			Person: person,
+			Key:    invitation.LastUpdatedPerson.Encode(),
+		}
 	}
 
 	var event Event
@@ -102,6 +118,8 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		AdditionalPassengers:      invitation.AdditionalPassengers,
 		TravelNotes:               invitation.TravelNotes,
 		OtherInfo:                 invitation.OtherInfo,
+		LastUpdatedPerson:         lastUpdatedPerson,
+		LastUpdatedTimestamp:      invitation.LastUpdatedTimestamp,
 	}
 
 	return realizedInvitation

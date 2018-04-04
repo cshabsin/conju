@@ -192,20 +192,20 @@ func GetAllFoodRestrictionTags() []FoodRestrictionTag {
 	return toReturn
 }
 
-func (p *Person) GetFirstName(formality NameFormality) string {
+func (p Person) GetFirstName(formality NameFormality) string {
 	if p.Nickname != "" && formality == Informal {
 		return p.Nickname
 	}
 	return p.FirstName
 }
 
-func (p *Person) FullName() string {
+func (p Person) FullName() string {
 	return p.FullNameWithFormality(Informal)
 }
 
 // FullName returns the formatted full name of the person, with
 // nickname if present.
-func (p *Person) FullNameWithFormality(formality NameFormality) string {
+func (p Person) FullNameWithFormality(formality NameFormality) string {
 
 	if p.Nickname != "" && formality == Full {
 		return fmt.Sprintf("%s (%s) %s", p.FirstName, p.Nickname, p.LastName)
