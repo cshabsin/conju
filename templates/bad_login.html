@@ -1,0 +1,16 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<h1>Log In Please</h1>
+
+<p>{{.Message}}</p>
+
+<p>If you have lost track of your login link, enter an email address we
+have on file for you to have the link resent</p>
+
+<form action="resendInvitation" method="POST">
+  Email Address <input type="text" name="emailAddress"/><p>
+  <input type="submit" value="Resend Link"/>
+</form>
+
+{{end}}
