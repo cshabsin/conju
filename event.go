@@ -68,6 +68,9 @@ func EventGetter(wr *WrappedRequest) error {
 	var events []*Event
 	q := datastore.NewQuery("Event").Filter("Current =", true)
 	keys, err = q.GetAll(wr.Context, &events)
+	if err != nil {
+		return err
+	}
 	if len(keys) > 1 {
 		log.Infof(wr.Context, "found %d current events", len(keys))
 		return errors.New(fmt.Sprintf("found more than one current event (%d)", len(keys)))

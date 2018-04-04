@@ -2,10 +2,12 @@ package conju
 
 import (
 	"fmt"
+	"html/template"
 	"math/rand"
 	"net/http"
 
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 // A LoginCode is a secret string we send to users as part of their
@@ -34,7 +36,7 @@ type LoginInfo struct {
 	*Person
 }
 
-const loginPage = "/login"
+const loginErrorPage = "/login_error"
 
 func handleLogin(urlTarget string) func(wr WrappedRequest) {
 	return func(wr WrappedRequest) {
@@ -45,23 +47,30 @@ func handleLogin(urlTarget string) func(wr WrappedRequest) {
 // When a user navigates to the login link and provides the given code
 // string, the system validates the login code against the Person
 // table, and either puts the login code into the session, or writes
-// an error.
+// an error. On error, we display an error page with help. On success,
+// we redirect to urlTarget.
 func handleLoginInner(wr WrappedRequest, urlTarget string) {
 	// TODO(cshabsin): Read "message" CGI arg if present and
 	// display it. Prettify this page in general, using templates.
 	url_q := wr.URL.Query()
 	lc, ok := url_q["loginCode"]
 	if !ok {
-		wr.ResponseWriter.Write([]byte("Please use the link from your email to log in."))
+		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
+			"?message=Please use the link from your email to log in.",
+			http.StatusFound)
 		return
 	}
 	count, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).Count(wr.Context)
 	if err != nil {
-		wr.ResponseWriter.Write([]byte("Login not recognized."))
+		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
+			"?message=Login not recognized.",
+			http.StatusFound)
 		return
 	}
 	if count == 0 {
-		wr.ResponseWriter.Write([]byte("Login not recognized."))
+		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
+			"?message=Login not recognized.",
+			http.StatusFound)
 		return
 	}
 	wr.SetSessionValue("code", lc[0])
@@ -87,7 +96,8 @@ func LoginGetter(wr *WrappedRequest) error {
 	}
 	code, ok := wr.Values["code"].(string)
 	if !ok {
-		return RedirectError{loginPage}
+		return RedirectError{loginErrorPage +
+			"?message=Please use the link from your email to log in."}
 	}
 	var people []Person
 	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(wr.Context, &people)
@@ -95,9 +105,11 @@ func LoginGetter(wr *WrappedRequest) error {
 		return err
 	}
 	if len(people) == 0 {
-		return RedirectError{loginPage + "?message=Person not found for loginCode."}
+		return RedirectError{loginErrorPage +
+			"?message=Person not found for loginCode."}
 	} else if len(people) > 1 {
-		return RedirectError{loginPage + "?message=DB Error: loginCode collision."}
+		return RedirectError{loginErrorPage +
+			"?message=DB Error: loginCode collision."}
 	}
 
 	var invitations []Invitation
@@ -109,9 +121,9 @@ func LoginGetter(wr *WrappedRequest) error {
 		return err
 	}
 	if len(invitations) == 0 {
-		return RedirectError{loginPage + "?message=No invitation found for currently selected event."}
+		return RedirectError{loginErrorPage + "?message=No invitation found for currently selected event."}
 	} else if len(invitations) > 1 {
-		return RedirectError{loginPage + "?message=DB Error: multiple invitations found."}
+		return RedirectError{loginErrorPage + "?message=DB Error: multiple invitations found."}
 	}
 
 	wr.LoginInfo = &LoginInfo{invitationKeys[0], &invitations[0], peopleKeys[0], &people[0]}
@@ -122,4 +134,65 @@ func LoginGetter(wr *WrappedRequest) error {
 // LoginGetter, for testing.
 func checkLogin(wr WrappedRequest) {
 	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(wr.Context, *wr.LoginInfo.InvitationKey, *wr.LoginInfo.Invitation))))
+}
+
+func handleLoginError(wr WrappedRequest) {
+	wr.Request.ParseForm()
+	message_list, ok := wr.Request.Form["message"]
+	var message string
+	if ok {
+		message = message_list[0]
+	} else {
+		message = "Login not found."
+	}
+	tpl := template.Must(template.New("").ParseFiles(
+		"templates/main.html",
+		"templates/bad_login.html"))
+	data := wr.MakeTemplateData(map[string]interface{}{
+		"Message": message,
+	})
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "bad_login.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}
+
+func handleResendInvitation(wr WrappedRequest) {
+	wr.Request.ParseForm()
+	emailAddresses, ok := wr.Request.PostForm["emailAddress"]
+	if !ok || len(emailAddresses) != 1 {
+		http.Redirect(wr.ResponseWriter, wr.Request,
+			loginErrorPage+"?message=Bad form input.", http.StatusFound)
+		return
+	}
+	q := datastore.NewQuery("Person").Filter("Email =", emailAddresses[0])
+	var people []Person
+	_, err := q.GetAll(wr.Context, &people)
+	if err != nil {
+		log.Errorf(wr.Context, "%v", err)
+		http.Redirect(wr.ResponseWriter, wr.Request,
+			loginErrorPage+"?message=Query error (contact admin: code RIGPER).",
+			http.StatusFound)
+	}
+	if len(people) == 1 {
+		loginUrl := SiteLink + "/login?loginCode=" + people[0].LoginCode
+		// NOTE: This does not give an error message if the email
+		// address is not found, so no one can probe the system for
+		// people they know. This may be a bad UI, but it is good
+		// privacy.
+		data := map[string]interface{}{
+			"LoginLink": loginUrl,
+		}
+		header := MailHeaderInfo{
+			To:      []string{people[0].Email},
+			Subject: fmt.Sprintf("Your Invitation Link to %s", wr.Event.Name),
+		}
+		sendMail(wr.Context, "resendInvitation", data, nil, header)
+	}
+	// TODO: Make a resentInvitation.html template explaining that
+	// if they don't get email in a minute or two from us, they
+	// should contact us to find out which email addresses of
+	// theirs we have on file.
+	http.Redirect(wr.ResponseWriter, wr.Request,
+		loginErrorPage+"?message=Updog.",
+		http.StatusFound)
 }

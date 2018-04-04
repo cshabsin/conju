@@ -542,6 +542,14 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
+
+	if !(wr.IsAdminUser() || *wr.InvitationKey == *invitationKey) {
+		http.Error(wr.ResponseWriter,
+			"Not authorized to edit invitation.",
+			http.StatusForbidden)
+		return
+	}
+
 	var invitation Invitation
 	datastore.Get(wr.Context, invitationKey, &invitation)
 

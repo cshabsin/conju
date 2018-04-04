@@ -2,6 +2,10 @@ package conju
 
 import "fmt"
 
+// TODO: Change this to the real link once we're live, or get it
+// dynamically somehow.
+const SiteLink = "http://localhost:8080"
+
 func init() {
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
 	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
@@ -18,10 +22,12 @@ func init() {
 	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(EventGetter).Needs(LoginGetter)
 
 	AddSessionHandler("/login", handleLogin("/rsvp")).Needs(EventGetter)
+	AddSessionHandler(loginErrorPage, handleLoginError).Needs(EventGetter)
 	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(LoginGetter)
 
 	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
 	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
+	AddSessionHandler("/resendInvitation", handleResendInvitation).Needs(EventGetter)
 }
 
 func handleIncrement(wr WrappedRequest) {

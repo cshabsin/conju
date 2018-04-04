@@ -20,9 +20,9 @@
 
   function togglePersonalInfo(encodedKey) {
     $("#" + encodedKey).toggle();
-    if ($("#" + encodedKey).is(":visible")) $("#showInfo_" + encodedKey).text("Hide"); 
+    if ($("#" + encodedKey).is(":visible")) $("#showInfo_" + encodedKey).text("Hide");
     else {
-      $("#showInfo_" + encodedKey).text("Edit Personal Info"); 
+      $("#showInfo_" + encodedKey).text("Edit Personal Info");
     }
   }
 
@@ -41,7 +41,7 @@
     return $(".rsvpStatus").map((index, status, statuses) => {
        var val = $(status).val();
        return val < 0 ? false : criteriaChecker(val);})
-         .get().reduce((tally, thing, index, things) => {return tally || thing;}, false); 
+         .get().reduce((tally, thing, index, things) => {return tally || thing;}, false);
   }
 
 
@@ -101,7 +101,7 @@
   }
 
   function addNewPersonContainer() {
-    $("#newPersonCollectionContainer").append("<div class=\"newPersonContainer\">" + 
+    $("#newPersonCollectionContainer").append("<div class=\"newPersonContainer\">" +
       "Name: <input type=\"text\" name=\"newPersonName\">" +
       "Who is this person? <input type=\"text\" name=\"newPersonDescription\"/></div>");
       adjustAddPersonInputs();
@@ -116,7 +116,7 @@
       } else {
         $(".newPersonCollectionContainer").append($("#newPersonContainer").clone())
         $(".newPersonInstructionsPlural").hide();
-        $(".newPersonInstructionsSingular").show();    
+        $(".newPersonInstructionsSingular").show();
       }
   }
 
@@ -132,7 +132,7 @@
 
       adjustArrows();
     });
-  
+
     $(".personal").hide();
     $(".activities").hide();
     $(".food").hide();
@@ -144,9 +144,9 @@
     $("#parking_{{.Invitation.Parking.Parking}}").prop("checked", true);
     for (var i=0; i < {{(len .Invitation.Invitees)}}; i++) {
         processRsvpStatus(i);
-    } 
+    }
     adjustDrivingFields();
-    
+
   })
 
 
@@ -184,7 +184,7 @@ function validate(form) {
     }
 
     if (errorMessages.length > 0) {
-	return confirm(errorMessages + "\n\nDo you still want to submit your RSVP?  You can update your RSVP at any time."); 
+	return confirm(errorMessages + "\n\nDo you still want to submit your RSVP?  You can update your RSVP at any time.");
     }
     return true;
 }
@@ -210,7 +210,7 @@ function validate(form) {
            {{if $IsAdminUser}}
                <td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
                <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
-           {{end}}  
+           {{end}}
            <td>
 	     <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
@@ -238,25 +238,25 @@ function validate(form) {
 	       </div>
 
 	       <div class="activities hidden">
-		 <div class="activityHeader">We will have some organized (perhaps "organized") activities at the weekend.  Attendance at some of the organized activities has been low in the past couple of years, so we want to make sure there there's interest before we schedule something.  If you are waffling between choices pick the less committal option.  Also, if you are willing to organize one of the activities (selecting a hike, DMing a role-playing game, etc) please check the corresponding box. </div> 
+		 <div class="activityHeader">We will have some organized (perhaps "organized") activities at the weekend.  Attendance at some of the organized activities has been low in the past couple of years, so we want to make sure there there's interest before we schedule something.  If you are waffling between choices pick the less committal option.  Also, if you are willing to organize one of the activities (selecting a hike, DMing a role-playing game, etc) please check the corresponding box. </div>
 
 		 <table class="activityTable">
-		   <tr><td><b>Would you attend this activity?</b></td><td class="ranking"><b>No</b></td><td class="ranking"><b>Maybe</b></td><td class="ranking"><b>Definitely</b></td><td class="leader"><b>Willing to Organize?</b></td></t> 
+		   <tr><td><b>Would you attend this activity?</b></td><td class="ranking"><b>No</b></td><td class="ranking"><b>Maybe</b></td><td class="ranking"><b>Definitely</b></td><td class="leader"><b>Willing to Organize?</b></td></t>
   		   {{range $a, $activity := $Activities}}
-                     {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}} 
+                     {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}}
 		     <tr>
 		       <td>{{$activity.Activity.Keyword}}: {{$activity.Activity.Description}}</td>
 		       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="1"{{if eq $activityRanking 1}} checked {{end}}></td>
                        <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="2"{{if eq $activityRanking 2}} checked {{end}}></td>
                        <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="3"{{if eq $activityRanking 3}} checked {{end}}></td>
                        {{if $activity.Activity.NeedsLeader}}
-                         {{$activityLeader := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}} 
+                         {{$activityLeader := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}}
 		         <td class="leader"><input type="checkbox" name="activity_{{$i}}_{{$a}}_leader" {{if $activityLeader}} checked{{end}}></td>
 		       {{end}}
 		     </tr>
- 
+
 		   {{end}}
-		 </table>  
+		 </table>
 	       </div>
 
                <div class="personal hidden">
@@ -274,7 +274,7 @@ function validate(form) {
                    Please let us know if you'll be joining us as soon as you know!  But as long as you're here...<br>
                    <br>
                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
-                 </div>                 
+                 </div>
                  <table class="formTable">
                    {{template "personInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
                  </table>
@@ -286,7 +286,7 @@ function validate(form) {
     {{end}}
   </table>
 
-  <div id="newPersonCollectionContainer" class="hidden"></div> 
+  <div id="newPersonCollectionContainer" class="hidden"></div>
   <div class="newPersonInstructionsSingular hidden">We'll let you know when this person has been added to your invitation.</div>
   <div class="newPersonInstructionsPlural hidden">We'll let you know when these people have been added to your invitation.</div>
 
@@ -295,7 +295,7 @@ function validate(form) {
   <div class="lodgingFormContainer hidden">
     <h4>Housing Preferences</h4>
     Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.<br>
-    <br> 
+    <br>
 
     {{$single := (eq (len .Invitation.Invitees) 1)}}
     <table class="rsvpHousing"><tr><td>

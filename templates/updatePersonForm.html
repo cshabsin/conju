@@ -32,9 +32,9 @@
         <table><tr><td>
           {{range $i, $restriction := .AllFoodRestrictions}}
             {{$RestrictionMapValue := index $FoodRestrictionMap $restriction.Tag}} 
-            <input type="checkbox" name="FoodRestrictions{{$index}}" value="{{.Tag}}"
+            <label><input type="checkbox" name="FoodRestrictions{{$index}}" value="{{.Tag}}"
             {{if eq 1 $RestrictionMapValue}}checked{{end}}
-            >{{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}<br>
+            >{{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}</label><br>
             {{if eq $i 4}}</td><td>{{end}}
           {{end}}
         </td></tr></table>
