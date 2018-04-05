@@ -29,5 +29,5 @@ func maybeDayOnly(t1 time.Time, t2 time.Time) string {
 	if t1.Month() == t2.Month() {
 		return t1.Format("2")
 	}
-	return ShortDate(t1)
+	return shortDate(t1)
 }
