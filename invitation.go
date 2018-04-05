@@ -264,25 +264,10 @@ func handleInvitations(wr WrappedRequest) {
 	var invitations []*Invitation
 
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	var invitationKeys []*datastore.Key
-
-	t := q.Run(ctx)
-	for {
-		var inv Invitation
-		invKey, err := t.Next(&inv)
-		if err == datastore.Done {
-			break
-		}
-		if err != nil {
-			log.Errorf(ctx, "fetching next Invitation: %v", err)
-			continue
-		}
-
-		invitationKeys = append(invitationKeys, invKey)
-		invitations = append(invitations, &inv)
-
+	invitationKeys, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
-
 	realizedInvitations := makeRealizedInvitations(ctx, invitationKeys, invitations)
 
 	type Statistics struct {
@@ -296,8 +281,7 @@ func handleInvitations(wr WrappedRequest) {
 
 	var statistics Statistics
 	statistics.UninvitedCount = len(people)
-	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := realizedInvitations[i]
+	for _, realizedInvitation := range realizedInvitations {
 		for _, invitee := range realizedInvitation.Invitees {
 			statistics.UninvitedCount--
 			birthdate := invitee.Person.Birthdate
@@ -328,9 +312,11 @@ func handleInvitations(wr WrappedRequest) {
 			return SortByLastFirstName(realizedInvitations[a].Invitees[0].Person, realizedInvitations[b].Invitees[0].Person)
 		})
 
-	var notInvitedList []PersonWithKey
+	notInvitedList := make([]PersonWithKey, len(notInvitedSet), len(notInvitedSet))
+	i := 0
 	for k := range notInvitedSet {
-		notInvitedList = append(notInvitedList, notInvitedSet[k])
+		notInvitedList[i] = notInvitedSet[k]
+		i++
 	}
 	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a].Person, notInvitedList[b].Person) })
 
