@@ -2,9 +2,7 @@ package conju
 
 import "fmt"
 
-// TODO: Change this to the real link once we're live, or get it
-// dynamically somehow.
-const SiteLink = "http://localhost:8080"
+const SiteLink = "https://psr2018.shabsin.com"
 
 func init() {
 	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
