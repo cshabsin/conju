@@ -1,14 +1,33 @@
 package conju
 
 import (
-	"google.golang.org/appengine/log"
 	"html/template"
+	"time"
+
+	"google.golang.org/appengine/log"
 )
 
 func handleHomePage(wr WrappedRequest) {
-	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/index.html"))
+	functionMap := template.FuncMap{
+		"ShortDate":    ShortDate,
+		"MaybeDayOnly": MaybeDayOnly,
+	}
+	tpl := template.Must(template.New("").
+		Funcs(functionMap).
+		ParseFiles("templates/main.html", "templates/index.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 		return
 	}
+}
+
+func ShortDate(t time.Time) string {
+	return t.Format("Jan 2")
+}
+
+func MaybeDayOnly(t1 time.Time, t2 time.Time) string {
+	if t1.Month() == t2.Month() {
+		return t1.Format("2")
+	}
+	return ShortDate(t1)
 }

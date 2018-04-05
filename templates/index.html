@@ -3,7 +3,11 @@
 
 <h1>{{.CurrentEvent.Name}}</h1>
 
-It's happening!<p>
+<p>It's happening! Save the date!</p>
+
+<p>
+{{ShortDate .CurrentEvent.StartDate}}-{{MaybeDayOnly .CurrentEvent.EndDate .CurrentEvent.StartDate}}</p>
+
 <img src="/media/happening.gif"/>
 
 {{end}}
