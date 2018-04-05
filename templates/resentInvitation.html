@@ -1,0 +1,14 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<h1>Invitation Resent</h1>
+
+<p>You have requested that an invitation be resent
+to <code>&lt;{{.ResentAddress}}&gt;</code>.</p>
+
+<p>This mail will only be sent if we have that address on file for
+you. If you don't get email from us in the next couple of minutes,
+please contact us by other means to see if we might have a different
+email address on file for you.</p>
+
+{{end}}

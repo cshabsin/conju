@@ -37,6 +37,7 @@ type LoginInfo struct {
 }
 
 const loginErrorPage = "/login_error"
+const resentInvitationPage = "/resentInvitation"
 
 func handleLogin(urlTarget string) func(wr WrappedRequest) {
 	return func(wr WrappedRequest) {
@@ -173,12 +174,12 @@ func handleResendInvitation(wr WrappedRequest) {
 			loginErrorPage+"?message=Query error (contact admin: code RIGPER).",
 			http.StatusFound)
 	}
+	// NOTE: This does not give an error message if the email
+	// address is not found, so no one can probe the system for
+	// people they know. This may be a bad UI, but it is good
+	// privacy.
 	if len(people) == 1 {
 		loginUrl := SiteLink + "/login?loginCode=" + people[0].LoginCode
-		// NOTE: This does not give an error message if the email
-		// address is not found, so no one can probe the system for
-		// people they know. This may be a bad UI, but it is good
-		// privacy.
 		data := map[string]interface{}{
 			"LoginLink": loginUrl,
 		}
@@ -193,6 +194,25 @@ func handleResendInvitation(wr WrappedRequest) {
 	// should contact us to find out which email addresses of
 	// theirs we have on file.
 	http.Redirect(wr.ResponseWriter, wr.Request,
-		loginErrorPage+"?message=Updog.",
+		resentInvitationPage+"?emailAddress="+emailAddresses[0],
 		http.StatusFound)
+}
+
+func handleResentInvitation(wr WrappedRequest) {
+	wr.Request.ParseForm()
+	emailAddresses, ok := wr.Request.Form["emailAddress"]
+	if !ok || len(emailAddresses) != 1 {
+		http.Redirect(wr.ResponseWriter, wr.Request,
+			loginErrorPage+"?message=An error occurred.", http.StatusFound)
+		return
+	}
+	data := wr.MakeTemplateData(map[string]interface{}{
+		"ResentAddress": emailAddresses[0],
+	})
+	tpl := template.Must(template.New("").ParseFiles(
+		"templates/main.html",
+		"templates/resentInvitation.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "resentInvitation.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
 }

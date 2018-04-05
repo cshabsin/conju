@@ -26,6 +26,7 @@ func init() {
 	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
 	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
 	AddSessionHandler("/resendInvitation", handleResendInvitation).Needs(EventGetter)
+	AddSessionHandler(resentInvitationPage, handleResentInvitation).Needs(EventGetter)
 
 	AddSessionHandler("/", handleHomePage).Needs(EventGetter)
 }
