@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -34,6 +35,8 @@ type Invitation struct {
 	AdditionalPassengers      string
 	TravelNotes               string
 	OtherInfo                 string
+	LastUpdatedPerson         *datastore.Key
+	LastUpdatedTimestamp      time.Time
 }
 
 func (inv *Invitation) Load(ps []datastore.Property) error {
@@ -161,6 +164,12 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		},
 		{Name: "OtherInfo",
 			Value: inv.OtherInfo,
+		},
+		{Name: "LastUpdatedPerson",
+			Value: inv.LastUpdatedPerson,
+		},
+		{Name: "LastUpdatedTimestamp",
+			Value: inv.LastUpdatedTimestamp,
 		},
 	}
 
@@ -603,6 +612,10 @@ func handleSaveInvitation(wr WrappedRequest) {
 	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
 	invitation.OtherInfo = wr.Request.Form.Get("otherInfo")
 
+	invitation.LastUpdatedPerson = wr.LoginInfo.PersonKey
+
+	invitation.LastUpdatedTimestamp = time.Now()
+
 	_, err := datastore.Put(wr.Context, invitationKey, &invitation)
 	if err != nil {
 		log.Errorf(wr.Context, "%v", err)
@@ -679,6 +692,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		To:      []string{"**** email address ****"},
 		Subject: subject,
 	}
+
 	sendMail(wr.Context, "rsvpconfirmation", data, functionMap, header)
 
 	if !wr.IsAdminUser() {
