@@ -9,8 +9,8 @@ import (
 
 func handleHomePage(wr WrappedRequest) {
 	functionMap := template.FuncMap{
-		"ShortDate":    ShortDate,
-		"MaybeDayOnly": MaybeDayOnly,
+		"ShortDate":    shortDate,
+		"MaybeDayOnly": maybeDayOnly,
 	}
 	tpl := template.Must(template.New("").
 		Funcs(functionMap).
@@ -21,11 +21,11 @@ func handleHomePage(wr WrappedRequest) {
 	}
 }
 
-func ShortDate(t time.Time) string {
+func shortDate(t time.Time) string {
 	return t.Format("Jan 2")
 }
 
-func MaybeDayOnly(t1 time.Time, t2 time.Time) string {
+func maybeDayOnly(t1 time.Time, t2 time.Time) string {
 	if t1.Month() == t2.Month() {
 		return t1.Format("2")
 	}
