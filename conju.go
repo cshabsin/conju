@@ -24,6 +24,7 @@ func init() {
 	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(LoginGetter)
 
 	AddSessionHandler("/sendMail", handleSendMail).Needs(LoginGetter).Needs(AdminGetter)
+	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(LoginGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
 	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
