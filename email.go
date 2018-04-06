@@ -17,22 +17,30 @@ type MailHeaderInfo struct {
 	Subject string
 }
 
-// Renders the named mail template and returns the filled text and html, or an error.
-func renderMail(templatePrefix string, data interface{}, functions template.FuncMap) (string, string, error) {
+// Renders the named mail template and returns the filled text, filled
+// html, and filled subject line, or an error.
+func renderMail(templatePrefix string, data interface{}, functions template.FuncMap, needSubject bool) (string, string, string, error) {
 	file := "templates/email/" + templatePrefix + ".html"
 	tpl, err := template.New("").Funcs(functions).ParseFiles(file)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	var text bytes.Buffer
-	var html bytes.Buffer
 	if err := tpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
+	var html bytes.Buffer
 	if err := tpl.ExecuteTemplate(&html, templatePrefix+"_html", data); err != nil {
-		return text.String(), "", err
+		return text.String(), "", "", err
 	}
-	return text.String(), html.String(), nil
+	if needSubject {
+		var subject bytes.Buffer
+		if err := tpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
+			return text.String(), html.String(), "", err
+		}
+		return text.String(), html.String(), subject.String(), nil
+	}
+	return text.String(), html.String(), "", nil
 }
 
 func handleSendMail(wr WrappedRequest) {
@@ -56,7 +64,7 @@ func handleSendMail(wr WrappedRequest) {
 		"Person":     wr.LoginInfo.Person,
 		"LoginLink":  makeLoginUrl(wr.LoginInfo.Person),
 	}
-	text, html, err := renderMail(emailTemplate[0], emailData, nil)
+	text, html, subject, err := renderMail(emailTemplate[0], emailData, nil, true)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -64,6 +72,7 @@ func handleSendMail(wr WrappedRequest) {
 	}
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"TemplateName": emailTemplate[0],
+		"Subject":      subject,
 		"Body":         text,
 		"HTMLBody":     template.HTML(html),
 	})
@@ -79,14 +88,19 @@ func handleSendMail(wr WrappedRequest) {
 
 func sendMail(ctx context.Context, templatePrefix string, data interface{},
 	functions template.FuncMap, headerData MailHeaderInfo) error {
-	text, html, err := renderMail(templatePrefix, data, functions)
+	text, html, subject, err := renderMail(templatePrefix, data, functions,
+		/* needSubject = */ headerData.Subject != "")
+	if headerData.Subject != "" {
+		subject = headerData.Subject
+	}
 	if err != nil {
 		return err
 	}
 	msg := &mail.Message{
 		Sender:   "**** sender address ****",
 		To:       headerData.To,
-		Subject:  headerData.Subject,
+		Bcc:      []string{"**** sender address ****"},
+		Subject:  subject,
 		Body:     text,
 		HTMLBody: html,
 	}

@@ -5,7 +5,15 @@
 
 <p>Email template <code>"{{.TemplateName}}"</code> example rendering:</p>
 
-<div id="textEmail">{{.Body}}</div>
-<div id="htmlEmail">{{.HTMLBody}}</div>
+<div id="email">
+  <label>Headers:</label>
+  <div id="headerEmail"><b>Subject:</b> {{.Subject}}</div>
+
+  <label>Text:</label>
+  <div id="textEmail">{{.Body}}</div>
+
+  <label>HTML:</label>
+  <div id="htmlEmail">{{.HTMLBody}}</div>
+</div>
 
 {{end}}

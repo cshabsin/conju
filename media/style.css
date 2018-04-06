@@ -170,21 +170,31 @@ h1 {
     padding:0;
 }
 
-#textEmail {
+#email {
 	border: 1px solid #1f1497;
 	margin: 20px;
 	padding: 5px;
-	font-family: monospace;
 	color: black;
 	background: white;
 }
 
+#headerEmail {
+	border: 1px solid #1f1497;
+	padding: 5px;
+	margin: 5px;
+}
+
+#textEmail {
+	border: 1px solid #1f1497;
+	font-family: monospace;
+	padding: 5px;
+	margin: 5px;
+}
+
 #htmlEmail {
 	border: 1px solid #1f1497;
-	margin: 20px;
 	padding: 5px;
-	color: black;
-	background: white;
+	margin: 5px;
 }
 
 textarea {width:100%}

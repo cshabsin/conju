@@ -184,8 +184,7 @@ func handleResendInvitation(wr WrappedRequest) {
 			"LoginLink": loginUrl,
 		}
 		header := MailHeaderInfo{
-			To:      []string{people[0].Email},
-			Subject: fmt.Sprintf("Your Invitation Link to %s", wr.Event.Name),
+			To: []string{people[0].Email},
 		}
 		sendMail(wr.Context, "resendInvitation", data, nil, header)
 	}
@@ -218,5 +217,5 @@ func handleResentInvitation(wr WrappedRequest) {
 }
 
 func makeLoginUrl(p *Person) string {
-	return SiteLink + "/login?logincode=" + p.LoginCode
+	return SiteLink + "/login?loginCode=" + p.LoginCode
 }
