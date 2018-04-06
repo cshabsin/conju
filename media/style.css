@@ -179,20 +179,20 @@ h1 {
 }
 
 #headerEmail {
-	border: 1px solid #1f1497;
+	border: 1px solid #ddd;
 	padding: 5px;
 	margin: 5px;
 }
 
 #textEmail {
-	border: 1px solid #1f1497;
+	border: 1px solid #ddd;
 	font-family: monospace;
 	padding: 5px;
 	margin: 5px;
 }
 
 #htmlEmail {
-	border: 1px solid #1f1497;
+	border: 1px solid #ddd;
 	padding: 5px;
 	margin: 5px;
 }
