@@ -118,6 +118,9 @@ func handleDoSendMail(wr WrappedRequest) {
 	}
 	var sender EmailSender
 	sender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
+		if _, ok := emailData["LoginLink"]; !ok {
+			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
+		}
 		return sendMail(ctx, emailTemplate, emailData, nil, headerData)
 	}
 	if err := distributor(wr, sender); err != nil {

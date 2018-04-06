@@ -25,7 +25,6 @@ func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
 		"Event":      wr.Event,
 		"Invitation": realizedInvitation,
 		"Person":     wr.LoginInfo.Person,
-		"LoginLink":  makeLoginUrl(wr.LoginInfo.Person),
 	}
 	err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
 	return err
