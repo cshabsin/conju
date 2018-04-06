@@ -170,6 +170,23 @@ h1 {
     padding:0;
 }
 
+#textEmail {
+	border: 1px solid #1f1497;
+	margin: 20px;
+	padding: 5px;
+	font-family: monospace;
+	color: black;
+	background: white;
+}
+
+#htmlEmail {
+	border: 1px solid #1f1497;
+	margin: 20px;
+	padding: 5px;
+	color: black;
+	background: white;
+}
+
 textarea {width:100%}
 
 table.listTable{margin:20px; border-collapse: collapse}

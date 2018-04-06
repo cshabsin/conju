@@ -1,0 +1,11 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<h1>Sending Email</h1>
+
+<p>Email template <code>"{{.TemplateName}}"</code> example rendering:</p>
+
+<div id="textEmail">{{.Body}}</div>
+<div id="htmlEmail">{{.HTMLBody}}</div>
+
+{{end}}
