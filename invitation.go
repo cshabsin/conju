@@ -61,6 +61,11 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
 				log2.Printf("person lookup error: %v", err)
+				continue
+			}
+			if personKey == nil {
+				log2.Printf("person lookup yielded nil key for map entry %s", p.Name)
+				continue
 			}
 
 			mapForPerson := make(map[*datastore.Key]ActivityRanking)
