@@ -34,12 +34,13 @@ func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
 func AllInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
-	// for all invitees in wr, call sender on the data built up from
+	// TODO: for all invitees in wr, call sender on the data built up from
 	// that invitee, but with "dry run" values for recipients.
 	return nil
 }
 
 func AllInviteesDistributor(wr WrappedRequest, sender EmailSender) error {
-	// for all invitees in wr, call sender on the data built up from that invitee.
+	// TODO: for all invitees in wr, call sender on the data built up
+	// from that invitee.
 	return nil
 }
