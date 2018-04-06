@@ -19,7 +19,7 @@
 Select a distribution:
 
 <form action="doSendMail" method="POST">
-  <input type="hidden" name="emailTemplate" value="{{.EmailTemplate}}"/>
+  <input type="hidden" name="emailTemplate" value="{{.TemplateName}}"/>
   <select name="distributor">
 	{{range .AllDistributors}}
 	<option value="{{.}}">{{.}}</option>
