@@ -179,7 +179,7 @@ func handleResendInvitation(wr WrappedRequest) {
 	// people they know. This may be a bad UI, but it is good
 	// privacy.
 	if len(people) == 1 {
-		loginUrl := SiteLink + "/login?loginCode=" + people[0].LoginCode
+		loginUrl := makeLoginUrl(&people[0])
 		data := map[string]interface{}{
 			"LoginLink": loginUrl,
 		}
@@ -215,4 +215,8 @@ func handleResentInvitation(wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "resentInvitation.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
+}
+
+func makeLoginUrl(p *Person) string {
+	return SiteLink + "/login?logincode=" + p.LoginCode
 }

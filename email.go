@@ -48,7 +48,15 @@ func handleSendMail(wr WrappedRequest) {
 		return
 	}
 	// TODO: What data do we send this?
-	text, html, err := renderMail(emailTemplate[0], nil, nil)
+	realizedInvitation := makeRealizedInvitation(wr.Context, *wr.LoginInfo.InvitationKey,
+		*wr.LoginInfo.Invitation)
+	emailData := map[string]interface{}{
+		"Event":      wr.Event,
+		"Invitation": realizedInvitation,
+		"Person":     wr.LoginInfo.Person,
+		"LoginLink":  makeLoginUrl(wr.LoginInfo.Person),
+	}
+	text, html, err := renderMail(emailTemplate[0], emailData, nil)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -57,7 +65,7 @@ func handleSendMail(wr WrappedRequest) {
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"TemplateName": emailTemplate[0],
 		"Body":         text,
-		"HTMLBody":     html,
+		"HTMLBody":     template.HTML(html),
 	})
 	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/sendEmail.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "sendEmail.html", data); err != nil {
