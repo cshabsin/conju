@@ -30,8 +30,6 @@ func init() {
 	AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/needsLogin", handleIncrement).Needs(InvitationGetter)
-	AddSessionHandler("/checkLogin", checkLogin).Needs(InvitationGetter)
 	AddSessionHandler("/resendInvitation", handleResendInvitation)
 	AddSessionHandler(resentInvitationPage, handleResentInvitation)
 
