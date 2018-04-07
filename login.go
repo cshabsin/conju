@@ -127,10 +127,7 @@ func PersonGetter(wr *WrappedRequest) error {
 		var err error
 		personKey, err = datastore.DecodeKey(personKeyEncoded)
 		err = datastore.Get(wr.Context, personKey, &person)
-		if err != nil {
-			return err
-		}
-		if person.LoginCode != code {
+		if err != nil || person.LoginCode != code {
 			return RedirectError{loginErrorPage +
 				"?message=Something went out of sync. Please log in " +
 				"again using the link from your email."}
