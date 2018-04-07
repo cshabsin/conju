@@ -55,11 +55,13 @@ func EventGetter(wr *WrappedRequest) error {
 	if err != nil {
 		return err
 	}
-	var e *Event
-	err = datastore.Get(wr.Context, key, e)
-	if err == nil && e != nil {
+	var e Event
+	err = datastore.Get(wr.Context, key, &e)
+	if err == nil {
 		// We have retrieved the event successfully.
-		log.Infof(wr.Context, "retrieved event successfully.")
+		wr.Event = &e
+		wr.EventKey = key
+		wr.TemplateData["CurrentEvent"] = e
 		return nil
 	}
 
@@ -74,11 +76,10 @@ func EventGetter(wr *WrappedRequest) error {
 		log.Infof(wr.Context, "found %d current events", len(keys))
 		return errors.New(fmt.Sprintf("found more than one current event (%d)", len(keys)))
 	}
-	e = events[0]
+	wr.Event = events[0]
 	key = keys[0]
 
-	wr.Event = e
-	wr.TemplateData["CurrentEvent"] = e
+	wr.TemplateData["CurrentEvent"] = wr.Event
 	wr.EventKey = key
 	wr.SetSessionValue("EventKey", key.Encode())
 	wr.SaveSession()
