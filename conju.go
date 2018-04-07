@@ -5,33 +5,33 @@ import "fmt"
 const SiteLink = "https://psr2018.shabsin.com"
 
 func init() {
-	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
-	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
-	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
-	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
+	AddSessionHandler("/increment", handleIncrement).Needs(PersonGetter)
+	AddSessionHandler("/reloadData", AskReloadData).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/doReloadData", ReloadData).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/clearData", ClearAllData).Needs(PersonGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/listPeople", handleListPeople).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(AdminGetter)
-	AddSessionHandler("/invitations", handleInvitations).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/viewInvitation", handleViewInvitationAdmin).Needs(EventGetter).Needs(AdminGetter)
-	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(EventGetter).Needs(LoginGetter)
+	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/invitations", handleInvitations).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/viewInvitation", handleViewInvitationAdmin).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(InvitationGetter)
 
-	AddSessionHandler("/login", handleLogin("/rsvp")).Needs(EventGetter)
-	AddSessionHandler(loginErrorPage, handleLoginError).Needs(EventGetter)
-	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(LoginGetter)
+	AddSessionHandler("/login", handleLogin("/rsvp"))
+	AddSessionHandler(loginErrorPage, handleLoginError)
+	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(InvitationGetter)
 
-	AddSessionHandler("/sendMail", handleSendMail).Needs(LoginGetter).Needs(AdminGetter)
-	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(LoginGetter).Needs(AdminGetter)
+	AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
+	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
-	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
-	AddSessionHandler("/resendInvitation", handleResendInvitation).Needs(EventGetter)
-	AddSessionHandler(resentInvitationPage, handleResentInvitation).Needs(EventGetter)
+	AddSessionHandler("/needsLogin", handleIncrement).Needs(InvitationGetter)
+	AddSessionHandler("/checkLogin", checkLogin).Needs(InvitationGetter)
+	AddSessionHandler("/resendInvitation", handleResendInvitation)
+	AddSessionHandler(resentInvitationPage, handleResentInvitation)
 
-	AddSessionHandler("/", handleHomePage).Needs(EventGetter)
+	AddSessionHandler("/", handleHomePage)
 }
 
 func handleIncrement(wr WrappedRequest) {

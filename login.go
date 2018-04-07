@@ -36,7 +36,7 @@ type LoginInfo struct {
 	*Person
 }
 
-const loginErrorPage = "/login_error"
+const loginErrorPage = "/loginError"
 const resentInvitationPage = "/resentInvitation"
 
 func handleLogin(urlTarget string) func(wr WrappedRequest) {
@@ -95,12 +95,14 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 // database.
 //
 // If EventGetter has not been called, LoginGetter calls it.
-func LoginGetter(wr *WrappedRequest) error {
+func PersonGetter(wr *WrappedRequest) error {
 	if !wr.hasRunEventGetter {
-		err := EventGetter(wr)
-		if err != nil {
+		if err := EventGetter(wr); err != nil {
 			return err
 		}
+	}
+	if wr.LoginInfo != nil {
+		return nil // This has already been run.
 	}
 	code, ok := wr.Values["code"].(string)
 	if !ok {
@@ -139,22 +141,32 @@ func LoginGetter(wr *WrappedRequest) error {
 				"again using the link from your email."}
 		}
 	}
+	wr.LoginInfo = &LoginInfo{nil, nil, personKey, &person}
+	return nil
+}
 
+func InvitationGetter(wr *WrappedRequest) error {
+	if wr.LoginInfo == nil {
+		if err := PersonGetter(wr); err != nil {
+			return err
+		}
+	}
 	var invitations []Invitation
 	invitationKeys, err := datastore.NewQuery("Invitation").
-		Filter("Invitees =", personKey).
+		Filter("Invitees =", wr.LoginInfo.PersonKey).
 		Filter("Event =", wr.EventKey).
 		GetAll(wr.Context, &invitations)
 	if err != nil {
 		return err
 	}
 	if len(invitations) == 0 {
-		return RedirectError{loginErrorPage + "?message=No invitation found for currently selected event: " + personKey.Encode()}
+		return RedirectError{loginErrorPage + "?message=No invitation found for currently selected event"}
 	} else if len(invitations) > 1 {
 		return RedirectError{loginErrorPage + "?message=DB Error: multiple invitations found."}
 	}
 
-	wr.LoginInfo = &LoginInfo{invitationKeys[0], &invitations[0], personKey, &person}
+	wr.LoginInfo.InvitationKey = invitationKeys[0]
+	wr.LoginInfo.Invitation = &invitations[0]
 	return nil
 }
 

@@ -54,7 +54,8 @@ func (dpe DoneProcessingError) Error() string {
 }
 
 func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
-	getters := Getters{make([]Getter, 0)}
+	var getters Getters
+	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
