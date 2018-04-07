@@ -106,8 +106,10 @@ func PersonGetter(wr *WrappedRequest) error {
 	}
 	code, ok := wr.Values["code"].(string)
 	if !ok {
-		return RedirectError{loginErrorPage +
-			"?message=Please use the link from your email to log in."}
+		li := &LoginInfo{nil, nil, nil, nil}
+		wr.LoginInfo = li
+		wr.TemplateData["LoginInfo"] = li
+		return nil
 	}
 	personKeyEncoded, ok := wr.Values["person"].(string)
 	var person Person
@@ -118,10 +120,7 @@ func PersonGetter(wr *WrappedRequest) error {
 		if err != nil {
 			return err
 		}
-		if len(people) == 0 {
-			return RedirectError{loginErrorPage +
-				"?message=Person not found for loginCode."}
-		} else if len(people) > 1 {
+		if len(people) > 1 {
 			return RedirectError{loginErrorPage +
 				"?message=DB Error: loginCode collision."}
 		}
@@ -141,7 +140,9 @@ func PersonGetter(wr *WrappedRequest) error {
 				"again using the link from your email."}
 		}
 	}
-	wr.LoginInfo = &LoginInfo{nil, nil, personKey, &person}
+	li := &LoginInfo{nil, nil, personKey, &person}
+	wr.LoginInfo = li
+	wr.TemplateData["LoginInfo"] = li
 	return nil
 }
 
@@ -150,6 +151,9 @@ func InvitationGetter(wr *WrappedRequest) error {
 		if err := PersonGetter(wr); err != nil {
 			return err
 		}
+	}
+	if wr.LoginInfo.Person == nil {
+		return RedirectError{loginErrorPage + "?message=Please use the link from your invitation email to log in."}
 	}
 	var invitations []Invitation
 	invitationKeys, err := datastore.NewQuery("Invitation").
