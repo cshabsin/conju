@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type CurrentEvent struct {
@@ -72,8 +71,10 @@ func EventGetter(wr *WrappedRequest) error {
 	if err != nil {
 		return err
 	}
+	if len(keys) == 0 {
+		return errors.New(fmt.Sprintf("found no current event"))
+	}
 	if len(keys) > 1 {
-		log.Infof(wr.Context, "found %d current events", len(keys))
 		return errors.New(fmt.Sprintf("found more than one current event (%d)", len(keys)))
 	}
 	wr.Event = events[0]
