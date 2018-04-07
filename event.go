@@ -4,11 +4,10 @@ package conju
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/log"
 )
 
 type CurrentEvent struct {
@@ -69,13 +68,16 @@ func EventGetter(wr *WrappedRequest) error {
 	q := datastore.NewQuery("Event").Filter("Current =", true)
 	keys, err = q.GetAll(wr.Context, &events)
 	if err != nil {
-		return err
+		log.Errorf(wr.Context, "Error querying for current event: %v", err)
+		return nil
 	}
 	if len(keys) == 0 {
-		return errors.New(fmt.Sprintf("found no current event"))
+		log.Errorf(wr.Context, "Found no current event")
+		return nil
 	}
 	if len(keys) > 1 {
-		return errors.New(fmt.Sprintf("found more than one current event (%d)", len(keys)))
+		log.Errorf(wr.Context, "Found more than one current event (%d)", len(keys))
+		return nil
 	}
 	wr.Event = events[0]
 	key = keys[0]
