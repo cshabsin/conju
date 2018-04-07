@@ -9,7 +9,7 @@
 
 <body link="#ff9999" vlink="#9999ff" >
   <div>
-    {{if (or .LoginInfo .User)}}
+    {{if (or .LoginInfo.Person .User)}}
       <div id="header">
         <div id="headerLinks">
 	  {{if .User}}

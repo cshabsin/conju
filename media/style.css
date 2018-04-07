@@ -69,6 +69,33 @@ html {
  a:hover   { color: #444444; }
 
 
+#email {
+	border: 1px solid #1f1497;
+	margin: 20px;
+	padding: 5px;
+	color: black;
+	background: white;
+}
+
+#headerEmail {
+	border: 1px solid #ddd;
+	padding: 5px;
+	margin: 5px;
+}
+
+#textEmail {
+	border: 1px solid #ddd;
+	font-family: monospace;
+	padding: 5px;
+	margin: 5px;
+}
+
+#htmlEmail {
+	border: 1px solid #ddd;
+	padding: 5px;
+	margin: 5px;
+}
+
 textarea {width:100%}
 
 table.listTable{margin:20px; border-collapse: collapse}

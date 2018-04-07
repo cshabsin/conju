@@ -1,0 +1,31 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<h1>Sending Email</h1>
+
+<p>Email template <code>"{{.TemplateName}}"</code> example rendering:</p>
+
+<div id="email">
+  <label>Headers:</label>
+  <div id="headerEmail"><b>Subject:</b> {{.Subject}}</div>
+
+  <label>Text:</label>
+  <div id="textEmail">{{.Body}}</div>
+
+  <label>HTML:</label>
+  <div id="htmlEmail">{{.HTMLBody}}</div>
+</div>
+
+Select a distribution:
+
+<form action="doSendMail" method="POST">
+  <input type="hidden" name="emailTemplate" value="{{.TemplateName}}"/>
+  <select name="distributor">
+	{{range .AllDistributors}}
+	<option value="{{.}}">{{.}}</option>
+	{{end}}
+  </select>
+  <input type="submit" value="Send"/>
+</form>
+
+{{end}}

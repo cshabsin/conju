@@ -53,7 +53,6 @@ func EventGetter(wr *WrappedRequest) error {
 	wr.hasRunEventGetter = true
 	key, err := wr.RetrieveKeyFromSession("EventKey")
 	if err != nil {
-		// TODO: do something
 		return err
 	}
 	var e *Event
