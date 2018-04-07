@@ -38,6 +38,8 @@ type Invitation struct {
 	LastUpdatedTimestamp      time.Time
 }
 
+const delimiter = "|_|"
+
 func (inv *Invitation) Load(ps []datastore.Property) error {
 	allRsvpStatuses := GetAllRsvpStatuses()
 
@@ -56,8 +58,8 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 
 		if strings.HasPrefix(p.Name, "ActivityMap.") {
 
-			underscore := strings.Index(p.Name, "_")
-			personKeyString := p.Name[12:underscore]
+			delimiterIndex := strings.Index(p.Name, delimiter)
+			personKeyString := p.Name[12:delimiterIndex]
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
 				log2.Printf("person lookup error: %v", err)
@@ -79,7 +81,7 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 
 			inv.ActivityMap[personKey] = mapForPerson
 
-			activityKeyString := p.Name[underscore+1:]
+			activityKeyString := p.Name[(delimiterIndex + len(delimiter)):]
 
 			activityKey, err := datastore.DecodeKey(activityKeyString)
 			if err != nil {
@@ -92,8 +94,8 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 
 		if strings.HasPrefix(p.Name, "ActivityLeaderMap.") {
 
-			underscore := strings.Index(p.Name, "_")
-			personKeyString := p.Name[18:underscore]
+			delimiterIndex := strings.Index(p.Name, delimiter)
+			personKeyString := p.Name[18:delimiterIndex]
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
 				log2.Printf("person lookup error: %v", err)
@@ -110,7 +112,7 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 
 			inv.ActivityLeaderMap[personKey] = mapForPerson
 
-			activityKeyString := p.Name[underscore+1:]
+			activityKeyString := p.Name[(delimiterIndex + len(delimiter)):]
 
 			activityKey, err := datastore.DecodeKey(activityKeyString)
 			if err != nil {
@@ -197,7 +199,7 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		personEncodedKey := (*p).Encode()
 		partialName := "ActivityMap." + personEncodedKey
 		for a, v := range m {
-			totalKey := partialName + "_" + (*a).Encode()
+			totalKey := partialName + delimiter + (*a).Encode()
 			props = append(props, datastore.Property{Name: totalKey, Value: int64(v)})
 		}
 	}
@@ -206,7 +208,7 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		personEncodedKey := (*p).Encode()
 		partialName := "ActivityLeaderMap." + personEncodedKey
 		for a, v := range m {
-			totalKey := partialName + "_" + (*a).Encode()
+			totalKey := partialName + delimiter + (*a).Encode()
 			props = append(props, datastore.Property{Name: totalKey, Value: v})
 		}
 	}
