@@ -71,16 +71,12 @@ func handleSendMail(wr WrappedRequest) {
 			http.StatusInternalServerError)
 		return
 	}
-	distributorNames := make([]string, 0)
-	for k, _ := range AllDistributors {
-		distributorNames = append(distributorNames, k)
-	}
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"TemplateName":    emailTemplate,
 		"Subject":         subject,
 		"Body":            text,
 		"HTMLBody":        template.HTML(html),
-		"AllDistributors": distributorNames,
+		"AllDistributors": AllDistributors,
 	})
 	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/sendEmail.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "sendEmail.html", data); err != nil {
@@ -123,7 +119,7 @@ func handleDoSendMail(wr WrappedRequest) {
 		}
 		return sendMail(ctx, emailTemplate, emailData, nil, headerData)
 	}
-	if err := distributor(wr, sender); err != nil {
+	if err := distributor.Distribute(wr, sender); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
 		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
 	}

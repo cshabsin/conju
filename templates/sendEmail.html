@@ -21,8 +21,8 @@ Select a distribution:
 <form action="doSendMail" method="POST">
   <input type="hidden" name="emailTemplate" value="{{.TemplateName}}"/>
   <select name="distributor">
-	{{range .AllDistributors}}
-	<option value="{{.}}">{{.}}</option>
+	{{range $name, $_ := .AllDistributors}}
+	<option value="{{$name}}">{{$name}}</option>
 	{{end}}
   </select>
   <input type="submit" value="Send"/>

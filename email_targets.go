@@ -11,11 +11,15 @@ import (
 type EmailSender func(context.Context, map[string]interface{}, MailHeaderInfo) error
 
 type EmailDistributor func(WrappedRequest, EmailSender) error
+type EmailDistributorEntry struct {
+	NeedsConfirm bool
+	Distribute   EmailDistributor
+}
 
-var AllDistributors = map[string]EmailDistributor{
-	"SelfOnly":          SelfOnlyDistributor,
-	"AllInviteesDryRun": AllInviteesDryRunDistributor,
-	"AllInvitees*REAL*": AllInviteesDistributor,
+var AllDistributors = map[string]EmailDistributorEntry{
+	"SelfOnly":          {false, SelfOnlyDistributor},
+	"AllInviteesDryRun": {false, AllInviteesDryRunDistributor},
+	"AllInvitees*REAL*": {true, AllInviteesDistributor},
 }
 
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
