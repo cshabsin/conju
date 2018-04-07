@@ -106,7 +106,9 @@ func PersonGetter(wr *WrappedRequest) error {
 	}
 	code, ok := wr.Values["code"].(string)
 	if !ok {
-		wr.LoginInfo = &LoginInfo{nil, nil, nil, nil}
+		li := &LoginInfo{nil, nil, nil, nil}
+		wr.LoginInfo = li
+		wr.TemplateData["LoginInfo"] = li
 		return nil
 	}
 	personKeyEncoded, ok := wr.Values["person"].(string)
@@ -138,7 +140,9 @@ func PersonGetter(wr *WrappedRequest) error {
 				"again using the link from your email."}
 		}
 	}
-	wr.LoginInfo = &LoginInfo{nil, nil, personKey, &person}
+	li := &LoginInfo{nil, nil, personKey, &person}
+	wr.LoginInfo = li
+	wr.TemplateData["LoginInfo"] = li
 	return nil
 }
 
