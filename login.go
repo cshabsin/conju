@@ -61,10 +61,11 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 			http.StatusFound)
 		return
 	}
-	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(wr.Context, nil)
+	var people []Person
+	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(wr.Context, &people)
 	if err != nil {
-		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
-			"?message=Login not recognized.",
+		http.Redirect(wr.ResponseWriter, wr.Request,
+			fmt.Sprintf("%s?message=DB error looking you up: %v", loginErrorPage, err),
 			http.StatusFound)
 		return
 	}
@@ -126,7 +127,8 @@ func LoginGetter(wr *WrappedRequest) error {
 		person = people[0]
 		personKey = peopleKeys[0]
 	} else {
-		personKey, err := datastore.DecodeKey(personKeyEncoded)
+		var err error
+		personKey, err = datastore.DecodeKey(personKeyEncoded)
 		err = datastore.Get(wr.Context, personKey, &person)
 		if err != nil {
 			return err
@@ -147,7 +149,7 @@ func LoginGetter(wr *WrappedRequest) error {
 		return err
 	}
 	if len(invitations) == 0 {
-		return RedirectError{loginErrorPage + "?message=No invitation found for currently selected event."}
+		return RedirectError{loginErrorPage + "?message=No invitation found for currently selected event: " + personKey.Encode()}
 	} else if len(invitations) > 1 {
 		return RedirectError{loginErrorPage + "?message=DB Error: multiple invitations found."}
 	}
