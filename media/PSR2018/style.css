@@ -1,3 +1,8 @@
+@media only screen and (max-width: 760px) {
+  .sidebarPictures { display: none !important; }
+  .headerSidePicture { display: none !important; }
+  .mainContent { padding-left: 0px !important; }
+}
 
 .homeMain {
     padding: 30px;
@@ -18,7 +23,7 @@
 
 }
 
-.headerPictures {
+.headerPictures, .textHeader {
     white-space: nowrap;
     width:100%;
 }
@@ -73,7 +78,7 @@
     color: #AA66FF;
 }
 
-.subscript-caret {
+.caret-subscript {
     font-family: "Comic Sans MS", cursive, sans-serif;
     font-size: 250%;
     position: relative;
@@ -107,4 +112,22 @@
 .mainContent {
     padding-left:40px;
     text-align: justify;
+}
+
+.rateTableContainer {
+    width: 100%;
+    text-align: center;
+    margin: 30px;
+}
+
+.rateTable {
+    margin: auto;
+    border-collapse: collapse;
+}
+
+.rateTable td, th {
+    border: 1px solid #1F1497;
+    padding:10px;
+    text-align: center;
+    vertical-align:top;
 }
