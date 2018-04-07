@@ -56,7 +56,7 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 	lc, ok := url_q["loginCode"]
 	if !ok {
 		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
-			"?message=Please use the link from your email to log in.",
+			"?message=Login is required for this section of our site.  Please use the link from your email to log in.",
 			http.StatusFound)
 		return
 	}

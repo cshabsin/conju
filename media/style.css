@@ -24,17 +24,11 @@
 
 body {
     margin:0;
-    padding:30px;
+    padding:0px 30px;
     color:      #1F1497;
-    background: #FAF4E2;
-    font-family: LMRoman, georgia, new york,serif;
-}
-
-.warning{
-    font-weight:bold;
-    color: #FAF4E2;
-    background: #1F1497;
-    padding:10px;
+    background-color: #EEEEEE;
+    /* background: #FAF4E2; */
+    /* font-family: LMRoman, georgia, new york,serif; */
 }
 
 html {
@@ -42,20 +36,11 @@ html {
     padding:0;
 }
 
-#wrap {
-    width:800px;
-    margin:0 auto;
-    background: none;
-}
-
-h1 {
-
-}
 
 #header {
     padding:5px 10px;
     border-bottom:1px solid  #1F1497;
-    margin: 10px 0px 40px 0px;
+    margin: 10px 0px;
     text-align: left;
     width: 100%;
 }
@@ -78,97 +63,11 @@ h1 {
     display: inline-block;
 }
 
-#content {
-    color: #1f1497;
-    /*color:      #eff9ff;*/
-    float: right;
-    width: 600px;
-    padding:10px;
-    margin: 20px 20px 20px 0px;
-}
-
-
-/* Side navigation bar */
-#sidebar {
-    /*background: #c0d8e6;*/
-    float: left;
-    width: 140px;
-    padding: 5px;
-    margin: 40px 0px 10px 0px;
-}
-
-#sidebar ul {
-    margin:0;
-    padding:0;
-    list-style:none;
-}
-
-#sidebar ul li {
-/* background color was C0D8E6 */
-    background: #191497/* url('/static/button.png') no-repeat*/;
-    background-position: center 7px;
-    /*filter:alpha(opacity=70);  opacity:0.7;*/
-    color: #FAF4E2;
-    margin: 8px;
-    padding: 8px;
-    font: 10pt bold; 
-    text-align: center;
-}
-
-#sidebar ul li a:link { color: #FAF4E2; text-decoration: none; } 
-#sidebar ul li a:visited { color: #FAF4E2; text-decoration: none;  }
-#sidebar ul li a:active  { color: #FAF4E2; text-decoration: none; }
-#sidebar ul li a:hover   { color: #CCAA12; text-decoration: none; }
-
-
-
-#sidebar ul li ul li {
-    background: none;
-    background-position: 10px center;
-    padding: 2px;
-    margin: 4px;
-}
-
  a:link    { color: #1f1497; }
  a:visited { color: #1f1497; }
  a:active  { color: #1f1497; }
  a:hover   { color: #444444; }
-/*
-#sidebar li a:link    { color: #4F0463; text-decoration: none; }
-#sidebar li a:visited { color: #4F0463; text-decoration: none; }
-#sidebar li a:active  { color: #4F0463; text-decoration: none; }
-#sidebar li a:hover   { color: red; text-decoration: none; }
 
-*/
-
-
-/* Footer */
-
-#footer {
-    background:#c0d8e6;
-    clear:both;
-    padding:5px 10px;
-}
-
-#footer p {
-    margin:0;
-}
-
-
-/* For a top navigation bar... */
-#nav {
-    background: #c99;
-}
-#nav ul {
-    margin:0;
-    padding:0;
-    list-style:none;
-}
-#nav li {
-    display:inline;
-    margin:0;
-    padding:0;
-}
 
 textarea {width:100%}
 
@@ -181,145 +80,7 @@ table.formtable {margin:20px}
 .addressField {width:150px;}
 .freeformTextField {width: 450px;height: 150px}
 
-
-table.infotable { border-collapse: collapse; margin:20px}
-
-table.infotable tr, table.infotable td, table.infotable th {
-    margin:  0px;
-    padding: 7px;
-    /*border: 1px solid #191497;*/
-    /*background-color: #e3ecf6;*/
-    color: #191497;
-    text-align: left;
-}
-
-table.infotable2 tr, table.infotable2 td, table.infotable2 th {
-    margin:  0px;
-    padding: 4px;
-    border: 2px solid #c0d8e6;
-    background-color:
-    color: black;
-    text-align: left;
-}
-
-/*
-table.activitytable{
-    width:75%;
-}
-
-table.activitytable td{
-    width:33%;
-    padding:10px;
-    vertical-align:top;
-}
-*/
-table.timespantable{
-    border-collapse:collapse;
-    margin-bottom:50px;
-}
-
-table.timespantable tr.header td{
-    padding-bottom:15px;
-}
-
-table.timespantable td.guest{
-    width:200px;
-}
-
-table.timespantable td{
-    width:125px;
-}
-
-table.timespantable td.present{
-    background-color: #990000;
-}
-
-
-.errorlist {
-    font: bold;
-    color: #0000ff;
-}
-
-.fieldWrapper {
-    display: block;
-    font-size: 10pt;
-    padding: 5px;
-}
-
-.fieldWrapper input[type="text"], .fieldWrapper textarea {
-    font-size: 12pt;
-    border: solid 1px #9999bb;
-    background: #f9fcff;
-}
-
-.fieldLabel {
-    color: #191497;
-    padding: 2px;
-    display: block;
-}
-
-.fieldWrapper ul {
-    list-style: none;
-    text-indent: -2em;
-}
-
-.formBox {
-    border: 1px #191497 solid;
-    padding: 10px;
-    margin: 20px 4px 20px 4px;
-    color: #191497;
-    text-align: left;
-}
-
-.formButton {
-    text-align: center;
-}
-
-.formButton input {
-    color: #191497;
-    background: #c0d8e6;
-    font-size: 14pt;
-    padding: 4px;
-}
-
-.formBox h4 {
-}
-
-.formBox h3 {
-    color:      #191497;
-    margin-top: 2px; 
-}
-
-.AttendingSelect {
-    onselect: 
-}
-
-.IfAttending {
-    display: none;
-}
-
-.logisticsRequestContainer {
-    display: none;
-}
-
-.allRooms {
-    display: inline-block;
-    margin-bottom:20px;
-}
-
-.individualRoom {
-    margin: 10px 0px 15px 20px;
-}
-
-.roomSharers {
-    margin-left: 20px;
-}
-
 .rideSharingOptions {
-    margin:10px 0px;
-}
-
-.GuestVenue select {
     margin:10px 0px;
 }
 
@@ -335,40 +96,6 @@ table.timespantable td.present{
     padding-left:10px
 }
 
-.photo-controls {
-    text-align: center;
-    display: block;
-    padding: 5pt;
-    margin: 5pt;
-    background-color: #c0d8e6;
-}
-
-
-.photo-display {
-    text-align: center;
-    display: block;
-    padding: 5pt;
-    margin: 5pt;
-}
-
-.photo-gallery {
-    display: block;
-    padding: 10pt;
-    margin: 10pt;
-    background-color: #c0d8e6;
-}
-
-.gallery-photo {
-    display: inline;
-}
-
-.gallery-photo img {
-    padding: 4pt 4pt 4pt 4pt;
-    margin: 7pt;
-    background-color: #000000;    
-    display: inline;
-}
-
 .emphasizedSubmit{
     width:100px;
     height:50px;
@@ -379,6 +106,9 @@ table.timespantable td.present{
 
 input[type="checkbox"] {margin:7px}
 input[type="radio"] {margin:7px}
+input[type="button"] {color: #1F1497;}
+input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
+
 
 .listUpArrow {vertical-align:top;}
 .listUpArrow img {

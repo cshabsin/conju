@@ -34,6 +34,7 @@
 {{range .NotInvitedList}}
  <input name="person" type="checkbox" value="{{.Key}}"> {{.Person.FullName}}<br>
 {{end}}
-<input type="submit" value="Create/Add to Invitation">
+
+<input type="submit" class="emphasizedSubmit" style="width:300px" value="Create/Add to Invitation">
 </form>
 {{end}}

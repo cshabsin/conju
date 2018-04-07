@@ -1,13 +1,16 @@
 package conju
 
-import "fmt"
+import (
+	"html/template"
+
+	"google.golang.org/appengine/log"
+)
 
 // TODO: Change this to the real link once we're live, or get it
 // dynamically somehow.
 const SiteLink = "http://localhost:8080"
 
 func init() {
-	AddSessionHandler("/increment", handleIncrement).Needs(EventGetter)
 	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
 	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
 	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
@@ -25,23 +28,16 @@ func init() {
 	AddSessionHandler(loginErrorPage, handleLoginError).Needs(EventGetter)
 	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(LoginGetter)
 
-	AddSessionHandler("/needsLogin", handleIncrement).Needs(LoginGetter)
-	AddSessionHandler("/checkLogin", checkLogin).Needs(LoginGetter)
 	AddSessionHandler("/resendInvitation", handleResendInvitation).Needs(EventGetter)
+
+	AddSessionHandler("/", handleIndex).Needs(EventGetter)
 }
 
-func handleIncrement(wr WrappedRequest) {
-	if wr.Values["n"] == nil {
-		wr.SetSessionValue("n", 0)
-	} else {
-		wr.SetSessionValue("n", wr.Values["n"].(int)+1)
+func handleIndex(wr WrappedRequest) {
+
+	log.Infof(wr.Context, "wr.TemplateData: %v", wr.TemplateData)
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+wr.Event.ShortName+"/index.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
+		log.Errorf(wr.Context, "%v", err)
 	}
-	wr.SaveSession()
-	ev := wr.Event
-	var event_name string
-	if ev != nil {
-		event_name = ev.Name
-	}
-	wr.ResponseWriter.Write([]byte(
-		fmt.Sprintf("%s\n%d\n", event_name, wr.Values["n"].(int))))
 }
