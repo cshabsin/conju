@@ -96,11 +96,6 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 //
 // If EventGetter has not been called, LoginGetter calls it.
 func PersonGetter(wr *WrappedRequest) error {
-	if !wr.hasRunEventGetter {
-		if err := EventGetter(wr); err != nil {
-			return err
-		}
-	}
 	if wr.LoginInfo != nil {
 		return nil // This has already been run.
 	}
@@ -152,6 +147,14 @@ func InvitationGetter(wr *WrappedRequest) error {
 		if err := PersonGetter(wr); err != nil {
 			return err
 		}
+	}
+	if !wr.hasRunEventGetter {
+		if err := EventGetter(wr); err != nil {
+			return err
+		}
+	}
+	if wr.Event == nil {
+		// Do something.
 	}
 	if wr.LoginInfo.Person == nil {
 		return RedirectError{loginErrorPage + "?message=Please use the link from your invitation email to log in."}
