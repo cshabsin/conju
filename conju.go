@@ -34,7 +34,7 @@ func init() {
 	AddSessionHandler("/resendInvitation", handleResendInvitation)
 	AddSessionHandler(resentInvitationPage, handleResentInvitation)
 
-	AddSessionHandler("/", handleIndex)
+	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 }
 
 func handleIndex(wr WrappedRequest) {
