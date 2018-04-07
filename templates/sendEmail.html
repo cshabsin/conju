@@ -1,6 +1,26 @@
 {{template "main.html" .}}
 {{define "body"}}
 
+<script>
+  function validate(form) {
+    var found = false;
+    var needsConfirm = false;
+    {{range $name, $distributorEntry := .AllDistributors}}
+    if (form.distributor.value == "{{$name}}") {
+      needsConfirm = {{$distributorEntry.NeedsConfirm}};
+      found = true;
+    }
+    {{end}}
+    if (!found) {
+      return window.confirm("Entry " + form.distributor.value + " not found.");
+    }
+    if (needsConfirm) {
+      return window.confirm("Email distribution " + form.distributor.value + " needs confirmation. Are you sure?");
+    }
+    return true;
+  }
+</script>
+
 <h1>Sending Email</h1>
 
 <p>Email template <code>"{{.TemplateName}}"</code> example rendering:</p>
@@ -18,7 +38,7 @@
 
 Select a distribution:
 
-<form action="doSendMail" method="POST">
+<form action="doSendMail" method="POST" onsubmit="return validate(this)">
   <input type="hidden" name="emailTemplate" value="{{.TemplateName}}"/>
   <select name="distributor">
 	{{range $name, $_ := .AllDistributors}}
