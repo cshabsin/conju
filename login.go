@@ -61,20 +61,26 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 			http.StatusFound)
 		return
 	}
-	count, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).Count(wr.Context)
+	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(wr.Context, nil)
 	if err != nil {
 		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
 			"?message=Login not recognized.",
 			http.StatusFound)
 		return
 	}
-	if count == 0 {
+	if len(peopleKeys) == 0 {
 		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
 			"?message=Login not recognized.",
 			http.StatusFound)
 		return
 	}
+	if len(peopleKeys) > 1 {
+		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
+			"?message=DB Error: multiple invitations found.",
+			http.StatusFound)
+	}
 	wr.SetSessionValue("code", lc[0])
+	wr.SetSessionValue("person", peopleKeys[0].Encode())
 	wr.SaveSession()
 	http.Redirect(wr.ResponseWriter, wr.Request, urlTarget, http.StatusFound)
 }
@@ -100,22 +106,41 @@ func LoginGetter(wr *WrappedRequest) error {
 		return RedirectError{loginErrorPage +
 			"?message=Please use the link from your email to log in."}
 	}
-	var people []Person
-	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(wr.Context, &people)
-	if err != nil {
-		return err
-	}
-	if len(people) == 0 {
-		return RedirectError{loginErrorPage +
-			"?message=Person not found for loginCode."}
-	} else if len(people) > 1 {
-		return RedirectError{loginErrorPage +
-			"?message=DB Error: loginCode collision."}
+	personKeyEncoded, ok := wr.Values["person"].(string)
+	var person Person
+	var personKey *datastore.Key
+	if !ok {
+		var people []Person
+		peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(wr.Context, &people)
+		if err != nil {
+			return err
+		}
+		if len(people) == 0 {
+			return RedirectError{loginErrorPage +
+				"?message=Person not found for loginCode."}
+		} else if len(people) > 1 {
+			return RedirectError{loginErrorPage +
+				"?message=DB Error: loginCode collision."}
+		}
+		wr.SetSessionValue("person", peopleKeys[0].Encode())
+		person = people[0]
+		personKey = peopleKeys[0]
+	} else {
+		personKey, err := datastore.DecodeKey(personKeyEncoded)
+		err = datastore.Get(wr.Context, personKey, &person)
+		if err != nil {
+			return err
+		}
+		if person.LoginCode != code {
+			return RedirectError{loginErrorPage +
+				"?message=Something went out of sync. Please log in " +
+				"again using the link from your email."}
+		}
 	}
 
 	var invitations []Invitation
 	invitationKeys, err := datastore.NewQuery("Invitation").
-		Filter("Invitees =", peopleKeys[0]).
+		Filter("Invitees =", personKey).
 		Filter("Event =", wr.EventKey).
 		GetAll(wr.Context, &invitations)
 	if err != nil {
@@ -127,7 +152,7 @@ func LoginGetter(wr *WrappedRequest) error {
 		return RedirectError{loginErrorPage + "?message=DB Error: multiple invitations found."}
 	}
 
-	wr.LoginInfo = &LoginInfo{invitationKeys[0], &invitations[0], peopleKeys[0], &people[0]}
+	wr.LoginInfo = &LoginInfo{invitationKeys[0], &invitations[0], personKey, &person}
 	return nil
 }
 
