@@ -10,9 +10,9 @@ const SiteLink = "https://psr2018.shabsin.com"
 
 func init() {
 
-	AddSessionHandler("/reloadData", AskReloadData).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/doReloadData", ReloadData).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/clearData", ClearAllData).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
+	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
+	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
 
 	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
