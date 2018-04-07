@@ -26,7 +26,9 @@ type WrappedRequest struct {
 	*Event
 	*user.User
 	*LoginInfo
-	TemplateData map[string]interface{}
+	TemplateData  map[string]interface{}
+	SenderAddress *string
+	BccAddress    *string
 }
 
 type Getter func(*WrappedRequest) error
@@ -155,6 +157,28 @@ func (w WrappedRequest) MakeTemplateData(extraVals map[string]interface{}) map[s
 		vals[k] = v
 	}
 	return vals
+}
+
+func (w WrappedRequest) SetSenderAddress(a string) error {
+	return nil
+}
+
+func (w WrappedRequest) GetSenderAddress() string {
+	if w.SenderAddress != nil {
+		return *w.SenderAddress
+	}
+	return "*** sender address ***"
+}
+
+func (w WrappedRequest) SetBccAddress(a string) error {
+	return nil
+}
+
+func (w WrappedRequest) GetBccAddress() string {
+	if w.BccAddress != nil {
+		return *w.BccAddress
+	}
+	return "*** bcc address ***"
 }
 
 /// WrappedResponseWriter simply records when the header has been

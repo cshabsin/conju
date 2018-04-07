@@ -699,7 +699,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		Subject: subject,
 	}
 
-	sendMail(wr.Context, "rsvpconfirmation", data, functionMap, header)
+	sendMail(wr, "rsvpconfirmation", data, functionMap, header)
 
 	if !wr.IsAdminUser() {
 

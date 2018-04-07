@@ -112,20 +112,20 @@ func handleDoSendMail(wr WrappedRequest) {
 			http.StatusBadRequest)
 		return
 	}
-	var sender EmailSender
-	sender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
+	var senderFunc EmailSender
+	senderFunc = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		if _, ok := emailData["LoginLink"]; !ok {
 			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
 		}
-		return sendMail(ctx, emailTemplate, emailData, nil, headerData)
+		return sendMail(wr, emailTemplate, emailData, nil, headerData)
 	}
-	if err := distributor.Distribute(wr, sender); err != nil {
+	if err := distributor.Distribute(wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
 		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
 	}
 }
 
-func sendMail(ctx context.Context, templatePrefix string, data interface{},
+func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	functions template.FuncMap, headerData MailHeaderInfo) error {
 	text, html, subject, err := renderMail(templatePrefix, data, functions,
 		/* needSubject = */ headerData.Subject != "")
@@ -136,16 +136,15 @@ func sendMail(ctx context.Context, templatePrefix string, data interface{},
 		return err
 	}
 	msg := &mail.Message{
-		Sender:   "**** sender address ****",
+		Sender:   wr.GetSenderAddress(),
 		To:       headerData.To,
-		Bcc:      []string{"**** sender address ****"},
+		Bcc:      []string{wr.GetBccAddress()},
 		Subject:  subject,
 		Body:     text,
 		HTMLBody: html,
 	}
-	if err := mail.Send(ctx, msg); err != nil {
+	if err := mail.Send(wr.Context, msg); err != nil {
 		return err
-		// log.Errorf(ctx, "Couldn't send email: %v", err)
 	}
 	return nil
 }
