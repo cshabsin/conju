@@ -125,6 +125,7 @@ func PersonGetter(wr *WrappedRequest) error {
 				"?message=DB Error: loginCode collision."}
 		}
 		wr.SetSessionValue("person", peopleKeys[0].Encode())
+		wr.SaveSession()
 		person = people[0]
 		personKey = peopleKeys[0]
 	} else {
@@ -198,6 +199,13 @@ func handleLoginError(wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "bad_login.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
+}
+
+func handleLogout(wr WrappedRequest) {
+	wr.SetSessionValue("code", nil)
+	wr.SetSessionValue("person", nil)
+	wr.SaveSession()
+	http.Redirect(wr.ResponseWriter, wr.Request, "/", http.StatusFound)
 }
 
 func handleResendInvitation(wr WrappedRequest) {
