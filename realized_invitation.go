@@ -28,10 +28,12 @@ type RealizedInvitation struct {
 	OtherInfo                 string
 	LastUpdatedPerson         PersonWithKey
 	LastUpdatedTimestamp      time.Time
+	InviteePeople             []Person
 }
 
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation) RealizedInvitation {
 	personKeys := invitation.Invitees
+	var inviteePeople []Person
 	var invitees []PersonWithKey
 	for _, personKey := range personKeys {
 		var person Person
@@ -43,6 +45,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		}
 
 		invitees = append(invitees, personWithKey)
+		inviteePeople = append(inviteePeople, person)
 	}
 
 	var person Person
@@ -103,6 +106,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	realizedInvitation := RealizedInvitation{
 		EncodedKey:                invitationKey.Encode(),
 		Invitees:                  invitees,
+		InviteePeople:             inviteePeople,
 		Event:                     event,
 		RsvpMap:                   realizedRsvpMap,
 		Activities:                activities,
