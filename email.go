@@ -177,7 +177,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	if err != nil {
 		return err
 	}
-	msg := &mail.Message{
+	msg := mail.Message{
 		Sender:   wr.GetSenderAddress(),
 		To:       headerData.To,
 		Bcc:      []string{wr.GetBccAddress()},
@@ -185,8 +185,20 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		Body:     text,
 		HTMLBody: html,
 	}
-	if err := mail.Send(wr.Context, msg); err != nil {
+	if err := mail.Send(wr.Context, &msg); err != nil {
 		return err
 	}
 	return nil
+}
+
+func sendErrorMail(wr WrappedRequest, message string) {
+	msg := mail.Message{
+		Sender:  wr.GetSenderAddress(),
+		To:      wr.GetErrorAddress(),
+		Subject: "[conju] Runtime error report",
+		Body:    message,
+	}
+	if err := mail.Send(wr.Context, &msg); err != nil {
+		log.Errorf(wr.Context, "Error sending error mail: %v", err)
+	}
 }
