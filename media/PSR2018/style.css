@@ -1,7 +1,8 @@
-@media only screen and (max-width: 760px) {
+@media only screen and (max-width:1000px) {
   .sidebarPictures { display: none !important; }
   .headerSidePicture { display: none !important; }
   .mainContent { padding-left: 0px !important; }
+  .headerMainPicture img {width:100% !important; height:auto !important }
 }
 
 .homeMain {
@@ -127,7 +128,7 @@
 
 .rateTable td, th {
     border: 1px solid #1F1497;
-    padding:10px;
+    padding:5px;
     text-align: center;
     vertical-align:top;
 }

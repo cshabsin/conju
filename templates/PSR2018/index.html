@@ -25,6 +25,12 @@
   <div class="sidebarPictures">
     <img src="{{$photoDirectory}}/jigsaw_puzzle.jpg"/>
     <img src="{{$photoDirectory}}/group-jumping.jpg"/>
+    {{if .LoginInfo.Person}}
+      <img src="{{$photoDirectory}}/SingingGroup.jpg"/>
+      <img src="{{$photoDirectory}}/group-hiking.jpg"/>
+      <img src="{{$photoDirectory}}/archery.jpg"/>
+      <img src="{{$photoDirectory}}/Shenanigans.jpg"/>
+    {{end}}
   </div>
 
   <div class="homeMain">
@@ -36,7 +42,7 @@
       <h2 class="textHeaderDate">June 7 - 10, 2018</h2>
     </div>
     <div class="mainContent"> 
-      <p> 6 years ago we invited some of our friends and family up into the mountains of New Hampshire to hang out for the weekend while we got married.  We had so much fun that we're doing it again and skipping the wedding part!
+      <p> Six years ago we invited some of our friends and family up into the mountains of New Hampshire to hang out for the weekend while we got married.  We had so much fun that we're doing it again and skipping the wedding part!
 </p>
 
 {{if not .LoginInfo.Person}}
@@ -45,13 +51,13 @@
 {{else}}
   <p>This year our retreat will run from Thursday, June 7th until Sunday, June 10th.  Most structured activities will happen between Friday evening and Sunday night.  Due to school and work schedules we expect that there will be a small group Thursday night and many more people around Friday - Sunday.</p>
 
-<p>Our goal is to provide a framework for you to have the kind of weekend that would be most fun for you, whether that means hiking and swimming, playing board games and doing jigsaw puzzles, or sitting in a quiet pretty place with a book.</p>
+<p>Our goal is to provide a framework for you to have the kind of weekend that would be most fun for you, whether that means hiking and swimming, playing board games and doing jigsaw puzzles, or sitting in a quiet pretty place with a book.  If you would like to run an activity, let us know if there is any support you need from us or from Purity Spring.</p>
 
 <p>Children are welcome at our Summer Weekend Retreat.  The cost for a child 3 or older is the same as for an adult.  There is no charge for children under 3.  Depending on availability, Purity Spring may be able to help you arrange childcare with a local babysitter for some of the weekend.</p>
 
 
 <p>Room rates (approximate):</p>
-<div class="rateTableContainer"style="width:100%; text-align:center">
+<div class="rateTableContainer">
   <table class="rateTable">
 <tr><th>Room Occupancy</th><th> Friday &ndash; Sunday</th><th>Thursday night<br>(additional charge)</th></tr>
 <tr><th>2</th><td>$165</td><td>$60</td></tr>
@@ -70,6 +76,8 @@
 <li> 9% state tax
 <li> Service fee paid to housekeepers and waitstaff
 </ul>
+
+<p style="margin-top:30px;">We hope to see you in June!  To RSVP, use the link at the top of this page.  If you have any questions or concerns, please <a href="mailto:shabsinscott@gmail.com">let us know.</a></p>
 
 {{end}}
 

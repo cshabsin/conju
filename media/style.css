@@ -47,7 +47,7 @@ html {
 
 #headerLinks {
     display: inline-block;
-    width: 73%;
+    max-width: 100%;
 }
 
 #headerLinks div {
@@ -57,7 +57,7 @@ html {
 }
 
 #logoutLink {
-    width: 25%;
+    float: right;
     text-align: right;
     font-weight: bold;
     display: inline-block;
