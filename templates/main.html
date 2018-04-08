@@ -12,22 +12,23 @@
     {{if (or .LoginInfo.Person .User)}}
       <div id="header">
         <div id="headerLinks">
-	  {{if .User}}
-	    <div><a href="listPeople">People</a></div>
-	    <div><a href="invitations">Invitations</a></div>
+	  {{if .IsAdminUser}}
+	    <div><a href="/listPeople">People</a></div>
+	    <div><a href="/invitations">Invitations</a></div>
+	    <div><a href="/sendMail">Mail</a></div>
 	  {{end}}
-	  <div><a href="index.html">Home</a></div>
-	  <div><a href="rsvp">RSVP</a></div>
+	  <div><a href="/">Home</a></div>
+	  <div><a href="/rsvp">RSVP</a></div>
 	  <div><a target="_blank" href="https://drive.google.com/open?id=1400euY4TSzjx1b2zsn5-Rt0I65U&usp=sharing">Site Plan/Directions</a></div>
 	  <div><a target="_blank" href="http://www.purityspring.com">Purity Spring Resort</a></div>
         </div>
-        {{if .User}}
+        {{if .LogoutLink}}
           <div id="logoutLink">
             <a href="{{.LogoutLink}}" id="login">Logout Admin</a>
           </div>
         {{end}}
       </div>
-    {{end}}  
+    {{end}}
     {{block "body" .}}Default Body{{end}}
   </div>
 </body>

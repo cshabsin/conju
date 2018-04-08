@@ -83,6 +83,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 				wr.TemplateData["LogoutLink"] = logoutUrl
 			}
 		}
+		wr.TemplateData["IsAdminUser"] = wr.IsAdminUser()
 		// TODO: make this always true once we go live.
 		wr.TemplateData["ShowRsvp"] = wr.IsAdminUser()
 		for _, getter := range getters.Getters {

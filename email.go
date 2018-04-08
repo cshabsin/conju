@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"path/filepath"
+	"strings"
 
+	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/mail"
 )
 
@@ -50,9 +53,7 @@ func handleSendMail(wr WrappedRequest) {
 		emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
 	}
 	if !ok || len(emailTemplates) == 0 {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("Use ?emailTemplate=<templateName> with %s.", wr.URL.Path),
-			http.StatusBadRequest)
+		handleListMail(wr)
 		return
 	}
 	emailTemplate := emailTemplates[0]
@@ -123,6 +124,39 @@ func handleDoSendMail(wr WrappedRequest) {
 		// Email distributors output info as they go, so don't issue an HTTP error.
 		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
 	}
+}
+
+func handleListMail(wr WrappedRequest) {
+	templateNames, err := filepath.Glob("templates/email/*.html")
+	if err != nil {
+		log.Errorf(wr.Context, "Error globbing email templates: %v", err)
+	}
+	for i, _ := range templateNames {
+		templateNames[i] = strings.TrimLeft(templateNames[i], "templates/email/")
+		templateNames[i] = strings.TrimRight(templateNames[i], ".html")
+	}
+	eventTemplateNames, err := filepath.Glob("templates/" + wr.Event.ShortName + "/email/*.html")
+	if err != nil {
+		log.Errorf(wr.Context, "Error globbing event email templates: %v", err)
+	}
+	for i, _ := range eventTemplateNames {
+		templateNames[i] = strings.TrimLeft(templateNames[i], "templates/"+wr.Event.ShortName+"email/")
+		templateNames[i] = strings.TrimRight(templateNames[i], ".html")
+	}
+
+	templateNames = append(templateNames, eventTemplateNames...)
+	functionMap := template.FuncMap{
+		"makeSendMailLink": makeSendMailLink,
+	}
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
+	data := map[string][]string{"Templates": templateNames}
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listEmail.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}
+
+func makeSendMailLink(templateName string) string {
+	return "/sendMail?emailTemplate=" + templateName
 }
 
 func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
