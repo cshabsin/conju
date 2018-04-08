@@ -63,6 +63,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
 		if err != nil {
+			// TODO: Clear session instead of erroring out?
 			http.Error(wrw, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -96,10 +97,10 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 				if _, ok := err.(DoneProcessingError); ok {
 					return
 				}
-				// TODO: Probably not internal server error
-				sendErrorEmail(fmt.Sprintf(
+				sendErrorMail(wr, fmt.Sprintf(
 					"Getter (index %d) returned an error on request %s: %v",
 					i, wr.Request.URL.Path, err))
+				// TODO: Probably not internal server error
 				http.Error(wrw, err.Error(), http.StatusInternalServerError)
 				return
 			}

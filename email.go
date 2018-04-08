@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	text_template "text/template"
 
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/mail"
@@ -35,22 +36,36 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 	if err != nil {
 		return "", "", "", err
 	}
-	var text bytes.Buffer
-	if err := tpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
+
+	textFunctionMap := text_template.FuncMap{
+		"HasHousingPreference": RealInvHasHousingPreference,
+		"PronounString":        GetPronouns,
+	}
+	text_tpl, err := text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/email/*.html")
+	if err != nil {
 		return "", "", "", err
 	}
-	var html bytes.Buffer
-	if err := tpl.ExecuteTemplate(&html, templatePrefix+"_html", data); err != nil {
+	text_tpl, err = text_tpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
+	if err != nil {
+		return "", "", "", err
+	}
+
+	var text bytes.Buffer
+	if err := text_tpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
+		return "", "", "", err
+	}
+	var htmlBuf bytes.Buffer
+	if err := tpl.ExecuteTemplate(&htmlBuf, templatePrefix+"_html", data); err != nil {
 		return text.String(), "", "", err
 	}
 	if needSubject {
 		var subject bytes.Buffer
-		if err := tpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
-			return text.String(), html.String(), "", err
+		if err := text_tpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
+			return text.String(), htmlBuf.String(), "", err
 		}
-		return text.String(), html.String(), subject.String(), nil
+		return text.String(), htmlBuf.String(), subject.String(), nil
 	}
-	return text.String(), html.String(), "", nil
+	return text.String(), htmlBuf.String(), "", nil
 }
 
 func handleSendMail(wr WrappedRequest) {
@@ -193,7 +208,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 func sendErrorMail(wr WrappedRequest, message string) {
 	msg := mail.Message{
 		Sender:  wr.GetSenderAddress(),
-		To:      wr.GetErrorAddress(),
+		To:      []string{wr.GetErrorAddress()},
 		Subject: "[conju] Runtime error report",
 		Body:    message,
 	}
