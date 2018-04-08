@@ -105,3 +105,57 @@ func TestCollectiveAddress(t *testing.T) {
 		}
 	}
 }
+
+func TestCollectiveAddressFirstNames(t *testing.T) {
+	type TestCase struct {
+		Name   string
+		People []Person
+		NameFormality
+		Want string
+	}
+	testcases := []TestCase{
+		{
+			Name:          "Single Person Informal",
+			People:        []Person{chris},
+			NameFormality: Informal,
+			Want:          "Chris",
+		},
+		{
+			Name:          "Couple Informal",
+			People:        []Person{dana, chris},
+			NameFormality: Informal,
+			Want:          "Dana & Chris",
+		},
+		{
+			Name:          "More than 2 people, Informal",
+			People:        []Person{chris, dana, lydia},
+			NameFormality: Informal,
+			Want:          "Chris, Dana & Lydia",
+		},
+		{
+			Name:          "Single Person Formal",
+			People:        []Person{chris},
+			NameFormality: Formal,
+			Want:          "Christopher",
+		},
+		{
+			Name:          "Couple Formal",
+			People:        []Person{dana, chris},
+			NameFormality: Formal,
+			Want:          "Dana & Christopher",
+		},
+		{
+			Name:          "More than 2 people, Formal",
+			People:        []Person{chris, dana, lydia},
+			NameFormality: Formal,
+			Want:          "Christopher, Dana & Lydia",
+		},
+	}
+
+	for _, tc := range testcases {
+		fn := CollectiveAddressFirstNames(tc.People, tc.NameFormality)
+		if fn != tc.Want {
+			t.Errorf("%s incorrect, got: %s, want: %s.", tc.Name, fn, tc.Want)
+		}
+	}
+}

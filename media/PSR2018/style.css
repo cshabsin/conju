@@ -3,6 +3,7 @@
   .headerSidePicture { display: none !important; }
   .mainContent { padding-left: 0px !important; }
   .headerMainPicture img {width:100% !important; height:auto !important }
+  .homeMain { padding: 30px 0px !important }
 }
 
 .homeMain {

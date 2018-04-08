@@ -25,8 +25,9 @@ type MailHeaderInfo struct {
 // html, and filled subject line, or an error.
 func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, needSubject bool) (string, string, string, error) {
 	functionMap := template.FuncMap{
-		"HasHousingPreference": RealInvHasHousingPreference,
-		"PronounString":        GetPronouns,
+		"HasHousingPreference":        RealInvHasHousingPreference,
+		"PronounString":               GetPronouns,
+		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
 	}
 	tpl, err := template.New("").Funcs(functionMap).ParseGlob("templates/email/*.html")
 	if err != nil {

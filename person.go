@@ -215,6 +215,32 @@ func (p Person) FullNameWithFormality(formality NameFormality) string {
 
 }
 
+func CollectiveAddressFirstNames(people []Person, formality NameFormality) string {
+	//TODO: throw error here?
+	if formality == Full {
+		formality = Formal
+	}
+	if len(people) == 1 {
+		return people[0].GetFirstName(formality)
+	}
+	if len(people) == 2 {
+		return people[0].GetFirstName(formality) + " & " + people[1].GetFirstName(formality)
+	}
+
+	toReturn := ""
+	for i := 0; i < len(people); i++ {
+		toReturn += people[i].GetFirstName(formality)
+		if i < len(people)-2 {
+			toReturn += ", "
+		}
+		if i == len(people)-2 {
+			toReturn += " & "
+		}
+	}
+
+	return toReturn
+}
+
 func CollectiveAddress(people []Person, formality NameFormality) string {
 	//TODO: throw error here?
 	if formality == Full {
