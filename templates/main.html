@@ -23,7 +23,7 @@
 	  <div><a target="_blank" href="http://www.purityspring.com">Purity Spring Resort</a></div>
         </div>
 	<div id="logoutLink">
-	  Welcome, {{.LoginInfo.Person.GetFirstName 0}}!
+	  {{if .LoginInfo.Person}}Welcome, {{.LoginInfo.Person.GetFirstName 0}}!{{end}}
           {{if .LogoutLink}}
             <a href="{{.LogoutLink}}" id="login">Logout Admin</a>
           {{end}}
