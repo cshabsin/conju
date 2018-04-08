@@ -237,7 +237,7 @@ func handleResendInvitation(wr WrappedRequest) {
 		header := MailHeaderInfo{
 			To: []string{people[0].Email},
 		}
-		sendMail(wr, "resendInvitation", data, nil, header)
+		sendMail(wr, "resendInvitation", data, header)
 	}
 	// TODO: Make a resentInvitation.html template explaining that
 	// if they don't get email in a minute or two from us, they

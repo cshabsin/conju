@@ -667,11 +667,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 	datastore.Get(wr.Context, invitation.Event, &e)
 	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
-	functionMap := template.FuncMap{
-		"HasHousingPreference": RealInvHasHousingPreference,
-		"PronounString":        GetPronouns,
-	}
-
 	realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKey, invitation)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
@@ -699,7 +694,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		Subject: subject,
 	}
 
-	sendMail(wr, "rsvpconfirmation", data, functionMap, header)
+	sendMail(wr, "rsvpconfirmation", data, header)
 
 	if !wr.IsAdminUser() {
 

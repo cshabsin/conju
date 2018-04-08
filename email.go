@@ -22,9 +22,16 @@ type MailHeaderInfo struct {
 
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
-func renderMail(templatePrefix string, data interface{}, functions template.FuncMap, needSubject bool) (string, string, string, error) {
-	file := "templates/email/" + templatePrefix + ".html"
-	tpl, err := template.New("").Funcs(functions).ParseFiles(file)
+func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, needSubject bool) (string, string, string, error) {
+	functionMap := template.FuncMap{
+		"HasHousingPreference": RealInvHasHousingPreference,
+		"PronounString":        GetPronouns,
+	}
+	tpl, err := template.New("").Funcs(functionMap).ParseGlob("templates/email/*.html")
+	if err != nil {
+		return "", "", "", err
+	}
+	tpl, err = tpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
 	if err != nil {
 		return "", "", "", err
 	}
@@ -66,7 +73,7 @@ func handleSendMail(wr WrappedRequest) {
 		"Person":     wr.LoginInfo.Person,
 		"LoginLink":  makeLoginUrl(wr.LoginInfo.Person),
 	}
-	text, html, subject, err := renderMail(emailTemplate, emailData, nil, true)
+	text, html, subject, err := renderMail(wr, emailTemplate, emailData, true)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -118,7 +125,7 @@ func handleDoSendMail(wr WrappedRequest) {
 		if _, ok := emailData["LoginLink"]; !ok {
 			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
 		}
-		return sendMail(wr, emailTemplate, emailData, nil, headerData)
+		return sendMail(wr, emailTemplate, emailData, headerData)
 	}
 	if err := distributor.Distribute(wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
@@ -140,8 +147,8 @@ func handleListMail(wr WrappedRequest) {
 		log.Errorf(wr.Context, "Error globbing event email templates: %v", err)
 	}
 	for i, _ := range eventTemplateNames {
-		templateNames[i] = strings.TrimLeft(templateNames[i], "templates/"+wr.Event.ShortName+"email/")
-		templateNames[i] = strings.TrimRight(templateNames[i], ".html")
+		eventTemplateNames[i] = strings.TrimLeft(eventTemplateNames[i], "templates/"+wr.Event.ShortName+"/email/")
+		eventTemplateNames[i] = strings.TrimRight(eventTemplateNames[i], ".html")
 	}
 
 	templateNames = append(templateNames, eventTemplateNames...)
@@ -160,8 +167,8 @@ func makeSendMailLink(templateName string) string {
 }
 
 func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
-	functions template.FuncMap, headerData MailHeaderInfo) error {
-	text, html, subject, err := renderMail(templatePrefix, data, functions,
+	headerData MailHeaderInfo) error {
+	text, html, subject, err := renderMail(wr, templatePrefix, data,
 		/* needSubject = */ headerData.Subject != "")
 	if headerData.Subject != "" {
 		subject = headerData.Subject
