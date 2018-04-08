@@ -39,8 +39,9 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 	}
 
 	textFunctionMap := text_template.FuncMap{
-		"HasHousingPreference": RealInvHasHousingPreference,
-		"PronounString":        GetPronouns,
+		"HasHousingPreference":        RealInvHasHousingPreference,
+		"PronounString":               GetPronouns,
+		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
 	}
 	text_tpl, err := text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/email/*.html")
 	if err != nil {
