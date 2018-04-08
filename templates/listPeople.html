@@ -5,12 +5,15 @@
 <a href="updatePersonForm">Add New Person</a>
 
 <table class="listTable">
-  <tr><th>Name</th><th>Email Address</th><th>Address</th></tr>
+  <tr><th>Name</th><th>Email Address</th><th>Address</th><th>Links</th></tr>
   {{range .People}}
     <tr>
       <td><a href="updatePersonForm?key={{.EncodedKey}}">{{.FullName}}</a></td><td>{{.Email}}</td>
       <td>
 	{{range .FormattedAddressForHtml}} {{.}}<br>{{end}}
+      </td>
+      <td>
+	<a href="{{makeLoginUrl .}}">Login</a>
       </td>
     </tr>
 {{end}}

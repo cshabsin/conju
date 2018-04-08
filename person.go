@@ -348,7 +348,10 @@ func handleListPeople(wr WrappedRequest) {
 		"People": allPeople,
 	})
 
-	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/listPeople.html"))
+	functionMap := template.FuncMap{
+		"makeLoginUrl": makeLoginUrl,
+	}
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listPeople.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {
 		log.Errorf(ctx, "%v", err)
 	}
