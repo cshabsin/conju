@@ -232,7 +232,7 @@ func handleResendInvitation(wr WrappedRequest) {
 	if len(people) == 1 {
 		loginUrl := makeLoginUrl(&people[0])
 		data := map[string]interface{}{
-			"Event":     wr.Event,
+			"Event":     *wr.Event,
 			"LoginLink": loginUrl,
 		}
 		header := MailHeaderInfo{
