@@ -88,6 +88,7 @@ html {
 	font-family: monospace;
 	padding: 5px;
 	margin: 5px;
+	white-space: pre;
 }
 
 #htmlEmail {
