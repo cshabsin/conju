@@ -196,12 +196,15 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		return err
 	}
 	message := sendgrid.NewMail()
-	message.AddTo(headerData.To)
+	for _, to := range headerData.To {
+		message.AddTo(to)
+	}
 	message.AddBcc(wr.GetBccAddress())
 	message.SetSubject(subject)
-	message.SetHtml(html)
+	message.SetHTML(html)
+	message.SetText(text)
 	message.SetFrom(wr.GetSenderAddress())
-	sg.Send(text)
+	wr.GetEmailClient().Send(message)
 	return nil
 }
 
