@@ -29,6 +29,7 @@ type WrappedRequest struct {
 	TemplateData  map[string]interface{}
 	SenderAddress *string
 	BccAddress    *string
+	ErrorAddress  *string
 }
 
 type Getter func(*WrappedRequest) error
@@ -86,7 +87,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 		wr.TemplateData["IsAdminUser"] = wr.IsAdminUser()
 		// TODO: make this always true once we go live.
 		wr.TemplateData["ShowRsvp"] = wr.IsAdminUser()
-		for _, getter := range getters.Getters {
+		for i, getter := range getters.Getters {
 			if err = getter(&wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
 					http.Redirect(wrw, r, redirect.Target, http.StatusFound)
@@ -96,6 +97,9 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 					return
 				}
 				// TODO: Probably not internal server error
+				sendErrorEmail(fmt.Sprintf(
+					"Getter (index %d) returned an error on request %s: %v",
+					i, wr.Request.URL.Path, err))
 				http.Error(wrw, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -180,6 +184,13 @@ func (w WrappedRequest) GetBccAddress() string {
 		return *w.BccAddress
 	}
 	return "*** bcc address ***"
+}
+
+func (w WrappedRequest) GetErrorAddress() string {
+	if w.ErrorAddress != nil {
+		return *w.ErrorAddress
+	}
+	return "*** error address ***"
 }
 
 /// WrappedResponseWriter simply records when the header has been
