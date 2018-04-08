@@ -186,7 +186,7 @@ func makeSendMailLink(templateName string) string {
 func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	headerData MailHeaderInfo) error {
 	text, html, subject, err := renderMail(wr, templatePrefix, data,
-		/* needSubject = */ headerData.Subject != "")
+		/* needSubject = */ headerData.Subject == "")
 	if headerData.Subject != "" {
 		subject = headerData.Subject
 	}
