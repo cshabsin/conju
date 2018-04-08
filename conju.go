@@ -35,12 +35,20 @@ func init() {
 	AddSessionHandler(resentInvitationPage, handleResentInvitation)
 
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
+	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 }
 
 func handleIndex(wr WrappedRequest) {
 
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+wr.Event.ShortName+"/index.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}
+
+func handleLoadMap(wr WrappedRequest) {
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/map.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "map.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }
