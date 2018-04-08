@@ -4,11 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/sessions"
+	"gopkg.in/sendgrid/sendgrid-go.v2"
+
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/urlfetch"
 	"google.golang.org/appengine/user"
 )
 
@@ -30,6 +34,7 @@ type WrappedRequest struct {
 	SenderAddress *string
 	BccAddress    *string
 	ErrorAddress  *string
+	EmailClient   *sendgrid.SGClient
 }
 
 type Getter func(*WrappedRequest) error
@@ -165,33 +170,24 @@ func (w WrappedRequest) MakeTemplateData(extraVals map[string]interface{}) map[s
 	return vals
 }
 
-func (w WrappedRequest) SetSenderAddress(a string) error {
-	return nil
+func (w *WrappedRequest) GetEmailClient() *sendgrid.SGClient {
+	if w.EmailClient == nil {
+		w.EmailClient = sendgrid.NewSendGridClientWithApiKey(os.Getenv("SENDGRID_API_KEY"))
+		w.EmailClient.Client = urlfetch.Client(w.Context)
+	}
+	return w.EmailClient
 }
 
 func (w WrappedRequest) GetSenderAddress() string {
-	if w.SenderAddress != nil {
-		return *w.SenderAddress
-	}
-	return "*** sender address ***"
-}
-
-func (w WrappedRequest) SetBccAddress(a string) error {
-	return nil
+	return os.Getenv("SENDER_ADDRESS")
 }
 
 func (w WrappedRequest) GetBccAddress() string {
-	if w.BccAddress != nil {
-		return *w.BccAddress
-	}
-	return "*** bcc address ***"
+	return os.Getenv("BCC_ADDRESS")
 }
 
 func (w WrappedRequest) GetErrorAddress() string {
-	if w.ErrorAddress != nil {
-		return *w.ErrorAddress
-	}
-	return "*** error address ***"
+	return os.Getenv("ERROR_ADDRESS")
 }
 
 /// WrappedResponseWriter simply records when the header has been

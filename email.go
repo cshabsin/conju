@@ -10,6 +10,8 @@ import (
 	"strings"
 	text_template "text/template"
 
+	"gopkg.in/sendgrid/sendgrid-go.v2"
+
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/mail"
 )
@@ -193,17 +195,13 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	if err != nil {
 		return err
 	}
-	msg := mail.Message{
-		Sender:   wr.GetSenderAddress(),
-		To:       headerData.To,
-		Bcc:      []string{wr.GetBccAddress()},
-		Subject:  subject,
-		Body:     text,
-		HTMLBody: html,
-	}
-	if err := mail.Send(wr.Context, &msg); err != nil {
-		return err
-	}
+	message := sendgrid.NewMail()
+	message.AddTo(headerData.To)
+	message.AddBcc(wr.GetBccAddress())
+	message.SetSubject(subject)
+	message.SetHtml(html)
+	message.SetFrom(wr.GetSenderAddress())
+	sg.Send(text)
 	return nil
 }
 

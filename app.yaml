@@ -9,3 +9,9 @@ handlers:
 - url: /.*
   script: _go_app
   secure: always
+
+env_variables:
+  SENDGRID_API_KEY: "put key here"
+  SENDER_ADDRESS: "*** sender address ***"
+  BCC_ADDRESS: "*** bcc address ***"
+  ERROR_ADDRESS: "*** error address ***"
