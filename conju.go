@@ -13,6 +13,7 @@ func init() {
 	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
 	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
 	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
+	AddSessionHandler("/repairData", RepairData).Needs(AdminGetter)
 
 	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
