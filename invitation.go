@@ -734,18 +734,27 @@ func handleRsvpReport(wr WrappedRequest) {
 		}
 		rsvpMap := make(map[RsvpStatus][]Person)
 
+		var personKeyToRsvp = make(map[datastore.Key]RsvpStatus)
 		for p, r := range invitation.RsvpMap {
+			personKeyToRsvp[*p] = r
+		}
 
-			var person Person
-			datastore.Get(ctx, p, &person)
-			listForStatus := rsvpMap[r]
-			if listForStatus == nil {
-				listForStatus = make([]Person, 0)
+		for _, invitee := range invitation.Invitees {
+			log.Infof(ctx, "invitee: %v", invitee)
+			if rsvp, present := personKeyToRsvp[*invitee]; present {
+				var person Person
+				datastore.Get(ctx, invitee, &person)
+				log.Infof(ctx, "found %s in rsvp map: %d", person.FullName(), rsvp)
+
+				listForStatus := rsvpMap[rsvp]
+				if listForStatus == nil {
+					listForStatus = make([]Person, 0)
+				}
+				listForStatus = append(listForStatus, person)
+				log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
+				rsvpMap[rsvp] = listForStatus
+
 			}
-			listForStatus = append(listForStatus, person)
-			log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
-			rsvpMap[r] = listForStatus
-
 		}
 		for r, p := range rsvpMap {
 			listOfLists := allRsvpMap[r]
@@ -755,34 +764,7 @@ func handleRsvpReport(wr WrappedRequest) {
 			listOfLists = append(listOfLists, p)
 			allRsvpMap[r] = listOfLists
 		}
-		/*
 
-			log.Infof(ctx, "rsvpMap: %v", invitation.RsvpMap)
-			for _, invitee := range invitation.Invitees {
-			       	log.Infof(ctx, "invitee: %v", invitee)
-				if rsvp, present := invitation.RsvpMap[invitee]; present {
-					var person Person
-					datastore.Get(ctx, invitee, &person)
-
-					listForStatus := rsvpMap[rsvp]
-					if listForStatus == nil {
-						listForStatus = make([]Person, 0)
-					}
-					listForStatus = append(listForStatus, person)
-					log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
-					rsvpMap[rsvp] = listForStatus
-
-				}  else { log.Infof(ctx, "ARGH invitee not found in rsvp map") }
-				for r, p := range rsvpMap {
-					listOfLists := allRsvpMap[r]
-					if listOfLists == nil {
-						listOfLists = make([][]Person, 0)
-					}
-					listOfLists = append(listOfLists, p)
-					allRsvpMap[r] = listOfLists
-				}
-			}
-		*/
 	}
 
 	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
