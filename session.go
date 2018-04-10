@@ -178,6 +178,7 @@ func (w *WrappedRequest) GetEmailClient() *sendgrid.SGClient {
 	return w.EmailClient
 }
 
+// Also receives the rsvp change status.
 func (w WrappedRequest) GetSenderAddress() string {
 	return os.Getenv("SENDER_ADDRESS")
 }

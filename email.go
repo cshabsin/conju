@@ -158,16 +158,16 @@ func handleListMail(wr WrappedRequest) {
 		log.Errorf(wr.Context, "Error globbing email templates: %v", err)
 	}
 	for i, _ := range templateNames {
-		templateNames[i] = strings.TrimLeft(templateNames[i], "templates/email/")
-		templateNames[i] = strings.TrimRight(templateNames[i], ".html")
+		templateNames[i] = strings.TrimPrefix(templateNames[i], "templates/email/")
+		templateNames[i] = strings.TrimSuffix(templateNames[i], ".html")
 	}
 	eventTemplateNames, err := filepath.Glob("templates/" + wr.Event.ShortName + "/email/*.html")
 	if err != nil {
 		log.Errorf(wr.Context, "Error globbing event email templates: %v", err)
 	}
 	for i, _ := range eventTemplateNames {
-		eventTemplateNames[i] = strings.TrimLeft(eventTemplateNames[i], "templates/"+wr.Event.ShortName+"/email/")
-		eventTemplateNames[i] = strings.TrimRight(eventTemplateNames[i], ".html")
+		eventTemplateNames[i] = strings.TrimPrefix(eventTemplateNames[i], "templates/"+wr.Event.ShortName+"/email/")
+		eventTemplateNames[i] = strings.TrimSuffix(eventTemplateNames[i], ".html")
 	}
 
 	templateNames = append(templateNames, eventTemplateNames...)
@@ -175,7 +175,7 @@ func handleListMail(wr WrappedRequest) {
 		"makeSendMailLink": makeSendMailLink,
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
-	data := map[string][]string{"Templates": templateNames}
+	data := wr.MakeTemplateData(map[string]interface{}{"Templates": templateNames})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listEmail.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}

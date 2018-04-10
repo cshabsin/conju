@@ -80,6 +80,7 @@ func CreatePerson(ctx context.Context, first, last string) error {
 	p := Person{
 		FirstName: first,
 		LastName:  last,
+		LoginCode: randomLoginCodeString(),
 	}
 
 	_, err := datastore.Put(ctx, PersonKey(ctx), &p)

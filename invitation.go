@@ -690,7 +690,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	}
 
 	header := MailHeaderInfo{
-		To:      []string{"**** email address ****"},
+		To:      []string{wr.GetSenderAddress()},
 		Subject: subject,
 	}
 
