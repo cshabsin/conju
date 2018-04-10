@@ -713,3 +713,87 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
+
+func handleRsvpReport(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	currentEventKeyEncoded := wr.Values["EventKey"].(string)
+	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+
+	var invitations []*Invitation
+	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
+	_, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
+	}
+
+	allRsvpMap := make(map[RsvpStatus][][]Person)
+
+	for _, invitation := range invitations {
+		if invitation.RsvpMap == nil {
+			continue
+		}
+		rsvpMap := make(map[RsvpStatus][]Person)
+
+		for p, r := range invitation.RsvpMap {
+
+			var person Person
+			datastore.Get(ctx, p, &person)
+			listForStatus := rsvpMap[r]
+			if listForStatus == nil {
+				listForStatus = make([]Person, 0)
+			}
+			listForStatus = append(listForStatus, person)
+			log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
+			rsvpMap[r] = listForStatus
+
+		}
+		for r, p := range rsvpMap {
+			listOfLists := allRsvpMap[r]
+			if listOfLists == nil {
+				listOfLists = make([][]Person, 0)
+			}
+			listOfLists = append(listOfLists, p)
+			allRsvpMap[r] = listOfLists
+		}
+		/*
+
+			log.Infof(ctx, "rsvpMap: %v", invitation.RsvpMap)
+			for _, invitee := range invitation.Invitees {
+			       	log.Infof(ctx, "invitee: %v", invitee)
+				if rsvp, present := invitation.RsvpMap[invitee]; present {
+					var person Person
+					datastore.Get(ctx, invitee, &person)
+
+					listForStatus := rsvpMap[rsvp]
+					if listForStatus == nil {
+						listForStatus = make([]Person, 0)
+					}
+					listForStatus = append(listForStatus, person)
+					log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
+					rsvpMap[rsvp] = listForStatus
+
+				}  else { log.Infof(ctx, "ARGH invitee not found in rsvp map") }
+				for r, p := range rsvpMap {
+					listOfLists := allRsvpMap[r]
+					if listOfLists == nil {
+						listOfLists = make([][]Person, 0)
+					}
+					listOfLists = append(listOfLists, p)
+					allRsvpMap[r] = listOfLists
+				}
+			}
+		*/
+	}
+
+	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
+
+	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
+	data := wr.MakeTemplateData(map[string]interface{}{
+		"RsvpMap":         allRsvpMap,
+		"StatusOrder":     statusOrder,
+		"AllRsvpStatuses": GetAllRsvpStatuses(),
+	})
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}

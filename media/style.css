@@ -268,3 +268,12 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
     width:75px;
     text-align: center;
 }
+
+.rsvpReportTable {
+    margin: 40px;
+}
+
+.rsvpReportTable td {
+    vertical-align: top;
+    padding: 5px 10px;
+}

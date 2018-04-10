@@ -36,6 +36,9 @@ func init() {
 
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
+
+	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
+
 }
 
 func handleIndex(wr WrappedRequest) {

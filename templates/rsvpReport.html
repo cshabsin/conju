@@ -1,0 +1,54 @@
+<script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
+{{template "main.html" .}}
+{{define "body"}}
+
+<script>
+  var allStatuses = [
+  {{range .AllRsvpStatuses}}
+ {shortDescription: "{{.ShortDescription}}", attending: {{.Attending}}, undecided: {{.Undecided}}, noLodging: {{.NoLodging }}},
+  {{end}}
+];
+
+
+
+  $( document ).ready(function() {
+  
+    $(".statusCheckbox").change(function() {
+      var status = $(this).attr("name");
+      if ($(this).is(":checked")) {
+          $(".rsvpStatus" + status).show();
+      } else {
+         $(".rsvpStatus" + status).hide();
+      }
+    })
+  });
+
+</script>
+
+<h1>RSVP Report</h1>
+{{$allStatuses := .AllRsvpStatuses}}
+{{$rsvpMap := .RsvpMap}}
+
+<div class="rsvpStatusSelector">
+  {{range .StatusOrder}}
+    <input class="statusCheckbox" type="checkbox" name="{{.}}" checked> {{with (index $allStatuses .)}}{{.ShortDescription}}{{end}}<br>
+  {{end}}
+</div>
+<table class="rsvpReportTable">
+{{range .StatusOrder}}
+  {{$status := .}}
+  {{range (index $rsvpMap .)}}
+    <tr class="rsvpStatus{{$status}}">
+      <td>{{(index $allStatuses $status).ShortDescription}}</td>
+      <td>
+        {{range .}}
+	  <div class="rsvpStatus{{$status}}">{{.FullName}}</div>
+        {{end}}
+      </td>
+    </tr>
+
+  {{end}}
+{{end}}
+</table>
+
+{{end}}
