@@ -16,6 +16,7 @@
          $("." + status).hide();
       }
       adjustRows();
+      adjustTotals();
     })
 
     $(".ageCheckbox").change(function() {
@@ -29,7 +30,10 @@
          $("." + ageType).hide();
       }
       adjustRows();
+      adjustTotals();
     })
+
+    adjustTotals();
   });
 
 function adjustRows() {
@@ -39,9 +43,14 @@ function adjustRows() {
       $(rsvpCells[i]).closest("tr").hide();
     }
   }
-
 }
-			   
+
+function adjustTotals() {
+  $("#total").text($(".rsvpCell div:visible").length);
+  $("#adults").text($(".rsvpCell .adult:visible").length);
+  $("#children").text($(".rsvpCell .child:visible").length)
+  $("#babies").text($(".rsvpCell .baby:visible").length);
+}  
 
 </script>
 
@@ -59,6 +68,12 @@ function adjustRows() {
   <input class="ageCheckbox" type="checkbox" name="child" checked> Kids<br>
   <input class="ageCheckbox" type="checkbox" name="baby" checked> Babies<br>
 </div>
+
+<h2><span id="total"></span> people total</h2>
+<span id="adults"></span> adults<br>
+<span id="children"></span> children<br>
+<span id="babies"></span> babies</br>
+
 <table class="rsvpReportTable">
 {{range .StatusOrder}}
   {{$status := .}}
