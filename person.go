@@ -204,6 +204,24 @@ func (p Person) FullName() string {
 	return p.FullNameWithFormality(Informal)
 }
 
+func (p Person) FullNameWithAge(t time.Time) string {
+	if p.Birthdate.IsZero() {
+		if !p.NeedBirthdate {
+			return p.FullName()
+		}
+		if p.FallbackAge == 0 {
+			return p.FullName() + " (???)"
+		}
+		return fmt.Sprintf("%s (%.1f)", p.FullName(), p.FallbackAge)
+	}
+	age := HalfYears(p.ApproxAgeAtTime(t))
+
+	if age >= 16 {
+		return p.FullName()
+	}
+	return fmt.Sprintf("%s (%.1f)", p.FullName(), age)
+}
+
 // FullName returns the formatted full name of the person, with
 // nickname if present.
 func (p Person) FullNameWithFormality(formality NameFormality) string {
@@ -314,12 +332,36 @@ func (p Person) ApproxAgeAtTime(dateTime time.Time) time.Duration {
 	return dateTime.Sub(p.Birthdate)
 }
 
-func (p Person) IsChildAtTime(datetime time.Time) bool {
+func (p Person) IsNonAdultAtTime(datetime time.Time) bool {
 	if p.Birthdate.IsZero() {
 		return p.NeedBirthdate
 	}
 	age := HalfYears(p.ApproxAgeAtTime(datetime))
 	return age < 16
+}
+
+func (p Person) IsAdultAtTime(datetime time.Time) bool {
+	if p.Birthdate.IsZero() {
+		return !p.NeedBirthdate
+	}
+	age := HalfYears(p.ApproxAgeAtTime(datetime))
+	return age >= 16
+}
+
+func (p Person) IsChildAtTime(datetime time.Time) bool {
+	if p.Birthdate.IsZero() {
+		return p.NeedBirthdate
+	}
+	age := HalfYears(p.ApproxAgeAtTime(datetime))
+	return age < 16 && age >= 4
+}
+
+func (p Person) IsBabyAtTime(datetime time.Time) bool {
+	if p.Birthdate.IsZero() {
+		return p.NeedBirthdate
+	}
+	age := HalfYears(p.ApproxAgeAtTime(datetime))
+	return age < 4
 }
 
 // Round a duration to half-years.

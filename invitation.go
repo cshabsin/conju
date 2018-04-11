@@ -250,7 +250,7 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 	for _, personKey := range inv.Invitees {
 		var person Person
 		datastore.Get(ctx, personKey, &person)
-		if person.IsChildAtTime(event.StartDate) {
+		if person.IsNonAdultAtTime(event.StartDate) {
 			return true
 		}
 	}

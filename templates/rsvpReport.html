@@ -3,46 +3,72 @@
 {{define "body"}}
 
 <script>
-  var allStatuses = [
-  {{range .AllRsvpStatuses}}
- {shortDescription: "{{.ShortDescription}}", attending: {{.Attending}}, undecided: {{.Undecided}}, noLodging: {{.NoLodging }}},
-  {{end}}
-];
-
-
-
   $( document ).ready(function() {
   
     $(".statusCheckbox").change(function() {
       var status = $(this).attr("name");
       if ($(this).is(":checked")) {
-          $(".rsvpStatus" + status).show();
+        var ages = $(".ageCheckbox:checked");
+        for (var i = 0; i < ages.length; i++) {
+		$("." + status + "." + $(ages[i]).attr("name")).show().closest("tr").show();
+	}
       } else {
-         $(".rsvpStatus" + status).hide();
+         $("." + status).hide();
       }
+      adjustRows();
+    })
+
+    $(".ageCheckbox").change(function() {
+      var ageType = $(this).attr("name");
+      if ($(this).is(":checked")) {
+        var statuses = $(".statusCheckbox:checked");
+        for (var i = 0; i < statuses.length; i++) {
+		$("." + $(statuses[i]).attr("name") + "." + ageType).show().closest("tr").show().closest("tr").show();
+	}
+      } else {
+         $("." + ageType).hide();
+      }
+      adjustRows();
     })
   });
+
+function adjustRows() {
+  var rsvpCells =$(".rsvpCell");
+  for (var i=0; i < rsvpCells.length; i++) {
+    if ($("div:visible", rsvpCells[i]).length == 0 ) {
+      $(rsvpCells[i]).closest("tr").hide();
+    }
+  }
+
+}
+			   
 
 </script>
 
 <h1>RSVP Report</h1>
 {{$allStatuses := .AllRsvpStatuses}}
 {{$rsvpMap := .RsvpMap}}
-
-<div class="rsvpStatusSelector">
+{{$currentEvent := .CurrentEvent}}
+<div style="display:inline-block" class="rsvpSelector">
   {{range .StatusOrder}}
-    <input class="statusCheckbox" type="checkbox" name="{{.}}" checked> {{with (index $allStatuses .)}}{{.ShortDescription}}{{end}}<br>
+    <input class="statusCheckbox" type="checkbox" name="{{(index $allStatuses .).ShortDescription}}" checked>{{(index $allStatuses .).ShortDescription}}<br>
   {{end}}
+</div>
+<div style="display:inline-block" class="rsvpSelector">
+  <input class="ageCheckbox" type="checkbox" name="adult" checked> Adults<br>
+  <input class="ageCheckbox" type="checkbox" name="child" checked> Kids<br>
+  <input class="ageCheckbox" type="checkbox" name="baby" checked> Babies<br>
 </div>
 <table class="rsvpReportTable">
 {{range .StatusOrder}}
   {{$status := .}}
   {{range (index $rsvpMap .)}}
-    <tr class="rsvpStatus{{$status}}">
+  {{$rsvpStatus := (index $allStatuses $status).ShortDescription}}
+    <tr>
       <td>{{(index $allStatuses $status).ShortDescription}}</td>
-      <td>
+      <td class="rsvpCell">
         {{range .}}
-	  <div class="rsvpStatus{{$status}}">{{.FullName}}</div>
+	  <div class="{{$rsvpStatus}}{{if (.IsAdultAtTime $currentEvent.StartDate)}} adult{{end}}{{if (.IsChildAtTime $currentEvent.StartDate)}} child{{end}}{{if (.IsBabyAtTime $currentEvent.StartDate)}} baby{{end}}">{{.FullNameWithAge $currentEvent.StartDate }}</div>
         {{end}}
       </td>
     </tr>
