@@ -218,15 +218,24 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 
 func (inv *Invitation) AnyAttending() bool {
 	allStatuses := GetAllRsvpStatuses()
-	for _, invitee := range inv.Invitees {
-		if rsvp, present := inv.RsvpMap[invitee]; present {
-			attending := allStatuses[rsvp].Attending
-			if attending {
-				return true
-			}
+	for _, v := range inv.RsvpMap {
+		attending := allStatuses[v].Attending
+		if attending {
+			return attending
 		}
 	}
 	return false
+}
+
+func (inv *Invitation) AttendingInvitees() []*datastore.Key {
+	allStatuses := GetAllRsvpStatuses()
+	var attending []*datastore.Key
+	for k, v := range inv.RsvpMap {
+		if allStatuses[v].Attending {
+			attending = append(attending, k)
+		}
+	}
+	return attending
 }
 
 func (inv *Invitation) AnyUndecided() bool {
@@ -714,6 +723,35 @@ func handleSaveInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
+func (invitation *Invitation) ClusterByRsvp(ctx context.Context) map[RsvpStatus][]Person {
+
+	var personKeyToRsvp = make(map[datastore.Key]RsvpStatus)
+	for p, r := range invitation.RsvpMap {
+		personKeyToRsvp[*p] = r
+	}
+
+	rsvpMap := make(map[RsvpStatus][]Person)
+
+	for _, invitee := range invitation.Invitees {
+		if rsvp, present := personKeyToRsvp[*invitee]; present {
+			var person Person
+			datastore.Get(ctx, invitee, &person)
+
+			listForStatus := rsvpMap[rsvp]
+			if listForStatus == nil {
+				listForStatus = make([]Person, 0)
+			}
+			listForStatus = append(listForStatus, person)
+			log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
+			rsvpMap[rsvp] = listForStatus
+
+		}
+	}
+
+	return rsvpMap
+
+}
+
 func handleRsvpReport(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	currentEventKeyEncoded := wr.Values["EventKey"].(string)
@@ -732,30 +770,9 @@ func handleRsvpReport(wr WrappedRequest) {
 		if invitation.RsvpMap == nil {
 			continue
 		}
-		rsvpMap := make(map[RsvpStatus][]Person)
 
-		var personKeyToRsvp = make(map[datastore.Key]RsvpStatus)
-		for p, r := range invitation.RsvpMap {
-			personKeyToRsvp[*p] = r
-		}
+		rsvpMap := invitation.ClusterByRsvp(ctx)
 
-		for _, invitee := range invitation.Invitees {
-			log.Infof(ctx, "invitee: %v", invitee)
-			if rsvp, present := personKeyToRsvp[*invitee]; present {
-				var person Person
-				datastore.Get(ctx, invitee, &person)
-				log.Infof(ctx, "found %s in rsvp map: %d", person.FullName(), rsvp)
-
-				listForStatus := rsvpMap[rsvp]
-				if listForStatus == nil {
-					listForStatus = make([]Person, 0)
-				}
-				listForStatus = append(listForStatus, person)
-				log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
-				rsvpMap[rsvp] = listForStatus
-
-			}
-		}
 		for r, p := range rsvpMap {
 			listOfLists := allRsvpMap[r]
 			if listOfLists == nil {

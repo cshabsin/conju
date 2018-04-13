@@ -39,6 +39,7 @@ func init() {
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 
 	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
 
 }
 

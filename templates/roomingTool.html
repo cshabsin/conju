@@ -1,0 +1,318 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+
+    <script type="text/JavaScript" src="/media/jquery-3.3.1.min.js"></script>
+    <style>
+      td{border:1px solid black;width:100px;height:100px;}
+      .FriSat_kids{background-color: #AA66FF}
+      .ThuFriSat_kids{background-color: #5A0ABF}
+      .all{background-color: #76A6F5}
+      .fs{background-color: #0761F2}
+      .ss{background-color: #00FF00}
+      .group{border:1px solid black; margin:3px; padding:2px;width:100px;height:auto;z-index:10; font-size:smaller;color:black}
+      .group .group {border:0px; width:95px; margin:0px; padding:0px}
+      .guestContainer{border:0px;}
+      /* .booked{background-color:#CCCCCC;opacity:.2} */
+      .typeHolder{margin:10px}
+      .unassigned div.group{display:inline-block; position:relative}
+      .unassigned .guestContainer .group{display:block}
+      .guestContainer {display:inline-block}
+      .exploder {float: right; position:absolute;top:0px; left:90; z-index:11}
+      td{vertical-align:top}
+      .building{display:inline-block;margin:0px 20px}
+      .buildingWithImage{display:inline-block; position:relative}
+      .buildingWithImage div{position:absolute}
+      .buildingWithImage div div{position:static}
+      img{opacity: .5}
+      img.desaturate{
+        -webkit-filter: grayscale(100%);
+        filter: grayscale(100%);
+        filter: url(desaturate.svg#greyscale);
+      }
+      .allBuildings{height:700px}
+
+/*     .guest{color: transparent;
+          text-shadow: 0 0 8px rgba(0,0,0,0.5);
+     }
+*/   
+      
+      #osceola{width:350px;}
+      #osceola img{opacity: .3}
+      #tecumseh{width:350px;}
+      #upperkingpine{width:350px;}
+      #upperkingpine img{opacity: .3}
+      #carrigain{width:350px;}
+      #carrigain img{opacity: .3}
+      #starrking{width:350px;}
+      #starrking img{opacity: .3}
+      #lowerkingpine{width:350px;}
+      #lowerkingpine img{opacity: .3}
+      #maininn{width:350px;}
+      #maininn img{opacity: .4}
+
+/*      #maininn > div:nth-child(5n+3) { background-color: #AA66FF; opacity:.3} */
+
+
+    </style>
+    <script>
+      function drop(ev) {
+        ev.preventDefault();
+        var data = ev.dataTransfer.getData("text");
+        ev.target.appendChild(document.getElementById(data));
+      }
+      
+      function allowDrop(ev) {
+        ev.preventDefault();
+      }
+      
+      function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.id);
+      }
+
+      function recordRoom(ev, entityId, isGuest) {
+        var room = $($(ev.target)[0]).parent()[0].id;
+        if (isGuest) {
+          $('[name=room_assignment_guest' + entityId + ']').val(room);
+        } else {
+          $("#inv" + entityId + " .guest").each(function(index, g) {
+            var guestId = parseInt($(g).attr("id").substring(5));
+            $('[name=room_assignment_guest' + guestId + ']').val(room);
+          });
+        }      
+      }
+
+      function explodeInvitee(inviteeId) {
+        $("#inv" + inviteeId) .removeClass().addClass("guestContainer");
+        $("#inv" + inviteeId + " .exploder").remove();
+        $("#inv" + inviteeId).attr("draggable", "false").attr("ondragstart", "").attr("ondragend", "");     
+        $("#inv" + inviteeId + " .guest").attr("draggable", "true").attr("ondragstart", "drag(event)");
+        $("#inv" + inviteeId + " .guest").each(function(index, g) {
+           var guestId = parseInt($(g).attr("id").substring(5));
+      $(g).attr("ondragend", "recordRoom(event, " + guestId + " , true)");
+        });
+      }
+
+
+      $(document).ready(function() {
+{{/*      
+        {%for inv, room in invitees.items%}
+          $("#{{room}}").append($("#inv{{inv.id}}"));
+          {%for g in inv.guest_set.all%}
+            $('[name=room_assignment_guest{{g.id}}]').val("{{room}}");
+          {%endfor%}
+        {%endfor%}
+        {%for g, room in guests.items%}
+          explodeInvitee({{g.invitee_id}});
+          $("#{{room}}").append($("#guest{{g.id}}"));
+          $('[name=room_assignment_guest{{g.id}}]').val("{{room}}");
+        {%endfor%}
+        {%for g, room in guests.items%}
+          $("#inv{{g.invitee.id}}").remove();          
+        {%endfor%}
+*/}}
+
+      // binding with jquery --> $!#$!@#$!%@
+//      $(".buildingWithImage div").bind("dragover", function(ev) {allowDrop(ev);});
+//      $(".buildingWithImage div").bind("drop", function(ev) {drop(ev);});
+      $(".floorplanLink").bind("mouseover", 
+          function() {
+              var parent = $(this).parent(); 
+              parent.find("img").css("opacity",1.0);
+              parent.find("div").css("opacity", .3);
+ 	      parent.find(".roomLabel").css("visibility", "hidden");
+          });
+      $(".floorplanLink").bind("mouseout", 
+          function() {
+	      var parent = $(this).parent(); 
+              parent.find("img").css("opacity",.5);
+              parent.find("div").css("opacity", 1);
+ 	      parent.find(".roomLabel").css("visibility", "visible");
+          });
+
+      });
+    </script>
+  </head>
+  <body>
+
+    
+  <div class="allBuildings">
+    <div class="building buildingWithImage" id="osceola">
+      <h2>Osceola</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/media/floorplan/osceola.png" style="width:350px;position:absolute;top:78px"/>
+      <div id="os_178" style="top:87px;left:10px;width:103px;height:155px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">178: QTCCCC</div></div>
+      <div id="os_177" style="top:87px;left:222px;width:120px;height:155px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">177: QTTTCCCC</div></div>
+      <div id="os_174" style="top:255px;left:10px;width:103px;height:195px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">174: QTTTCCCC</div></div>
+      <div id="os_175" style="top:255px;left:122px;width:98px;height:195px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">175: QTTTCCCC</div></div>
+      <div id="os_176" style="top:250px;left:260px;width:80px;height:160px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">176: TT</div></div>
+      <div id="os_173" style="top:495px;left:10px;width:110px;height:190px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">173: QTTTCCCC</div></div>
+      <div id="os_172" style="top:495px;left:125px;width:98px;height:190px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">172: QTTTCCCC</div></div>
+      <div id="os_171" style="top:495px;left:232px;width:110px;height:190px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">171: QTTTCCCC</div></div>
+    </div>
+
+    <div class="building buildingWithImage" id="tecumseh">
+      <h2>Tecumseh</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/media/floorplan/tecumseh.png" style="width:350px;position:absolute;top:78px"/>
+      <div id="tc_192" style="top:87px;left:10px;width:200px;height:143px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">192: DTTTCC</div></div>
+      <div id="tc_191" style="top:87px;left:212px;width:132px;height:135px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">191: DTCC</div></div>
+      <div id="tc_194" style="top:233px;left:10px;width:140px;height:143px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">194: DTTTC</div></div>
+      <div id="tc_193" style="top:223px;left:212px;width:132px;height:148px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">193: TTCC</div></div>
+      <div id="tc_196" style="top:378px;left:10px;width:140px;height:148px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">196: DTTTC</div></div>
+      <div id="tc_195" style="top:370px;left:212px;width:135px;height:153px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">195: DTTTC</div></div>
+      <div id="tc_198" style="top:530px;left:10px;width:193px;height:148px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">198: DTTTCC</div></div>
+      <div id="tc_197" style="top:530px;left:230px;width:118px;height:148px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">197: TTCC</div></div>
+    </div>
+
+    
+    <div class="building buildingWithImage" id="carrigain">
+      <h2>Carrigain</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/media/floorplan/carrigain.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <div id="cr_213" style="top:85px;left:193px;width:153px;height:133px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">213: TT</div></div>
+      <div id="cr_212" style="top:230px;left:193px;width:153px;height:140px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">212: TT</div></div>
+      <div id="cr_214" style="top:395px;left:10px;width:177px;height:175px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">214: KTT</div></div>
+      <div id="cr_215" style="top:395px;left:193px;width:157px;height:175px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">215: TTTT</div></div>
+    </div>
+
+    <div class="building buildingWithImage" id="starrking">
+      <h2>Starr King</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/media/floorplan/starrking.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <div id="sk_205" style="top:85px;left:73px;width:120px;height:135px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">205: TTCC</div></div>
+      <div id="sk_204" style="top:228px;left:73px;width:153px;height:130px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">204: TTCC</div></div>
+      <div id="sk_203" style="top:323px;left:195px;width:142px;height:172px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">203: TTCC</div></div>
+      <div id="sk_202" style="top:500px;left:73px;width:153px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">202: TTCC</div></div>
+      <div id="sk_201" style="top:645px;left:73px;width:120px;height:135px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">201: TTCC</div></div>
+    </div>
+
+<!--
+    <div class="building buildingWithImage" id="maininn">
+      <h2>Main Inn</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/static/maininn.png" style="width:600px;position:absolute;top:78px"/>
+      <div id="in_140" style="top:98px;left:5px;width:125px;height:211px"><div class="roomLabel">140: KTT</div></div>
+      <div id="in_139" style="top:98px;left:135px;width:109px;height:211px"><div class="roomLabel">139: KTT</div></div>
+      <div id="in_137" style="top:337px;left:7px;width:92px;height:201px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">137: QTTT</div></div>
+      <div id="in_138" style="top:337px;left:151px;width:95px;height:175px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">138: QTT</div></div>
+      <div id="in_141" style="top:332px;left:337px;width:181px;height:106px"><div class="roomLabel">141: QTT</div></div>
+      <div id="in_135" style="top:540px;left:78px;width:163px;height:92px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">135:Q</div></div>
+      <div id="in_134" style="top:458px;left:247px;width:150px;height:85px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">134: Q</div></div>
+      <div id="in_131" style="top:457px;left:399px;width:133px;height:85px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">131: TT</div></div>
+      <div id="in_133" style="top:575px;left:247px;width:142px;height:105px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">133: DT</div></div>
+      <div id="in_132" style="top:575px;left:394px;width:136px;height:105px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">132: TT</div></div>
+    </div>
+-->
+    
+<!--
+
+    <div class="building buildingWithImage" id="upperkingpine">
+      <h2>Upper King Pine</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/static/upperkingpine.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <div id="kp_162" style="top:87px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">162: QDTT</div></div>
+      <div id="kp_164" style="top:196px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">164: QDTT</div></div>
+      <div id="kp_166" style="top:305px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">166: QDTT</div></div>
+      <div id="kp_168" style="top:414px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">168: QDTT</div></div>
+      <div id="kp_170" style="top:523px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">170: QDTT</div></div>
+
+      <div id="kp_161" style="top:196px;left:195px;width:150px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">161: QDTT</div></div>
+      <div id="kp_165" style="top:305px;left:195px;width:150px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">165: QDTT</div></div>
+      <div id="kp_167" style="top:414px;left:195px;width:150px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">167: QDTT</div></div>
+      <div id="kp_169" style="top:523px;left:195px;width:150px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">169: QDTT</div></div>
+    </div>
+
+    
+    <div class="building buildingWithImage" id="lowerkingpine">
+      <h2>Lower King Pine</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/static/lowerkingpine.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <div id="kp_152" style="top:87px;left:7px;width:150px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">152: Q</div></div>
+      <div id="kp_154" style="top:228px;left:7px;width:150px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">154: Q</div></div>
+      <div id="kp_156" style="top:367px;left:7px;width:150px;height:130px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">156: Q</div></div>
+      <div id="kp_158" style="top:500px;left:7px;width:150px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">158: Q</div></div>
+      <div id="kp_160" style="top:640px;left:7px;width:120px;height:240px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">160: QTTT</div></div>
+
+      <div id="kp_151" style="top:87px;left:205px;width:145px;height:250px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">151: QTTT</div></div>
+      <div id="kp_155" style="top:375px;left:205px;width:145px;height:255px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">155: QTTT</div></div>
+      <div id="kp_159" style="top:715px;left:125px;width:120px;height:170px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">159: QT</div></div>
+    </div>
+-->
+  </div>
+
+{{$eventDate := .CurrentEvent.StartDate}}  
+<form action="/tools/rooming-tool/">
+<input type="submit" value="Save"/>
+
+
+<div class="unassigned">
+{{$RsvpToGroupsMap := .RsvpToGroupsMap}}
+{{$allStatuses := .AllRsvpStatuses}}
+{{range $i, $status := .StatusOrder}}
+  {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
+    <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}_kids" draggable="true" ondragstart="drag(event)" ondragend="">
+    <div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>
+    {{range $k, $person := .}}
+      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}_kids">{{$person.FullNameWithAge $eventDate}}</div>
+    {{end}}
+    </div>
+  {{end}}
+{{end}}
+
+
+{{/* 
+ {%for group_type in all_attending_guests %}
+    <div class="typeHolder">
+      {%for duration in group_type %}
+        {%for group in duration %}
+      <div id="inv{{group.0.invitee_id}}" class="group invitee
+	   {%if forloop.parentloop.parentloop.counter == 1%}
+             {%if forloop.parentloop.counter == 2%}
+	       kidsExtra
+	     {%else%}
+	       kids
+	     {%endif%}
+	   {%elif forloop.parentloop.counter == 2%}
+	     fs
+	   {%elif forloop.parentloop.counter == 3%}
+	     ss
+	   {%else%}
+	     all
+	   {%endif%}" draggable="true" ondragstart="drag(event)" ondragend="recordRoom(event,{{group.0.invitee_id}})">
+            {%if  forloop.parentloop.parentloop.counter < 3 %}
+             <div class="exploder" onclick="explodeInvitee({{group.0.invitee_id}})">+</div>
+            {%endif%}
+            {%for guest in group%}
+              <div id="guest{{guest.id}}" class="guest group 
+                {%if forloop.parentloop.parentloop.parentloop.counter == 1%}
+                  {%if forloop.parentloop.parentloop.counter == 2%}
+	            kidsExtra
+	          {%else%}
+	            kids
+         	  {%endif%}
+		{%elif forloop.parentloop.parentloop.counter == 2%}
+		  fs
+		{%elif forloop.parentloop.parentloop.counter == 3%}
+                  ss
+		{%else%}
+		  all
+		{%endif%}"> 
+                {{guest.first_name}} {%if guest.approx_age > -1 and guest.approx_age < 16%} ({{guest.approx_age}}){%endif%}<br>
+	      </div>
+	    {%endfor%}
+          </div>
+          {%for guest in group%}
+            <input type="hidden" name="room_assignment_guest{{guest.id}}">
+          {%endfor%}
+        {%endfor%}
+      {%endfor%}
+    </div>
+  {%endfor%}
+*/}}
+
+</div>
+</form>
+
+ 
+{{end}}
