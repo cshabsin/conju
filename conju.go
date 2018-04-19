@@ -15,6 +15,10 @@ func init() {
 	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
 	AddSessionHandler("/repairData", RepairData).Needs(AdminGetter)
 
+	AddSessionHandler("/reloadHousingSetup", AskReloadHousingSetup).Needs(AdminGetter)
+	AddSessionHandler("/doReloadHousingSetup", ReloadHousingSetup).Needs(AdminGetter)
+	//	AddSessionHandler("/clearHousingSetup", ClearAllHousingSetup).Needs(AdminGetter)
+
 	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(PersonGetter).Needs(AdminGetter)

@@ -3,7 +3,6 @@ package conju
 // TODO: move to "package models"?
 
 import (
-	"context"
 	"time"
 
 	"google.golang.org/appengine/datastore"
@@ -17,30 +16,16 @@ type CurrentEvent struct {
 // TODO: add object that's a map of string names to values and attach one to every event
 type Event struct {
 	EventId               int // this can get deleted after all the data is imported
+	Venue                 *datastore.Key
 	Name                  string
 	ShortName             string
 	StartDate             time.Time
 	EndDate               time.Time
 	RsvpStatuses          []RsvpStatus
-	InvitationClosingText string
+	Rooms                 []*datastore.Key
 	Activities            []*datastore.Key
+	InvitationClosingText string
 	Current               bool
-}
-
-func CreateEvent(ctx context.Context, id int, name string, shortName string, startDate time.Time, endDate time.Time, rsvpStatuses []RsvpStatus, invitationClosingText string, activityKeys []*datastore.Key, current bool) (*datastore.Key, error) {
-	e := Event{
-		EventId:               id,
-		Name:                  name,
-		ShortName:             shortName,
-		StartDate:             startDate,
-		EndDate:               endDate,
-		RsvpStatuses:          rsvpStatuses,
-		InvitationClosingText: invitationClosingText,
-		Activities:            activityKeys,
-		Current:               current,
-	}
-	return datastore.Put(ctx, datastore.NewIncompleteKey(
-		ctx, "Event", nil), &e)
 }
 
 // Sets up Event in the WrappedRequest.

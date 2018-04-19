@@ -13,7 +13,7 @@ func ClearAllData(wr WrappedRequest) {
 	// wr.Values["event"] = nil
 	// wr.SaveSession()
 
-	// entityNames := []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode"}
+	// entityNames := []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"}
 
 	// for _, entityName := range entityNames {
 	// 	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Clearing: %s\n", entityName)))
