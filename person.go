@@ -514,6 +514,7 @@ func savePeople(wr WrappedRequest) error {
 			key = PersonKey(ctx)
 			p = &Person{
 				NeedBirthdate: false,
+				LoginCode:     randomLoginCodeString(),
 			}
 		}
 

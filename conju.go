@@ -2,6 +2,8 @@ package conju
 
 import (
 	"html/template"
+	"math/rand"
+	"time"
 
 	"google.golang.org/appengine/log"
 )
@@ -44,6 +46,8 @@ func init() {
 
 	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
+
+	rand.Seed(time.Now().UnixNano())
 
 }
 
