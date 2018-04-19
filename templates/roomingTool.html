@@ -50,10 +50,10 @@
       #lowerkingpine img{opacity: .3}
       #maininn{width:350px;}
       #maininn img{opacity: .4}
-
-/*      #maininn > div:nth-child(5n+3) { background-color: #AA66FF; opacity:.3} */
-
-
+/*
+      .buildingWithImage > div:nth-child(2n) { background-color: #AA66FF; opacity:.3} 
+      .buildingWithImage > div:nth-child(2n+1) { background-color: lightgreen; opacity:.3} 
+*/
     </style>
     <script>
       function drop(ev) {
@@ -137,6 +137,7 @@
 
     
   <div class="allBuildings">
+   
     <div class="building buildingWithImage" id="osceola">
       <h2>Osceola</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
@@ -187,30 +188,44 @@
       <div id="sk_201" style="top:645px;left:73px;width:120px;height:135px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">201: TTCC</div></div>
     </div>
 
-<!--
+    <div class="building buildingWithImage" id="islandview">
+      <h2>Island View</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/media/floorplan/islandview.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <div id="iv_224_A" style="top:85px;left:5px;width:185px;height:120px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">224A: Q</div></div>
+      <div id="iv_224_B" style="top:205px;left:5px;width:150px;height:120px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">224B: TT</div></div>
+      <div id="iv_224_C" style="top:85px;left:190px;width:160px;height:120px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">224C: D</div></div>
+      <div id="iv_223_A" style="top:325px;left:5px;width:155px;height:145px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223A: Q</div></div>
+      <div id="iv_223_B" style="top:325px;left:160px;width:108px;height:155px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223B: TT</div></div>
+      <div id="iv_223_C" style="top:325px;left:268px;width:80px;height:300px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223C: TTTTTT</div></div>
+      <div id="iv_223_D" style="top:482px;left:160px;width:108px;height:145px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223D: D</div></div>
+    </div>
+<#--
     <div class="building buildingWithImage" id="maininn">
       <h2>Main Inn</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
-      <img src="/static/maininn.png" style="width:600px;position:absolute;top:78px"/>
-      <div id="in_140" style="top:98px;left:5px;width:125px;height:211px"><div class="roomLabel">140: KTT</div></div>
-      <div id="in_139" style="top:98px;left:135px;width:109px;height:211px"><div class="roomLabel">139: KTT</div></div>
-      <div id="in_137" style="top:337px;left:7px;width:92px;height:201px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">137: QTTT</div></div>
-      <div id="in_138" style="top:337px;left:151px;width:95px;height:175px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">138: QTT</div></div>
-      <div id="in_141" style="top:332px;left:337px;width:181px;height:106px"><div class="roomLabel">141: QTT</div></div>
+      <img src="/media/floorplan/maininn.png" style="width:600px;position:absolute;top:78px"/>
+      <div id="in_140_A" style="top:98px;left:5px;width:125px;height:130px"><div class="roomLabel">140A: K</div></div>
+      <div id="in_140_B" style="top:228px;left:5px;width:125px;height:80px"><div class="roomLabel">140B: TT</div></div>
+      <div id="in_139_A" style="top:98px;left:135px;width:109px;height:130px"><div class="roomLabel">139A: K</div></div>
+      <div id="in_139_B" style="top:228px;left:135px;width:109px;height:80px"><div class="roomLabel">139B: TT</div></div>
+      <div id="in_137_A" style="top:337px;left:7px;width:92px;height:103px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">137A: Q</div></div>
+      <div id="in_137_B" style="top:440px;left:7px;width:92px;height:97px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">137B: TTT</div></div>
+      <div id="in_138_A" style="top:337px;left:151px;width:95px;height:99px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">138A: Q</div></div>
+      <div id="in_138_B" style="top:436px;left:151px;width:95px;height:80px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">138B: TT</div></div>
+      <div id="in_141_A" style="top:332px;left:437px;width:80px;height:106px"><div class="roomLabel">141A: Q</div></div>
+      <div id="in_141_B" style="top:332px;left:337px;width:100px;height:106px"><div class="roomLabel">141B: TT</div></div>
       <div id="in_135" style="top:540px;left:78px;width:163px;height:92px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">135:Q</div></div>
       <div id="in_134" style="top:458px;left:247px;width:150px;height:85px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">134: Q</div></div>
       <div id="in_131" style="top:457px;left:399px;width:133px;height:85px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">131: TT</div></div>
       <div id="in_133" style="top:575px;left:247px;width:142px;height:105px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">133: DT</div></div>
       <div id="in_132" style="top:575px;left:394px;width:136px;height:105px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">132: TT</div></div>
     </div>
--->
-    
-<!--
 
     <div class="building buildingWithImage" id="upperkingpine">
       <h2>Upper King Pine</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
-      <img src="/static/upperkingpine.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <img src="/media/floorplan/upperkingpine.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
       <div id="kp_162" style="top:87px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">162: QDTT</div></div>
       <div id="kp_164" style="top:196px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">164: QDTT</div></div>
       <div id="kp_166" style="top:305px;left:7px;width:157px;height:102px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">166: QDTT</div></div>
@@ -227,19 +242,21 @@
     <div class="building buildingWithImage" id="lowerkingpine">
       <h2>Lower King Pine</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
-      <img src="/static/lowerkingpine.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
+      <img src="/media/floorplan/lowerkingpine.png" class="desaturate" style="width:350px;position:absolute;top:78px"/>
       <div id="kp_152" style="top:87px;left:7px;width:150px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">152: Q</div></div>
       <div id="kp_154" style="top:228px;left:7px;width:150px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">154: Q</div></div>
       <div id="kp_156" style="top:367px;left:7px;width:150px;height:130px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">156: Q</div></div>
       <div id="kp_158" style="top:500px;left:7px;width:150px;height:138px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">158: Q</div></div>
       <div id="kp_160" style="top:640px;left:7px;width:120px;height:240px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">160: QTTT</div></div>
 
-      <div id="kp_151" style="top:87px;left:205px;width:145px;height:250px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">151: QTTT</div></div>
-      <div id="kp_155" style="top:375px;left:205px;width:145px;height:255px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">155: QTTT</div></div>
+      <div id="kp_151_A" style="top:87px;left:205px;width:145px;height:125px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">151A: Q</div></div>
+      <div id="kp_151_B" style="top:212px;left:205px;width:145px;height:125px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">151B: TTT</div></div>
+      <div id="kp_155_A" style="top:375px;left:205px;width:145px;height:125px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">155A: Q</div></div>
+      <div id="kp_155_B" style="top:500px;left:205px;width:145px;height:130px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">155B: TTT</div></div>
       <div id="kp_159" style="top:715px;left:125px;width:120px;height:170px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">159: QT</div></div>
     </div>
--->
   </div>
+-->
 
 {{$eventDate := .CurrentEvent.StartDate}}  
 <form action="/tools/rooming-tool/">
