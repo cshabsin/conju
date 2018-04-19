@@ -571,11 +571,11 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 
 func AskReloadHousingSetup(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(wr.ResponseWriter, `
-	 <form method="POST" action="/doReloadHousingSetup">
-	 <input type="submit" value="Do it">
-	 </form>
-	 `)
+	// fmt.Fprintf(wr.ResponseWriter, `
+	// <form method="POST" action="/doReloadHousingSetup">
+	// <input type="submit" value="Do it">
+	// </form>
+	// `)
 	fmt.Fprintf(wr.ResponseWriter, "NO")
 }
 
