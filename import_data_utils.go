@@ -37,7 +37,6 @@ func ReloadData(wr WrappedRequest) {
 		return
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	// TODO: print out report of what got imported
 	ClearAllData(wr)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	SetupVenues(wr.ResponseWriter, wr.Context)
@@ -179,29 +178,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 				//}
 			}
 
-			var rooms []*datastore.Key
-			roomStrings := strings.Split(fields[8], ",")
-			for _, r := range roomStrings {
-				parts := strings.Split(r, "_")
-				buildingKey := (buildingsMap[parts[0]])
-				if len(parts) == 1 {
-					q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).KeysOnly()
-					roomKeys, err := q.GetAll(ctx, nil)
-					if err != nil {
-						log.Errorf(ctx, "fetching rooms for building %s: %v", parts[0], err)
-					}
-					rooms = append(rooms, roomKeys...)
-				}
-				if len(parts) == 2 {
-					roomNumber, _ := strconv.Atoi(parts[1])
-					q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).Filter("RoomNumber =", roomNumber).KeysOnly()
-					roomKeys, err := q.GetAll(ctx, nil)
-					if err != nil {
-						log.Errorf(ctx, "fetching room %s %d: %v", parts[0], parts[1], err)
-					}
-					rooms = append(rooms, roomKeys...)
-				}
-			}
+			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
 			e := Event{
 				EventId:               eventId,
@@ -227,6 +204,34 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 		processedHeader = true
 	}
 	return err
+}
+
+func getRoomsFromString(roomsString string, ctx context.Context, buildingsMap map[string]datastore.Key) []*datastore.Key {
+	roomStrings := strings.Split(roomsString, ",")
+	var rooms []*datastore.Key
+	for _, r := range roomStrings {
+		parts := strings.Split(r, "_")
+		buildingKey := (buildingsMap[parts[0]])
+		if len(parts) == 1 {
+			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).KeysOnly()
+			roomKeys, err := q.GetAll(ctx, nil)
+			if err != nil {
+				log.Errorf(ctx, "fetching rooms for building %s: %v", parts[0], err)
+			}
+			rooms = append(rooms, roomKeys...)
+		}
+		if len(parts) == 2 {
+			roomNumber, _ := strconv.Atoi(parts[1])
+			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).Filter("RoomNumber =", roomNumber).KeysOnly()
+			roomKeys, err := q.GetAll(ctx, nil)
+			if err != nil {
+				log.Errorf(ctx, "fetching room %s %d: %v", parts[0], parts[1], err)
+			}
+			rooms = append(rooms, roomKeys...)
+		}
+	}
+	return rooms
+
 }
 
 type ImportedGuest struct {
@@ -571,24 +576,86 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 
 func AskReloadHousingSetup(wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// fmt.Fprintf(wr.ResponseWriter, `
-	// <form method="POST" action="/doReloadHousingSetup">
-	// <input type="submit" value="Do it">
-	// </form>
-	// `)
-	fmt.Fprintf(wr.ResponseWriter, "NO")
+	fmt.Fprintf(wr.ResponseWriter, `
+	<form method="POST" action="/doReloadHousingSetup">
+	<input type="submit" value="Do it">
+	</form>
+	`)
+	//fmt.Fprintf(wr.ResponseWriter, "NO")
 }
 
 func ReloadHousingSetup(wr WrappedRequest) {
 
-	//  SetupVenues( wr.Context)
+	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	SetupVenues(wr.ResponseWriter, wr.Context)
+	wr.ResponseWriter.Write([]byte("\n\n"))
+	time.Sleep(2 * time.Second)
+	SetupBuildings(wr.ResponseWriter, wr.Context)
+	wr.ResponseWriter.Write([]byte("\n\n"))
+	time.Sleep(2 * time.Second)
+	SetupRooms(wr.ResponseWriter, wr.Context)
+	wr.ResponseWriter.Write([]byte("\n\n"))
+	time.Sleep(2 * time.Second)
 
-	// Load Buildings
+	ctx := wr.Context
 
-	// Load Rooms
+	venuesMap := make(map[string]datastore.Key)
+	var venues []Venue
+	q := datastore.NewQuery("Venue")
+	keys, err := q.GetAll(ctx, &venues)
+	for i, venueKey := range keys {
+		venuesMap[(venues[i]).ShortName] = *venueKey
+	}
 
-	// Add venue to events
-	// Add rooms to events
+	buildingsMap := make(map[string]datastore.Key)
+	var buildings []Building
+	q = datastore.NewQuery("Building")
+	keys, err = q.GetAll(ctx, &buildings)
+	for i, buildingKey := range keys {
+		buildingsMap[(buildings[i]).Code] = *buildingKey
+	}
+
+	eventsMap := make(map[string]datastore.Key)
+	var events []Event
+	q = datastore.NewQuery("Event")
+	keys, err = q.GetAll(ctx, &events)
+	for i, eventKey := range keys {
+		eventsMap[(events[i]).ShortName] = *eventKey
+	}
+
+	eventsFile, err := os.Open(Import_Data_Directory + "/" + Events_Data_File_Name)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
+	defer eventsFile.Close()
+	scanner := bufio.NewScanner(eventsFile)
+	processedHeader := false
+	for scanner.Scan() {
+		if processedHeader {
+			eventRow := scanner.Text()
+
+			fields := strings.Split(eventRow, "\t")
+
+			// Add venue to events
+			venueKey := venuesMap[fields[3]]
+			// Add rooms to events
+			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
+
+			var event Event
+			eventKey := eventsMap[fields[2]]
+			datastore.Get(ctx, &eventKey, &event)
+
+			event.Venue = &venueKey
+			event.Rooms = rooms
+			_, err := datastore.Put(ctx, &eventKey, &event)
+			if err != nil {
+				log.Infof(ctx, "%v", err)
+			}
+
+		}
+		processedHeader = true
+
+	}
 
 }
 
