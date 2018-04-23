@@ -47,8 +47,9 @@ type Room struct {
 }
 
 type RealRoom struct {
-	Room     Room
-	Building Building
+	Room       Room
+	Building   Building
+	BedsString string
 }
 
 func (room Room) makeRealRoom(ctx context.Context) RealRoom {

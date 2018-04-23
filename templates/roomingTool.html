@@ -32,24 +32,11 @@
       }
       .allBuildings{height:700px}
 
-/*     .guest{color: transparent;
-          text-shadow: 0 0 8px rgba(0,0,0,0.5);
-     }
-*/
-      
-      #osceola{width:350px;}
-      #osceola img{opacity: .3}
-      #tecumseh{width:350px;}
-      #upperkingpine{width:350px;}
-      #upperkingpine img{opacity: .3}
-      #carrigain{width:350px;}
-      #carrigain img{opacity: .3}
-      #starrking{width:350px;}
-      #starrking img{opacity: .3}
-      #lowerkingpine{width:350px;}
-      #lowerkingpine img{opacity: .3}
-      #maininn{width:350px;}
-      #maininn img{opacity: .4}
+    .building{width:350px;}
+    .building img{opacity: .3}
+  
+
+
 /*
       .buildingWithImage > div:nth-child(2n) { background-color: #AA66FF; opacity:.3} 
       .buildingWithImage > div:nth-child(2n+1) { background-color: lightgreen; opacity:.3} 
@@ -134,10 +121,23 @@
     </script>
   </head>
   <body>
-
-    
   <div class="allBuildings">
+  {{$buildingsToRoomsMap := .BuildingsToRooms}}
+  {{range .BuildingsInOrder}}
+    {{$rooms := (index $buildingsToRoomsMap .)}}
+    <div class="building buildingWithImage" id="{{.Code}}">
+      <h2>{{.Name}}</h2>
+      <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
+      <img src="/media/floorplan/{{.FloorplanImageUrl}}" style="width:350px;position:absolute;top:78px"/>
 
+   {{range $rooms}}
+      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if (len .Room.Partition) gt 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}}</div></div>
+   {{end}}
+   </div>
+ {{end}}
+
+
+<!--
     <div class="building buildingWithImage" id="osceola">
       <h2>Osceola</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
@@ -200,7 +200,7 @@
       <div id="iv_223_C" style="top:325px;left:268px;width:80px;height:300px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223C: TTTTTT</div></div>
       <div id="iv_223_D" style="top:482px;left:160px;width:108px;height:145px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223D: D</div></div>
     </div>
-<!--
+
     <div class="building buildingWithImage" id="maininn">
       <h2>Main Inn</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
