@@ -723,7 +723,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
-func (invitation *Invitation) ClusterByRsvp(ctx context.Context) map[RsvpStatus][]Person {
+func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus][]Person, []Person) {
 
 	var personKeyToRsvp = make(map[datastore.Key]RsvpStatus)
 	for p, r := range invitation.RsvpMap {
@@ -731,12 +731,13 @@ func (invitation *Invitation) ClusterByRsvp(ctx context.Context) map[RsvpStatus]
 	}
 
 	rsvpMap := make(map[RsvpStatus][]Person)
+	var noRsvp []Person
 
 	for _, invitee := range invitation.Invitees {
-		if rsvp, present := personKeyToRsvp[*invitee]; present {
-			var person Person
-			datastore.Get(ctx, invitee, &person)
+		var person Person
+		datastore.Get(ctx, invitee, &person)
 
+		if rsvp, present := personKeyToRsvp[*invitee]; present {
 			listForStatus := rsvpMap[rsvp]
 			if listForStatus == nil {
 				listForStatus = make([]Person, 0)
@@ -745,10 +746,12 @@ func (invitation *Invitation) ClusterByRsvp(ctx context.Context) map[RsvpStatus]
 			log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
 			rsvpMap[rsvp] = listForStatus
 
+		} else {
+			noRsvp = append(noRsvp, person)
 		}
 	}
 
-	return rsvpMap
+	return rsvpMap, noRsvp
 
 }
 
@@ -765,13 +768,11 @@ func handleRsvpReport(wr WrappedRequest) {
 	}
 
 	allRsvpMap := make(map[RsvpStatus][][]Person)
+	var allNoRsvp [][]Person
 
 	for _, invitation := range invitations {
-		if invitation.RsvpMap == nil {
-			continue
-		}
 
-		rsvpMap := invitation.ClusterByRsvp(ctx)
+		rsvpMap, noRsvp := invitation.ClusterByRsvp(ctx)
 
 		for r, p := range rsvpMap {
 			listOfLists := allRsvpMap[r]
@@ -781,6 +782,7 @@ func handleRsvpReport(wr WrappedRequest) {
 			listOfLists = append(listOfLists, p)
 			allRsvpMap[r] = listOfLists
 		}
+		allNoRsvp = append(allNoRsvp, noRsvp)
 
 	}
 
@@ -789,6 +791,7 @@ func handleRsvpReport(wr WrappedRequest) {
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"RsvpMap":         allRsvpMap,
+		"NoRsvp":          allNoRsvp,
 		"StatusOrder":     statusOrder,
 		"AllRsvpStatuses": GetAllRsvpStatuses(),
 	})

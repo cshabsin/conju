@@ -92,4 +92,15 @@ function adjustTotals() {
 {{end}}
 </table>
 
+
+<h2>No RSVP</h2>
+{{range .NoRsvp}}
+  <div style="padding: 10px 0px">
+    {{range .}}
+      <div class="noRsvp">{{.FullNameWithAge $currentEvent.StartDate}}</div>
+    {{end}}
+  </div>
+{{end}}
+
+
 {{end}}

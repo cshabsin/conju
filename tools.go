@@ -20,7 +20,7 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
 	for _, invitation := range invitations {
-		rsvpMap := invitation.ClusterByRsvp(ctx)
+		rsvpMap, _ := invitation.ClusterByRsvp(ctx)
 		for k, v := range rsvpMap {
 			if GetAllRsvpStatuses()[k].Attending {
 				if listForRsvp, present := rsvpToGroupsMap[k]; present {
