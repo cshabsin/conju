@@ -122,6 +122,7 @@
   </head>
   <body>
   <div class="allBuildings">
+<!--
   {{$buildingsToRoomsMap := .BuildingsToRooms}}
   {{range .BuildingsInOrder}}
     {{$rooms := (index $buildingsToRoomsMap .)}}
@@ -135,9 +136,9 @@
    {{end}}
    </div>
  {{end}}
+-->
 
 
-<!--
     <div class="building buildingWithImage" id="osceola">
       <h2>Osceola</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
@@ -201,6 +202,7 @@
       <div id="iv_223_D" style="top:482px;left:160px;width:108px;height:145px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223D: D</div></div>
     </div>
 
+<!--
     <div class="building buildingWithImage" id="maininn">
       <h2>Main Inn</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
