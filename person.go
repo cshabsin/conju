@@ -327,7 +327,11 @@ func (p Person) ApproxAge() time.Duration {
 
 func (p Person) ApproxAgeAtTime(dateTime time.Time) time.Duration {
 	if p.Birthdate.IsZero() {
-		return 0
+		if p.NeedBirthdate {
+			return time.Duration(p.FallbackAge * 1000 * 1000 * 1000 * 60 * 24 * 365)
+		} else {
+			return 0
+		}
 	}
 	return dateTime.Sub(p.Birthdate)
 }
@@ -357,11 +361,11 @@ func (p Person) IsChildAtTime(datetime time.Time) bool {
 }
 
 func (p Person) IsBabyAtTime(datetime time.Time) bool {
-	if p.Birthdate.IsZero() {
-		return p.NeedBirthdate
+	if p.Birthdate.IsZero() && p.NeedBirthdate {
+		return p.FallbackAge <= 3
 	}
 	age := HalfYears(p.ApproxAgeAtTime(datetime))
-	return age < 4
+	return age <= 3
 }
 
 // Round a duration to half-years.
