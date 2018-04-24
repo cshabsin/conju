@@ -781,8 +781,9 @@ func handleRsvpReport(wr WrappedRequest) {
 			listOfLists = append(listOfLists, p)
 			allRsvpMap[r] = listOfLists
 		}
-		allNoRsvp = append(allNoRsvp, noRsvp)
-
+		if len(noRsvp) > 0 {
+			allNoRsvp = append(allNoRsvp, noRsvp)
+		}
 	}
 
 	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
