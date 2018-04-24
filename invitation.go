@@ -743,7 +743,6 @@ func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus
 				listForStatus = make([]Person, 0)
 			}
 			listForStatus = append(listForStatus, person)
-			log.Infof(ctx, CollectiveAddress(listForStatus, Informal))
 			rsvpMap[rsvp] = listForStatus
 
 		} else {
