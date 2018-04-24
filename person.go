@@ -361,8 +361,12 @@ func (p Person) IsChildAtTime(datetime time.Time) bool {
 }
 
 func (p Person) IsBabyAtTime(datetime time.Time) bool {
-	if p.Birthdate.IsZero() && p.NeedBirthdate {
-		return p.FallbackAge <= 3
+	if p.Birthdate.IsZero() {
+		if p.NeedBirthdate {
+			return p.FallbackAge <= 3
+		} else {
+			return false
+		}
 	}
 	age := HalfYears(p.ApproxAgeAtTime(datetime))
 	return age <= 3
