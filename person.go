@@ -205,21 +205,37 @@ func (p Person) FullName() string {
 }
 
 func (p Person) FullNameWithAge(t time.Time) string {
+	ageString := p.AgeString(t)
+	if len(ageString) > 0 {
+		return p.FullName() + " (" + ageString + ")"
+	}
+	return p.FullName()
+}
+
+func (p Person) FirstNameWithAge(t time.Time) string {
+	ageString := p.AgeString(t)
+	if len(ageString) > 0 {
+		return p.GetFirstName(Informal) + " (" + ageString + ")"
+	}
+	return p.GetFirstName(Informal)
+}
+
+func (p Person) AgeString(t time.Time) string {
 	if p.Birthdate.IsZero() {
 		if !p.NeedBirthdate {
-			return p.FullName()
+			return ""
 		}
 		if p.FallbackAge == 0 {
-			return p.FullName() + " (???)"
+			return "???"
 		}
-		return fmt.Sprintf("%s (%.1f)", p.FullName(), p.FallbackAge)
+		return fmt.Sprintf("%.1f", p.FallbackAge)
 	}
 	age := HalfYears(p.ApproxAgeAtTime(t))
 
 	if age >= 16 {
-		return p.FullName()
+		return ""
 	}
-	return fmt.Sprintf("%s (%.1f)", p.FullName(), age)
+	return fmt.Sprintf("%.1f", age)
 }
 
 // FullName returns the formatted full name of the person, with

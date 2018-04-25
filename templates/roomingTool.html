@@ -5,8 +5,10 @@
     <script type="text/JavaScript" src="/media/jquery-3.3.1.min.js"></script>
     <style>
       td{border:1px solid black;width:100px;height:100px;}
-      .FriSat_kids{background-color: #AA66FF}
       .ThuFriSat_kids{background-color: #5A0ABF}
+      .FriSat_kids{background-color: #AA66FF}
+      .Maybe_kids{background-color: #D6ADF7}
+      .NoRsvps{background-color: #EBD9FA}
       .all{background-color: #76A6F5}
       .fs{background-color: #0761F2}
       .ss{background-color: #00FF00}
@@ -273,12 +275,20 @@
     <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}_kids" draggable="true" ondragstart="drag(event)" ondragend="">
     <div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>
     {{range $k, $person := .}}
-      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}_kids">{{$person.FullNameWithAge $eventDate}}</div>
+      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}_kids">{{$person.FirstNameWithAge $eventDate}}</div>
     {{end}}
     </div>
   {{end}}
 {{end}}
 
+{{range $i, $group := .NoRsvps}}
+    <div id="inv{{$i}}--" class="group invitee NoRsvps" draggable="true" ondragstart="drag(event)" ondragend="">
+    <div class="exploder" onclick="explodeInvitee('{{$i}}--')">+</div>
+    {{range $k, $person := .}}
+      <div id="guest{{$i}}_{{$k}}" class="guest group NoRsvps">{{$person.FirstNameWithAge $eventDate}}</div>
+    {{end}}
+    </div>
+{{end}}
 
 {{/* 
  {%for group_type in all_attending_guests %}

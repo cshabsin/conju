@@ -18,20 +18,25 @@ func handleRoomingTool(wr WrappedRequest) {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
 
+	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe}
 	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
+	var noRsvps [][]Person
 	for _, invitation := range invitations {
-		rsvpMap, _ := invitation.ClusterByRsvp(ctx)
-		for k, v := range rsvpMap {
-			if GetAllRsvpStatuses()[k].Attending {
-				if listForRsvp, present := rsvpToGroupsMap[k]; present {
-					listForRsvp = append(listForRsvp, v)
-					rsvpToGroupsMap[k] = listForRsvp
+		rsvpMap, noResponse := invitation.ClusterByRsvp(ctx)
+		for _, s := range statusOrder {
+			if peopleForRsvp, pr := rsvpMap[s]; pr {
+				if listForRsvp, present := rsvpToGroupsMap[s]; present {
+					listForRsvp = append(listForRsvp, peopleForRsvp)
+					rsvpToGroupsMap[s] = listForRsvp
 				} else {
 					listForRsvp = [][]Person{}
-					listForRsvp = append(listForRsvp, v)
-					rsvpToGroupsMap[k] = listForRsvp
+					listForRsvp = append(listForRsvp, peopleForRsvp)
+					rsvpToGroupsMap[s] = listForRsvp
 				}
 			}
+		}
+		if len(noResponse) > 0 {
+			noRsvps = append(noRsvps, noResponse)
 		}
 	}
 
@@ -40,7 +45,6 @@ func handleRoomingTool(wr WrappedRequest) {
 	q = datastore.NewQuery("Building") // .Filter("Venue =", wr.Event.Venue)
 	keys, err := q.GetAll(ctx, &buildings)
 	for i, buildingKey := range keys {
-		log.Infof(ctx, "%s -> %v", buildings[i].Name, buildings[i])
 		buildingsMap[*buildingKey] = buildings[i]
 	}
 
@@ -91,10 +95,10 @@ func handleRoomingTool(wr WrappedRequest) {
 		availableRooms = append(availableRooms, realRoom)
 	}
 
-	statusOrder := []RsvpStatus{ThuFriSat, FriSat}
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingTool.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"RsvpToGroupsMap":  rsvpToGroupsMap,
+		"NoRsvps":          noRsvps,
 		"StatusOrder":      statusOrder,
 		"AllRsvpStatuses":  GetAllRsvpStatuses(),
 		"AvailableRooms":   availableRooms,
