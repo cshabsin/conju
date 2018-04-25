@@ -273,7 +273,7 @@
 {{range $i, $status := .StatusOrder}}
   {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
     <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}_kids" draggable="true" ondragstart="drag(event)" ondragend="">
-    <div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>
+    {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>{{end}}
     {{range $k, $person := .}}
       <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}_kids">{{$person.FirstNameWithAge $eventDate}}</div>
     {{end}}
@@ -283,7 +283,7 @@
 
 {{range $i, $group := .NoRsvps}}
     <div id="inv{{$i}}--" class="group invitee NoRsvps" draggable="true" ondragstart="drag(event)" ondragend="">
-    <div class="exploder" onclick="explodeInvitee('{{$i}}--')">+</div>
+    {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('{{$i}}--')">+</div>{{end}}
     {{range $k, $person := .}}
       <div id="guest{{$i}}_{{$k}}" class="guest group NoRsvps">{{$person.FirstNameWithAge $eventDate}}</div>
     {{end}}
