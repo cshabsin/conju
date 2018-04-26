@@ -321,6 +321,10 @@ func getCommonLastName(people []Person) string {
 	return lastName
 }
 
+func SortByFirstName(a, b Person) bool {
+	return strings.Compare(a.GetFirstName(Informal), b.GetFirstName(Informal)) < 0
+}
+
 func SortByLastFirstName(a, b Person) bool {
 	lastNameComparison := strings.Compare(a.LastName, b.LastName)
 	if lastNameComparison != 0 {

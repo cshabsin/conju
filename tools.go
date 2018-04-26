@@ -2,6 +2,7 @@ package conju
 
 import (
 	"html/template"
+	"sort"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -39,6 +40,12 @@ func handleRoomingTool(wr WrappedRequest) {
 			noRsvps = append(noRsvps, noResponse)
 		}
 	}
+
+	for _, v := range rsvpToGroupsMap {
+		sort.Slice(v, func(a, b int) bool { return SortByFirstName(v[a][0], v[b][0]) })
+	}
+
+	sort.Slice(noRsvps, func(a, b int) bool { return SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
 
 	buildingsMap := make(map[datastore.Key]Building)
 	var buildings []Building

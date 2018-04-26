@@ -5,9 +5,9 @@
     <script type="text/JavaScript" src="/media/jquery-3.3.1.min.js"></script>
     <style>
       td{border:1px solid black;width:100px;height:100px;}
-      .ThuFriSat_kids{background-color: #5A0ABF}
-      .FriSat_kids{background-color: #AA66FF}
-      .Maybe_kids{background-color: #D6ADF7}
+      .ThuFriSat{background-color: #5A0ABF}
+      .FriSat{background-color: #AA66FF}
+      .Maybe{background-color: #D6ADF7}
       .NoRsvps{background-color: #EBD9FA}
       .all{background-color: #76A6F5}
       .fs{background-color: #0761F2}
@@ -272,10 +272,10 @@
 {{$allStatuses := .AllRsvpStatuses}}
 {{range $i, $status := .StatusOrder}}
   {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
-    <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}_kids" draggable="true" ondragstart="drag(event)" ondragend="">
+    <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}" draggable="true" ondragstart="drag(event)" ondragend="">
     {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>{{end}}
     {{range $k, $person := .}}
-      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}_kids">{{$person.FirstNameWithAge $eventDate}}</div>
+      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}">{{$person.FirstNameWithAge $eventDate}}</div>
     {{end}}
     </div>
   {{end}}
