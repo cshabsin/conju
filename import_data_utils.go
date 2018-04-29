@@ -716,7 +716,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 
 	propertiesMap := make(map[string]int)
 	for _, hpb := range GetAllHousingPreferenceBooleans() {
-		propertiesMap[hpb.Name] = int(hpb.Boolean)
+		propertiesMap[hpb.Name] = hpb.Bit
 	}
 
 	scanner := bufio.NewScanner(buildingsFile)
