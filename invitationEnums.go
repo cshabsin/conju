@@ -161,6 +161,13 @@ const (
 	FartherBuilding
 )
 
+type HousingPreferenceBooleanType int
+
+const (
+	Desired = iota
+	Acceptable
+)
+
 type HousingPreferenceBooleanInfo struct {
 	Boolean                   HousingPreferenceBoolean
 	Name                      string
@@ -172,6 +179,7 @@ type HousingPreferenceBooleanInfo struct {
 	ForChildren               bool
 	ForMultiples              bool
 	Bit                       int
+	PreferenceType            HousingPreferenceBooleanType
 }
 
 func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
@@ -184,6 +192,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Monitor Range",
 		ForChildren:               true,
 		Bit:                       64,
+		PreferenceType:            Desired,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean: CloseBuilding,
@@ -192,6 +201,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Close Building",
 		ForChildren:               true,
 		Bit:                       32,
+		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean: FarBuilding,
@@ -200,6 +210,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Far Building",
 		ForChildren:               true,
 		Bit:                       16,
+		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean: CanCrossRoad,
@@ -208,6 +219,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Across Road",
 		ForChildren:               true,
 		Bit:                       8,
+		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean: PreferFar,
@@ -216,6 +228,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		SinglePersonDescription:   "I would prefer to be housed far from the main common room.",
 		ReportDescription:         "Prefer Farther",
 		Bit:                       4,
+		PreferenceType:            Desired,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean: FartherBuilding,
@@ -225,6 +238,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		SupplementalInfo:          "Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about half a mile).",
 		ReportDescription:         "Farther Building Okay",
 		Bit:                       1,
+		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean: ShareBed,
@@ -234,9 +248,30 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Share Bed",
 		ForMultiples:              true,
 		Bit:                       2,
+		PreferenceType:            Desired,
 	})
 
 	return toReturn
+}
+
+func GetPreferenceTypeMask(preferenceType HousingPreferenceBooleanType) int {
+	mask := 0
+	for _, info := range GetAllHousingPreferenceBooleans() {
+		if info.PreferenceType == preferenceType {
+			mask += info.Bit
+		}
+	}
+	return mask
+}
+
+func GetAdultPreferenceMask() int {
+	mask := 0
+	for _, info := range GetAllHousingPreferenceBooleans() {
+		if info.ForChildren && info.PreferenceType == Acceptable {
+			mask += info.Bit
+		}
+	}
+	return mask
 }
 
 type DrivingPreference int

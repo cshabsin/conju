@@ -5,10 +5,13 @@
     <script type="text/JavaScript" src="/media/jquery-3.3.1.min.js"></script>
     <style>
       td{border:1px solid black;width:100px;height:100px;}
-      .ThuFriSat{background-color: #5A0ABF}
+      .ThuFriSat{background-color: #5A0ABF; color: lightgray !important}
       .FriSat{background-color: #AA66FF}
       .Maybe{background-color: #D6ADF7}
       .NoRsvps{background-color: #EBD9FA}
+      .roomProperties{display:none}
+      .guestProperties{display:none}
+      .constraintsNotMet{border: 3px solid red !important}
       .all{background-color: #76A6F5}
       .fs{background-color: #0761F2}
       .ss{background-color: #00FF00}
@@ -32,10 +35,9 @@
         filter: grayscale(100%);
         filter: url(desaturate.svg#greyscale);
       }
-      .allBuildings{height:700px}
-
-    .building{width:350px;}
-    .building img{opacity: .3}
+      .allBuildings{height:775px}
+      .building{width:350px;}
+      .building img{opacity: .3}
   
 
 
@@ -45,10 +47,42 @@
 */
     </style>
     <script>
+
+      function combineProperties(existing, next) {
+          desired = (existing | next) & {{.DesiredMask}};
+          acceptable = existing & next & {{.AcceptableMask}};
+          return desired + acceptable;
+      }
+
+      function propertiesMatch(roomProperties, peopleProperties) {
+          var desiredRoomProperties = roomProperties & {{.DesiredMask}};
+          var desiredPeopleProperties = peopleProperties & {{.DesiredMask}};
+          if ((desiredRoomProperties & desiredPeopleProperties) != desiredPeopleProperties) {
+              return false;
+          }
+          var acceptableRoomProperties = roomProperties & {{.AcceptableMask}};
+          var acceptablePeopleProperties = peopleProperties & {{.AcceptableMask}};
+          return (acceptableRoomProperties & ~acceptablePeopleProperties) == 0;
+      }
+
       function drop(ev) {
         ev.preventDefault();
         var data = ev.dataTransfer.getData("text");
-        ev.target.appendChild(document.getElementById(data));
+        var group = document.getElementById(data);
+        ev.target.appendChild(group);
+        var properties = $(".guestProperties", $(group));
+        var totalProperties = parseInt($(properties[0]).text())
+        if (properties.length > 1) {
+           for (var i=1; i<properties.length; i++) {
+	      totalProperties = combineProperties(totalProperties, parseInt($(properties[i]).text()));
+	   }
+	}
+	roomProperties = parseInt($(".roomProperties", $(ev.target)).text());
+        if (propertiesMatch(roomProperties, totalProperties)) {
+	    $(group).removeClass("constraintsNotMet");
+	} else {
+	    $(group).addClass("constraintsNotMet");
+        }	   
       }
       
       function allowDrop(ev) {
@@ -124,7 +158,7 @@
   </head>
   <body>
   <div class="allBuildings">
-<!--
+
   {{$buildingsToRoomsMap := .BuildingsToRooms}}
   {{range .BuildingsInOrder}}
     {{$rooms := (index $buildingsToRoomsMap .)}}
@@ -134,13 +168,13 @@
       <img src="/media/floorplan/{{.FloorplanImageUrl}}" style="width:350px;position:absolute;top:78px"/>
 
    {{range $rooms}}
-      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if (len .Room.Partition) gt 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}}</div></div>
+      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if (len .Room.Partition) gt 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}} ({{.AllProperties}})</div><span class="roomProperties">{{.AllProperties}}</span></div>
    {{end}}
    </div>
  {{end}}
--->
 
 
+<!--
     <div class="building buildingWithImage" id="osceola">
       <h2>Osceola</h2>
       <div style="position:absolute; top:60px" class="floorplanLink">(floorplan)</div>
@@ -203,7 +237,7 @@
       <div id="iv_223_C" style="top:325px;left:268px;width:80px;height:300px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223C: TTTTTT</div></div>
       <div id="iv_223_D" style="top:482px;left:160px;width:108px;height:145px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">223D: D</div></div>
     </div>
-
+-->
 <!--
     <div class="building buildingWithImage" id="maininn">
       <h2>Main Inn</h2>
@@ -270,12 +304,15 @@
 <div class="unassigned">
 {{$RsvpToGroupsMap := .RsvpToGroupsMap}}
 {{$allStatuses := .AllRsvpStatuses}}
+{{$peopleToProperties := .PeopleToProperties}}
 {{range $i, $status := .StatusOrder}}
   {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
     <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}" draggable="true" ondragstart="drag(event)" ondragend="">
     {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>{{end}}
     {{range $k, $person := .}}
-      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}">{{$person.FirstNameWithAge $eventDate}}</div>
+      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}">{{$person.FirstNameWithAge $eventDate}} [{{index $peopleToProperties $person.DatastoreKey}}]
+	<span class="guestProperties">{{index $peopleToProperties $person.DatastoreKey}}</span>
+</div>
     {{end}}
     </div>
   {{end}}
@@ -289,56 +326,6 @@
     {{end}}
     </div>
 {{end}}
-
-{{/* 
- {%for group_type in all_attending_guests %}
-    <div class="typeHolder">
-      {%for duration in group_type %}
-        {%for group in duration %}
-      <div id="inv{{group.0.invitee_id}}" class="group invitee
-	   {%if forloop.parentloop.parentloop.counter == 1%}
-             {%if forloop.parentloop.counter == 2%}
-	       kidsExtra
-	     {%else%}
-	       kids
-	     {%endif%}
-	   {%elif forloop.parentloop.counter == 2%}
-	     fs
-	   {%elif forloop.parentloop.counter == 3%}
-	     ss
-	   {%else%}
-	     all
-	   {%endif%}" draggable="true" ondragstart="drag(event)" ondragend="recordRoom(event,{{group.0.invitee_id}})">
-            {%if  forloop.parentloop.parentloop.counter < 3 %}
-             <div class="exploder" onclick="explodeInvitee({{group.0.invitee_id}})">+</div>
-            {%endif%}
-            {%for guest in group%}
-              <div id="guest{{guest.id}}" class="guest group 
-                {%if forloop.parentloop.parentloop.parentloop.counter == 1%}
-                  {%if forloop.parentloop.parentloop.counter == 2%}
-	            kidsExtra
-	          {%else%}
-	            kids
-         	  {%endif%}
-		{%elif forloop.parentloop.parentloop.counter == 2%}
-		  fs
-		{%elif forloop.parentloop.parentloop.counter == 3%}
-                  ss
-		{%else%}
-		  all
-		{%endif%}"> 
-                {{guest.first_name}} {%if guest.approx_age > -1 and guest.approx_age < 16%} ({{guest.approx_age}}){%endif%}<br>
-	      </div>
-	    {%endfor%}
-          </div>
-          {%for guest in group%}
-            <input type="hidden" name="room_assignment_guest{{guest.id}}">
-          {%endfor%}
-        {%endfor%}
-      {%endfor%}
-    </div>
-  {%endfor%}
-*/}}
 
 </div>
 </form>

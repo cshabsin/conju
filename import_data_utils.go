@@ -718,6 +718,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	for _, hpb := range GetAllHousingPreferenceBooleans() {
 		propertiesMap[hpb.Name] = hpb.Bit
 	}
+	log.Infof(ctx, "Properties Map: %v", propertiesMap)
 
 	scanner := bufio.NewScanner(buildingsFile)
 	processedHeader := false
@@ -734,7 +735,9 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 			properties := 0
 			for _, b := range propertyStrings {
 				properties += propertiesMap[b]
+				log.Infof(ctx, "%s: %s --> %d", name, b, propertiesMap[b])
 			}
+			log.Infof(ctx, "%s total properties: %d", name, properties)
 
 			building := Building{
 				Venue:             &venue,
@@ -772,7 +775,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 
 	propertiesMap := make(map[string]int)
 	for _, hpb := range GetAllHousingPreferenceBooleans() {
-		propertiesMap[hpb.Name] = int(hpb.Boolean)
+		propertiesMap[hpb.Name] = int(hpb.Bit)
 	}
 
 	scanner := bufio.NewScanner(roomsFile)

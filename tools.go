@@ -20,8 +20,11 @@ func handleRoomingTool(wr WrappedRequest) {
 	}
 
 	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe}
+	adultPreferenceMask := GetAdultPreferenceMask()
 	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
 	var noRsvps [][]Person
+	peopleToProperties := make(map[*datastore.Key]int)
+
 	for _, invitation := range invitations {
 		rsvpMap, noResponse := invitation.ClusterByRsvp(ctx)
 		for _, s := range statusOrder {
@@ -33,6 +36,13 @@ func handleRoomingTool(wr WrappedRequest) {
 					listForRsvp = [][]Person{}
 					listForRsvp = append(listForRsvp, peopleForRsvp)
 					rsvpToGroupsMap[s] = listForRsvp
+				}
+				for _, person := range peopleForRsvp {
+					hpb := invitation.HousingPreferenceBooleans
+					if person.IsAdultAtTime(wr.Event.StartDate) {
+						hpb |= adultPreferenceMask
+					}
+					peopleToProperties[person.DatastoreKey] = hpb
 				}
 			}
 		}
@@ -104,13 +114,16 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingTool.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"RsvpToGroupsMap":  rsvpToGroupsMap,
-		"NoRsvps":          noRsvps,
-		"StatusOrder":      statusOrder,
-		"AllRsvpStatuses":  GetAllRsvpStatuses(),
-		"AvailableRooms":   availableRooms,
-		"BuildingsToRooms": buildingsToRooms,
-		"BuildingsInOrder": buildingsInOrder,
+		"RsvpToGroupsMap":    rsvpToGroupsMap,
+		"NoRsvps":            noRsvps,
+		"StatusOrder":        statusOrder,
+		"AllRsvpStatuses":    GetAllRsvpStatuses(),
+		"AvailableRooms":     availableRooms,
+		"BuildingsToRooms":   buildingsToRooms,
+		"BuildingsInOrder":   buildingsInOrder,
+		"PeopleToProperties": peopleToProperties,
+		"DesiredMask":        GetPreferenceTypeMask(Desired),
+		"AcceptableMask":     GetPreferenceTypeMask(Acceptable),
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingTool.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
