@@ -21,38 +21,43 @@ func init() {
 	AddSessionHandler("/doReloadHousingSetup", ReloadHousingSetup).Needs(AdminGetter)
 	//	AddSessionHandler("/clearHousingSetup", ClearAllHousingSetup).Needs(AdminGetter)
 
+	AddSessionHandler("/login", handleLogin("/rsvp"))
+	AddSessionHandler(loginErrorPage, handleLoginError)
+	AddSessionHandler("/logout", handleLogout)
+	AddSessionHandler("/resendInvitation", handleResendInvitation)
+	AddSessionHandler(resentInvitationPage, handleResentInvitation)
+
+	AddSessionHandler("/reports", handleReports).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/tools", handleTools).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/entities", handleEntities).Needs(PersonGetter).Needs(AdminGetter)
+
 	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(PersonGetter).Needs(AdminGetter)
+
 	AddSessionHandler("/invitations", handleInvitations).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/viewInvitation", handleViewInvitationAdmin).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(InvitationGetter)
 
-	AddSessionHandler("/login", handleLogin("/rsvp"))
-	AddSessionHandler(loginErrorPage, handleLoginError)
-	AddSessionHandler("/logout", handleLogout)
 	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(InvitationGetter)
+
+	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
+
+	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/resendInvitation", handleResendInvitation)
-	AddSessionHandler(resentInvitationPage, handleResentInvitation)
-
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
-
-	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
 
 	rand.Seed(time.Now().UnixNano())
 
 }
 
 func handleIndex(wr WrappedRequest) {
-
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+wr.Event.ShortName+"/index.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
@@ -62,6 +67,27 @@ func handleIndex(wr WrappedRequest) {
 func handleLoadMap(wr WrappedRequest) {
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/map.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "map.html", wr.TemplateData); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}
+
+func handleReports(wr WrappedRequest) {
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}
+
+func handleTools(wr WrappedRequest) {
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/tools.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "tools.html", wr.TemplateData); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}
+
+func handleEntities(wr WrappedRequest) {
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/entities.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "entities.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }
