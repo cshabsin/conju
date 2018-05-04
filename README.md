@@ -19,7 +19,7 @@ $ eval $(ssh-agent -s)
 $ ssh-add
 $ cd  ~/work/conju
 $ git init
-$ git remote add origin git@github.com:cshabsin/conju.git                                                                                              
+$ git remote add origin git@github.com:cshabsin/conju.git
 $ git pull origin master
 ```
 
@@ -85,6 +85,27 @@ things. Some useful spots:
  * Datastore (view entities and indexes)
  * IAM - administer Gmail accounts that can administer the site.
  * Debug - view the "local" filesystem as AppEngine sees it.
+
+## Backups
+
+Follow the export/import instructions from [Google](https://cloud.google.com/datastore/docs/export-import-entities):
+
+```
+$ gcloud beta datastore export --namespaces="(default)" gs://backup-$(PROJECT_ID) --project=$(PROJECT_ID)
+Waiting for [projects/.../operations/...] to finish..
+.done.
+metadata:
+  '@type': type.googleapis.com/google.datastore.admin.v1beta1.ExportEntitiesMetadata
+  common:
+    operationType: EXPORT_ENTITIES
+    startTime: '2018-05-04T03:48:30.622850Z'
+    state: PROCESSING
+  entityFilter:
+    namespaceIds:
+    - ''
+  outputUrlPrefix: gs://backup-.../2018-05-04T03:48:30_42848
+name: projects/.../operations/...
+```
 
 ## Useful Links
 
