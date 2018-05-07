@@ -72,14 +72,19 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 
 			mapForPerson := make(map[*datastore.Key]ActivityRanking)
 			// Ewwwwww
+			var mainPersonKey *datastore.Key
 			for person, m := range inv.ActivityMap {
 				if *person == *personKey {
 					mapForPerson = m
+					mainPersonKey = person
 					break
 				}
 			}
+			if mainPersonKey == nil {
+				mainPersonKey = personKey
+			}
 
-			inv.ActivityMap[personKey] = mapForPerson
+			inv.ActivityMap[mainPersonKey] = mapForPerson
 
 			activityKeyString := p.Name[(delimiterIndex + len(delimiter)):]
 
@@ -103,14 +108,19 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 
 			mapForPerson := make(map[*datastore.Key]bool)
 			// Ewwwwww
+			var mainPersonKey *datastore.Key
 			for person, m := range inv.ActivityLeaderMap {
 				if *person == *personKey {
 					mapForPerson = m
+					mainPersonKey = person
 					break
 				}
 			}
+			if mainPersonKey == nil {
+				mainPersonKey = personKey
+			}
 
-			inv.ActivityLeaderMap[personKey] = mapForPerson
+			inv.ActivityLeaderMap[mainPersonKey] = mapForPerson
 
 			activityKeyString := p.Name[(delimiterIndex + len(delimiter)):]
 
@@ -752,50 +762,4 @@ func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus
 
 	return rsvpMap, noRsvp
 
-}
-
-func handleRsvpReport(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
-
-	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	_, err := q.GetAll(ctx, &invitations)
-	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
-	}
-
-	allRsvpMap := make(map[RsvpStatus][][]Person)
-	var allNoRsvp [][]Person
-
-	for _, invitation := range invitations {
-
-		rsvpMap, noRsvp := invitation.ClusterByRsvp(ctx)
-
-		for r, p := range rsvpMap {
-			listOfLists := allRsvpMap[r]
-			if listOfLists == nil {
-				listOfLists = make([][]Person, 0)
-			}
-			listOfLists = append(listOfLists, p)
-			allRsvpMap[r] = listOfLists
-		}
-		if len(noRsvp) > 0 {
-			allNoRsvp = append(allNoRsvp, noRsvp)
-		}
-	}
-
-	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
-
-	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
-		"RsvpMap":         allRsvpMap,
-		"NoRsvp":          allNoRsvp,
-		"StatusOrder":     statusOrder,
-		"AllRsvpStatuses": GetAllRsvpStatuses(),
-	})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
-	}
 }

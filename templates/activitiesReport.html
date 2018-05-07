@@ -1,0 +1,31 @@
+{{template "main.html" .}}
+{{define "body"}}
+  <h1>Activity Preferences</h1>
+  <table class="listTable">
+    <tr><th>Activity</th><th>Definitely</th><th>Maybe</th><th>No</th><th>Leaders</th>
+  {{$keysToActivities := .KeysToActivities}}
+  {{$activityResponseMap := .ActivityResponseMap}}
+  {{$personMap := .PersonMap}}
+  {{range .ActivityKeys}}
+    <tr>
+      <td>{{(index $keysToActivities .).Keyword}}</td>
+      <td>{{(len (index $activityResponseMap .).DefinitelyResponses)}}<br>
+	{{range (index $activityResponseMap .).DefinitelyResponses}}
+           {{(index $personMap .)}}<br>
+        {{end}}
+      </td>
+      <td>{{(len (index $activityResponseMap .).MaybeResponses)}}<br>
+	{{range (index $activityResponseMap .).MaybeResponses}}
+           {{(index $personMap .)}}<br>
+        {{end}}
+      </td>
+      <td>{{(len (index $activityResponseMap .).NoResponses)}}<br>
+	{{range (index $activityResponseMap .).NoResponses}}
+           {{(index $personMap .)}}<br>
+        {{end}}
+      </td>
+      <td></td>
+    </tr>
+  {{end}}
+  <table>
+{{end}}

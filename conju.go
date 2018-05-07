@@ -44,6 +44,7 @@ func init() {
 	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(InvitationGetter)
 
 	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/activitiesReport", handleActivitiesReport).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
 
@@ -67,13 +68,6 @@ func handleIndex(wr WrappedRequest) {
 func handleLoadMap(wr WrappedRequest) {
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/map.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "map.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
-	}
-}
-
-func handleReports(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }

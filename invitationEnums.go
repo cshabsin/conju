@@ -372,7 +372,8 @@ func GetAllParkingTypes() []ParkingTypeInfo {
 type ActivityRanking int
 
 const (
-	ActivityNo = iota
+	ActivityNotSet = iota
+	ActivityNo
 	ActivityMaybe
 	ActivityDefinitely
 )
