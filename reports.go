@@ -95,6 +95,7 @@ func handleActivitiesReport(wr WrappedRequest) {
 		MaybeResponses      []datastore.Key
 		DefinitelyResponses []datastore.Key
 		Leaders             []datastore.Key
+		Expected            float64
 	}
 
 	activityResponseMap := make(map[datastore.Key]*ActivityResponse)
@@ -130,12 +131,26 @@ func handleActivitiesReport(wr WrappedRequest) {
 						response.NoResponses = append(response.NoResponses, *k)
 					case ActivityMaybe:
 						response.MaybeResponses = append(response.MaybeResponses, *k)
+						response.Expected += .5
 					case ActivityDefinitely:
 						response.DefinitelyResponses = append(response.DefinitelyResponses, *k)
+						response.Expected++
 					}
 				}
 			}
 		}
+
+		for k, v := range invitation.ActivityLeaderMap {
+			if _, present := personKeySet[*k]; present {
+				for ak, leader := range v {
+					response := activityResponseMap[*ak]
+					if leader {
+						response.Leaders = append(response.Leaders, *k)
+					}
+				}
+			}
+		}
+
 	}
 
 	var people = make([]*Person, len(allPeopleToLookUp))

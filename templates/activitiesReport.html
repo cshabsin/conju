@@ -1,31 +1,59 @@
 {{template "main.html" .}}
 {{define "body"}}
   <h1>Activity Preferences</h1>
-  <table class="listTable">
-    <tr><th>Activity</th><th>Definitely</th><th>Maybe</th><th>No</th><th>Leaders</th>
   {{$keysToActivities := .KeysToActivities}}
   {{$activityResponseMap := .ActivityResponseMap}}
   {{$personMap := .PersonMap}}
+
+  <table class="listTable">
+    <tr><th>Activity</th><th>Definitely</th><th>Maybe</th><th>No</th><th>Expected</th><th>Leaders</th>
   {{range .ActivityKeys}}
     <tr>
       <td>{{(index $keysToActivities .).Keyword}}</td>
-      <td>{{(len (index $activityResponseMap .).DefinitelyResponses)}}<br>
+      <td>{{(len (index $activityResponseMap .).DefinitelyResponses)}}</td>
+      <td>{{(len (index $activityResponseMap .).MaybeResponses)}}</td>
+      <td>{{(len (index $activityResponseMap .).NoResponses)}}</td>
+      <td>{{(index $activityResponseMap .).Expected}}</td>
+      <td>{{(len (index $activityResponseMap .).Leaders)}}
+	{{if (gt (len (index $activityResponseMap .).Leaders) 0)}}
+	  ({{range (index $activityResponseMap .).Leaders}}
+            {{(index $personMap .)}},
+          {{end}})
+	{{end}}
+      </td>
+    </tr>
+  {{end}}
+  <table>
+
+  <table class="listTable">
+    <tr><th>Activity</th><th>Definitely</th><th>Maybe</th><th>No</th><th>Leaders</th>
+  {{range .ActivityKeys}}
+    <tr>
+      <td>{{(index $keysToActivities .).Keyword}}</td>
+      <td>
 	{{range (index $activityResponseMap .).DefinitelyResponses}}
            {{(index $personMap .)}}<br>
         {{end}}
       </td>
-      <td>{{(len (index $activityResponseMap .).MaybeResponses)}}<br>
+      <td>
 	{{range (index $activityResponseMap .).MaybeResponses}}
            {{(index $personMap .)}}<br>
         {{end}}
       </td>
-      <td>{{(len (index $activityResponseMap .).NoResponses)}}<br>
+      <td>
 	{{range (index $activityResponseMap .).NoResponses}}
            {{(index $personMap .)}}<br>
         {{end}}
       </td>
-      <td></td>
+      <td>
+	{{range (index $activityResponseMap .).Leaders}}
+           {{(index $personMap .)}}<br>
+        {{end}}
+      </td>
     </tr>
   {{end}}
   <table>
+
+
+
 {{end}}
