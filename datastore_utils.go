@@ -8,37 +8,37 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-func ClearAllData(wr WrappedRequest) {
+func ClearAllData(wr WrappedRequest, entityNames []string) {
 	fmt.Fprintf(wr.ResponseWriter, "Disabled for now.")
-	// wr.Values["event"] = nil
-	// wr.SaveSession()
+	wr.Values["event"] = nil
+	wr.SaveSession()
 
-	// entityNames := []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"}
+	//entityNames := []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"}
 
-	// for _, entityName := range entityNames {
-	// 	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Clearing: %s\n", entityName)))
-	// 	q := datastore.NewQuery(entityName).KeysOnly()
+	for _, entityName := range entityNames {
+		wr.ResponseWriter.Write([]byte(fmt.Sprintf("Clearing: %s\n", entityName)))
+		q := datastore.NewQuery(entityName).KeysOnly()
 
-	// 	keys, err := q.GetAll(wr.Context, nil)
-	// 	if err != nil {
-	// 		log.Errorf(wr.Context, "%v", err)
-	// 		return
-	// 	}
+		keys, err := q.GetAll(wr.Context, nil)
+		if err != nil {
+			log.Errorf(wr.Context, "%v", err)
+			return
+		}
 
-	// 	wr.ResponseWriter.Write([]byte(
-	// 		fmt.Sprintf("	%d %s to delete\n", len(keys), entityName)))
+		wr.ResponseWriter.Write([]byte(
+			fmt.Sprintf("	%d %s to delete\n", len(keys), entityName)))
 
-	// 	if err != nil {
-	// 		log.Errorf(wr.Context, "%v", err)
-	// 		return
-	// 	}
+		if err != nil {
+			log.Errorf(wr.Context, "%v", err)
+			return
+		}
 
-	// 	err = datastore.DeleteMulti(wr.Context, keys)
-	// 	if err != nil {
-	// 		log.Errorf(wr.Context, "%v", err)
-	// 		return
-	// 	}
-	// }
+		err = datastore.DeleteMulti(wr.Context, keys)
+		if err != nil {
+			log.Errorf(wr.Context, "%v", err)
+			return
+		}
+	}
 }
 
 func RepairData(wr WrappedRequest) {

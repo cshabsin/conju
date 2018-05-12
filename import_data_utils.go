@@ -37,7 +37,7 @@ func ReloadData(wr WrappedRequest) {
 		return
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	ClearAllData(wr)
+	ClearAllData(wr, []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"})
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	SetupVenues(wr.ResponseWriter, wr.Context)
 	wr.ResponseWriter.Write([]byte("\n\n"))
@@ -585,7 +585,7 @@ func AskReloadHousingSetup(wr WrappedRequest) {
 }
 
 func ReloadHousingSetup(wr WrappedRequest) {
-
+	ClearAllData(wr, []string{"Venue", "Building", "Room"})
 	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	SetupVenues(wr.ResponseWriter, wr.Context)
 	wr.ResponseWriter.Write([]byte("\n\n"))
@@ -706,12 +706,12 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	}
 	defer buildingsFile.Close()
 
-	venuesMap := make(map[string]datastore.Key)
+	venuesMap := make(map[string]*datastore.Key)
 	var venues []Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	for i, venueKey := range keys {
-		venuesMap[(venues[i]).ShortName] = *venueKey
+		venuesMap[(venues[i]).ShortName] = venueKey
 	}
 
 	propertiesMap := make(map[string]int)
@@ -740,14 +740,14 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 			log.Infof(ctx, "%s total properties: %d", name, properties)
 
 			building := Building{
-				Venue:             &venue,
+				Venue:             venue,
 				Name:              name,
 				Code:              code,
 				FloorplanImageUrl: floorplanUrl,
 				Properties:        properties,
 			}
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Building", nil), &building)
+			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Building", venue), &building)
 			if err != nil {
 				log.Errorf(ctx, "%v", err)
 			}
@@ -765,12 +765,12 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 	}
 	defer roomsFile.Close()
 
-	buildingsMap := make(map[string]datastore.Key)
+	buildingsMap := make(map[string]*datastore.Key)
 	var buildings []Building
 	q := datastore.NewQuery("Building")
 	keys, err := q.GetAll(ctx, &buildings)
 	for i, buildingKey := range keys {
-		buildingsMap[(buildings[i]).Code] = *buildingKey
+		buildingsMap[(buildings[i]).Code] = buildingKey
 	}
 
 	propertiesMap := make(map[string]int)
@@ -815,7 +815,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 			height, _ := strconv.Atoi(fields[8])
 
 			room := Room{
-				Building:    &building,
+				Building:    building,
 				RoomNumber:  number,
 				Partition:   partition,
 				Properties:  properties,
@@ -826,7 +826,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 				ImageHeight: height,
 			}
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Room", nil), &room)
+			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Room", building), &room)
 			if err != nil {
 				log.Errorf(ctx, "%v", err)
 			}

@@ -283,3 +283,16 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
     vertical-align: top;
     margin: 5px 15px;
 }
+
+.roomingTestTable {
+    margin-top: 50px;
+    border-collapse:collapse;
+    border 0px; 
+    width:800px;
+}
+
+.roomingTestTable td {
+    width: auto;
+    height: auto;
+    border: none;
+}

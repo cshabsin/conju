@@ -1,8 +1,11 @@
 package conju
 
 import (
+	"context"
 	"html/template"
+	"net/http"
 	"sort"
+	"strconv"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -57,14 +60,7 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	sort.Slice(noRsvps, func(a, b int) bool { return SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
 
-	buildingsMap := make(map[datastore.Key]Building)
-	var buildings []Building
-	q = datastore.NewQuery("Building") // .Filter("Venue =", wr.Event.Venue)
-	keys, err := q.GetAll(ctx, &buildings)
-	for i, buildingKey := range keys {
-		buildingsMap[*buildingKey] = buildings[i]
-	}
-
+	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	var buildingsInOrder []Building
 	var availableRooms []RealRoom
 	var buildingsToRooms = make(map[Building][]RealRoom)
@@ -72,8 +68,8 @@ func handleRoomingTool(wr WrappedRequest) {
 	for i, room := range wr.Event.Rooms {
 		var rm Room
 		datastore.Get(ctx, room, &rm)
-		buildingKey := rm.Building
-		building := buildingsMap[*buildingKey]
+		buildingKey := room.Parent()
+		building := buildingsMap[buildingKey.IntID()]
 		if i == 0 || buildingsInOrder[len(buildingsInOrder)-1] != building {
 			buildingsInOrder = append(buildingsInOrder, building)
 		}
@@ -96,7 +92,7 @@ func handleRoomingTool(wr WrappedRequest) {
 		}
 		realRoom := RealRoom{
 			Room:       rm,
-			Building:   buildingsMap[*buildingKey],
+			Building:   buildingsMap[buildingKey.IntID()],
 			BedsString: bedstring,
 		}
 
@@ -129,4 +125,65 @@ func handleRoomingTool(wr WrappedRequest) {
 		log.Errorf(wr.Context, "%v", err)
 	}
 
+}
+
+func handleSaveRooming(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey).KeysOnly()
+	bookingKeys, _ := q.GetAll(ctx, nil)
+	datastore.DeleteMulti(ctx, bookingKeys)
+
+	buildingMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
+
+	roomMap := make(map[string]*datastore.Key)
+	roomingMap := make(map[string][]*datastore.Key)
+	var rooms []Room
+	_ = datastore.GetMulti(ctx, wr.Event.Rooms, &rooms)
+	for i, room := range rooms {
+		str := buildingMap[room.Building.IntID()].Code + "_" + strconv.Itoa(room.RoomNumber)
+		if room.Partition != "" {
+			str += "_" + room.Partition
+		}
+		roomMap[str] = wr.Event.Rooms[i]
+		roomingMap[str] = make([]*datastore.Key, 0)
+	}
+
+	for k, v := range wr.Request.PostForm {
+		if v[0] == "" {
+			continue
+		}
+		if k[0:12] == "roomingSlot_" {
+			personKey, _ := datastore.DecodeKey(string(k[12:]))
+			roommates := roomingMap[v[0]]
+			roomingMap[v[0]] = append(roommates, personKey)
+		}
+	}
+
+	for rmStr, people := range roomingMap {
+		if len(people) == 0 {
+			continue
+		}
+		log.Infof(ctx, "creating booking for room %s: %v", rmStr, people)
+		booking := Booking{Event: wr.EventKey, Room: roomMap[rmStr], Roommates: people}
+		datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Booking", wr.EventKey), &booking)
+	}
+
+	http.Redirect(wr.ResponseWriter, wr.Request, "rooming", http.StatusSeeOther)
+}
+
+func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[int64]Building {
+	buildingsMap := make(map[int64]Building)
+	var buildings []Building
+	q := datastore.NewQuery("Building").Ancestor(venueKey)
+	keys, err := q.GetAll(ctx, &buildings)
+
+	if err != nil {
+		log.Infof(ctx, "%v", err)
+	}
+	for i, buildingKey := range keys {
+		buildingsMap[buildingKey.IntID()] = buildings[i]
+	}
+	return buildingsMap
 }

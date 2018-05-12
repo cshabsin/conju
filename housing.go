@@ -67,16 +67,10 @@ func (room RealRoom) AllProperties() int {
 	return room.Building.Properties | room.Room.Properties
 }
 
-/*
-(room *Room) String() {
-	toReturn := ""
-	if room.Building != nil {
-	   var building Building
-	   datastore.Get(ctx
-	   toReturn
-	}
+type Booking struct {
+	Event    *datastore.Key
+	Room     *datastore.Key
+	reserved bool
 
-	if Description != "" {
-	   toReturn += Description
-	}
-} */
+	Roommates []*datastore.Key
+}

@@ -11,6 +11,7 @@
       .NoRsvps{background-color: #EBD9FA}
       .roomProperties{display:none}
       .guestProperties{display:none}
+      .guestKey{display:none}
       .constraintsNotMet{border: 3px solid red !important}
       .all{background-color: #76A6F5}
       .fs{background-color: #0761F2}
@@ -70,6 +71,12 @@
         var data = ev.dataTransfer.getData("text");
         var group = document.getElementById(data);
         ev.target.appendChild(group);
+
+        var guestKeys = $(".guestKey", $(group));
+        for (var i=0; i < guestKeys.length; i++) {
+	   $("[name='roomingSlot_" + $(guestKeys[i]).text() + "']").val(ev.target.id);
+	}
+
         var properties = $(".guestProperties", $(group));
         var totalProperties = parseInt($(properties[0]).text())
         if (properties.length > 1) {
@@ -177,14 +184,15 @@
   </div>
 
 {{$eventDate := .CurrentEvent.StartDate}}  
-<form action="/tools/rooming-tool/">
+{{$RsvpToGroupsMap := .RsvpToGroupsMap}}
+{{$allStatuses := .AllRsvpStatuses}}
+{{$peopleToProperties := .PeopleToProperties}}
+<form action="/saveRooming" method="POST">
+
 <input type="submit" value="Save"/>
 
 
 <div class="unassigned">
-{{$RsvpToGroupsMap := .RsvpToGroupsMap}}
-{{$allStatuses := .AllRsvpStatuses}}
-{{$peopleToProperties := .PeopleToProperties}}
 {{range $i, $status := .StatusOrder}}
   {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
     <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}" draggable="true" ondragstart="drag(event)" ondragend="">
@@ -192,6 +200,7 @@
     {{range $k, $person := .}}
       <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}">{{$person.FirstNameWithAge $eventDate}}
 	<span class="guestProperties">{{index $peopleToProperties $person.DatastoreKey}}</span>
+	<span class="guestKey guestProperties">{{$person.DatastoreKey.Encode}}</span>
 </div>
     {{end}}
     </div>
@@ -208,6 +217,19 @@
 {{end}}
 
 </div>
+
+
+<table class="roomingTestTable">
+{{range $i, $status := .StatusOrder}}
+  {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
+    {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>{{end}}
+    {{range $k, $person := .}}
+	<tr><td>{{$person.FullName}}</td><td>{{$person.DatastoreKey.Encode}}</td><td><input name="roomingSlot_{{$person.DatastoreKey.Encode}}"/></td></tr>
+    {{end}}
+  {{end}}
+{{end}}
+</table>
+
 </form>
 
  

@@ -14,7 +14,7 @@ func init() {
 
 	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
 	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
-	AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
+	//AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
 	AddSessionHandler("/repairData", RepairData).Needs(AdminGetter)
 
 	AddSessionHandler("/reloadHousingSetup", AskReloadHousingSetup).Needs(AdminGetter)
@@ -47,6 +47,7 @@ func init() {
 	AddSessionHandler("/activitiesReport", handleActivitiesReport).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/saveRooming", handleSaveRooming).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
