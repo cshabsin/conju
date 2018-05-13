@@ -296,3 +296,20 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
     height: auto;
     border: none;
 }
+
+.buildingRoomingList {
+  margin: 20px;
+}
+
+.buildingName {
+  font-size:larger;
+  font-weight:bold;
+}
+
+.roomingList {
+  padding-right:15px;
+}
+
+.roomNumber {
+  font-weight:bold;
+}

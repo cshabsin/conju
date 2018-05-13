@@ -1,0 +1,17 @@
+{{template "main.html" .}}
+{{define "body"}}
+{{$eventDate := .CurrentEvent.StartDate}}  
+
+<h1>Rooming Assignments</h1>
+{{range .BookingsByBuilding}}
+  <div class="buildingRoomingList">
+   <div class="buildingName">{{(index . 0).Building.Name}}</div>
+     <div class="roomingList">
+       {{range .}}
+        <div> <span class="roomNumber">{{.Room.RoomNumber}}:</span>
+         {{range $i, $person := .Roommates}}{{if $i}}, {{end}}{{$person.FullNameWithAge $eventDate}}{{end}}</div>
+       {{end}}
+    </div>
+  </div>
+{{end}}
+{{end}}

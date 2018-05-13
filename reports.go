@@ -4,6 +4,7 @@ import (
 	//	"context"
 	"html/template"
 	//	"net/http"
+	"sort"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -175,4 +176,91 @@ func handleActivitiesReport(wr WrappedRequest) {
 		log.Errorf(wr.Context, "%v", err)
 	}
 
+}
+
+func handleRoomingReport(wr WrappedRequest) {
+	ctx := wr.Context
+
+	var bookings []Booking
+	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	_, _ = q.GetAll(ctx, &bookings)
+
+	roomsMap := make(map[int64]Room)
+	var rooms = make([]*Room, len(wr.Event.Rooms))
+	err := datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
+	if err != nil {
+		log.Infof(ctx, "%v", err)
+	}
+
+	for i, room := range rooms {
+		roomsMap[wr.Event.Rooms[i].IntID()] = *room
+	}
+
+	var buildingOrderMap = make(map[int64]int)
+	for _, room := range wr.Event.Rooms {
+		buildingKeyId := room.Parent().IntID()
+		if _, present := buildingOrderMap[buildingKeyId]; !present {
+			buildingOrderMap[buildingKeyId] = len(buildingOrderMap)
+		}
+	}
+
+	var peopleToLookUp []*datastore.Key
+	for _, booking := range bookings {
+		peopleToLookUp = append(peopleToLookUp, booking.Roommates...)
+	}
+
+	personMap := make(map[int64]Person)
+	var people = make([]*Person, len(peopleToLookUp))
+	err = datastore.GetMulti(ctx, peopleToLookUp, people)
+	if err != nil {
+		log.Infof(ctx, "%v", err)
+	}
+
+	for i, person := range people {
+		personMap[peopleToLookUp[i].IntID()] = *person
+	}
+
+	type RealBooking struct {
+		Room      Room
+		Building  Building
+		Roommates []Person
+	}
+
+	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
+	// doesn't deal with consolidating partitioned rooms
+	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
+	for _, booking := range bookings {
+		people := make([]Person, len(booking.Roommates))
+		for i, person := range booking.Roommates {
+			people[i] = personMap[person.IntID()]
+		}
+		buildingId := booking.Room.Parent().IntID()
+		realBooking := RealBooking{
+			Room:      roomsMap[booking.Room.IntID()],
+			Building:  buildingsMap[buildingId],
+			Roommates: people,
+		}
+		buildingIndex := buildingOrderMap[buildingId]
+		bookingsForBuilding := realBookingsByBuilding[buildingIndex]
+		if bookingsForBuilding == nil {
+			bookingsForBuilding = make([]RealBooking, 0)
+		}
+		bookingsForBuilding = append(bookingsForBuilding, realBooking)
+		realBookingsByBuilding[buildingIndex] = bookingsForBuilding
+	}
+
+	for _, buildingGroup := range realBookingsByBuilding {
+		sort.Slice(buildingGroup,
+			func(a, b int) bool {
+				return buildingGroup[a].Room.RoomNumber < buildingGroup[b].Room.RoomNumber
+			})
+	}
+
+	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingReport.html"))
+	data := wr.MakeTemplateData(map[string]interface{}{
+		"BookingsByBuilding": realBookingsByBuilding,
+	})
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingReport.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
 }
