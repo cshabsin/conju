@@ -139,8 +139,9 @@ func handleSaveRooming(wr WrappedRequest) {
 
 	roomMap := make(map[string]*datastore.Key)
 	roomingMap := make(map[string][]*datastore.Key)
-	var rooms []Room
-	_ = datastore.GetMulti(ctx, wr.Event.Rooms, &rooms)
+	var rooms = make([]*Room, len(wr.Event.Rooms))
+	datastore.GetMulti(ctx, wr.Event.Rooms, &rooms)
+
 	for i, room := range rooms {
 		str := buildingMap[room.Building.IntID()].Code + "_" + strconv.Itoa(room.RoomNumber)
 		if room.Partition != "" {
