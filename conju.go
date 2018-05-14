@@ -27,9 +27,7 @@ func init() {
 	AddSessionHandler("/resendInvitation", handleResendInvitation)
 	AddSessionHandler(resentInvitationPage, handleResentInvitation)
 
-	AddSessionHandler("/reports", handleReports).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/tools", handleTools).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/entities", handleEntities).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/admin", handleAdmin).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
@@ -74,16 +72,9 @@ func handleLoadMap(wr WrappedRequest) {
 	}
 }
 
-func handleTools(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/tools.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "tools.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
-	}
-}
-
-func handleEntities(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/entities.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "entities.html", wr.TemplateData); err != nil {
+func handleAdmin(wr WrappedRequest) {
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/admin.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "admin.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }
