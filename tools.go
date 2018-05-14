@@ -14,51 +14,21 @@ import (
 
 func handleRoomingTool(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	var invitations []*Invitation
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	_, err := q.GetAll(ctx, &invitations)
-	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+	var bookings []Booking
+	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	bookingKeys, _ := q.GetAll(ctx, &bookings)
+
+	type BookingInfo struct {
+		Booking    Booking
+		RoomString string
 	}
 
-	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe}
-	adultPreferenceMask := GetAdultPreferenceMask()
-	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
-	var noRsvps [][]Person
-	peopleToProperties := make(map[*datastore.Key]int)
+	var personToBooking = make(map[int64]int64)
+	bookingInfos := make([]BookingInfo, len(bookings))
+	var roomStringMap = make(map[int64]string)
 
-	for _, invitation := range invitations {
-		rsvpMap, noResponse := invitation.ClusterByRsvp(ctx)
-		for _, s := range statusOrder {
-			if peopleForRsvp, pr := rsvpMap[s]; pr {
-				if listForRsvp, present := rsvpToGroupsMap[s]; present {
-					listForRsvp = append(listForRsvp, peopleForRsvp)
-					rsvpToGroupsMap[s] = listForRsvp
-				} else {
-					listForRsvp = [][]Person{}
-					listForRsvp = append(listForRsvp, peopleForRsvp)
-					rsvpToGroupsMap[s] = listForRsvp
-				}
-				for _, person := range peopleForRsvp {
-					hpb := invitation.HousingPreferenceBooleans
-					if person.IsAdultAtTime(wr.Event.StartDate) {
-						hpb |= adultPreferenceMask
-					}
-					peopleToProperties[person.DatastoreKey] = hpb
-				}
-			}
-		}
-		if len(noResponse) > 0 {
-			noRsvps = append(noRsvps, noResponse)
-		}
-	}
-
-	for _, v := range rsvpToGroupsMap {
-		sort.Slice(v, func(a, b int) bool { return SortByFirstName(v[a][0], v[b][0]) })
-	}
-
-	sort.Slice(noRsvps, func(a, b int) bool { return SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
+	var invitationsToExplode []string
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	var buildingsInOrder []Building
@@ -106,20 +76,93 @@ func handleRoomingTool(wr WrappedRequest) {
 		buildingsToRooms[building] = roomsForBuilding
 
 		availableRooms = append(availableRooms, realRoom)
+
+		roomStr := building.Code + "_" + strconv.Itoa(rm.RoomNumber)
+		if rm.Partition != "" {
+			roomStr += "_" + rm.Partition
+		}
+		roomStringMap[room.IntID()] = roomStr
 	}
+
+	for i, booking := range bookings {
+		bookingInfos[i] = BookingInfo{Booking: booking, RoomString: roomStringMap[booking.Room.IntID()]}
+		for _, roommate := range booking.Roommates {
+			personToBooking[roommate.IntID()] = bookingKeys[i].IntID()
+		}
+	}
+
+	var invitations []*Invitation
+	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	_, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
+	}
+
+	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe}
+	adultPreferenceMask := GetAdultPreferenceMask()
+	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
+	var noRsvps [][]Person
+	peopleToProperties := make(map[*datastore.Key]int)
+
+	for _, invitation := range invitations {
+		rsvpMap, noResponse := invitation.ClusterByRsvp(ctx)
+		for _, s := range statusOrder {
+			if peopleForRsvp, pr := rsvpMap[s]; pr {
+				if listForRsvp, present := rsvpToGroupsMap[s]; present {
+					listForRsvp = append(listForRsvp, peopleForRsvp)
+					rsvpToGroupsMap[s] = listForRsvp
+				} else {
+					listForRsvp = [][]Person{}
+					listForRsvp = append(listForRsvp, peopleForRsvp)
+					rsvpToGroupsMap[s] = listForRsvp
+				}
+				initialBookingId := int64(0)
+				foundExploder := false
+				for i, person := range peopleForRsvp {
+					hpb := invitation.HousingPreferenceBooleans
+					if person.IsAdultAtTime(wr.Event.StartDate) {
+						hpb |= adultPreferenceMask
+					}
+					peopleToProperties[person.DatastoreKey] = hpb
+
+					bookingId := personToBooking[person.DatastoreKey.IntID()]
+					if i == 0 {
+						initialBookingId = bookingId
+					} else {
+						if !foundExploder && initialBookingId != bookingId {
+							invitationsToExplode = append(invitationsToExplode, person.DatastoreKey.Encode())
+							foundExploder = true
+						}
+					}
+				}
+
+			}
+		}
+		if len(noResponse) > 0 {
+			noRsvps = append(noRsvps, noResponse)
+		}
+	}
+
+	for _, v := range rsvpToGroupsMap {
+		sort.Slice(v, func(a, b int) bool { return SortByFirstName(v[a][0], v[b][0]) })
+	}
+
+	sort.Slice(noRsvps, func(a, b int) bool { return SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingTool.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"RsvpToGroupsMap":    rsvpToGroupsMap,
-		"NoRsvps":            noRsvps,
-		"StatusOrder":        statusOrder,
-		"AllRsvpStatuses":    GetAllRsvpStatuses(),
-		"AvailableRooms":     availableRooms,
-		"BuildingsToRooms":   buildingsToRooms,
-		"BuildingsInOrder":   buildingsInOrder,
-		"PeopleToProperties": peopleToProperties,
-		"DesiredMask":        GetPreferenceTypeMask(Desired),
-		"AcceptableMask":     GetPreferenceTypeMask(Acceptable),
+		"RsvpToGroupsMap":      rsvpToGroupsMap,
+		"NoRsvps":              noRsvps,
+		"StatusOrder":          statusOrder,
+		"AllRsvpStatuses":      GetAllRsvpStatuses(),
+		"AvailableRooms":       availableRooms,
+		"BuildingsToRooms":     buildingsToRooms,
+		"BuildingsInOrder":     buildingsInOrder,
+		"PeopleToProperties":   peopleToProperties,
+		"DesiredMask":          GetPreferenceTypeMask(Desired),
+		"AcceptableMask":       GetPreferenceTypeMask(Acceptable),
+		"BookingInfos":         bookingInfos,
+		"InvitationsToExplode": invitationsToExplode,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingTool.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
@@ -133,6 +176,8 @@ func handleSaveRooming(wr WrappedRequest) {
 
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey).KeysOnly()
 	bookingKeys, _ := q.GetAll(ctx, nil)
+	// TODO: don't unilaterally delete all old bookings -- look for changes.
+	// (Will matter when saving booked state.)
 	datastore.DeleteMulti(ctx, bookingKeys)
 
 	buildingMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
@@ -166,7 +211,6 @@ func handleSaveRooming(wr WrappedRequest) {
 		if len(people) == 0 {
 			continue
 		}
-		log.Infof(ctx, "creating booking for room %s: %v", rmStr, people)
 		booking := Booking{Event: wr.EventKey, Room: roomMap[rmStr], Roommates: people}
 		datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Booking", wr.EventKey), &booking)
 	}

@@ -66,25 +66,28 @@
           return (acceptableRoomProperties & ~acceptablePeopleProperties) == 0;
       }
 
-      function drop(ev) {
-        ev.preventDefault();
-        var data = ev.dataTransfer.getData("text");
+      function dropFromEvent(event) {
+        event.preventDefault();
+        drop(event.dataTransfer.getData('text'), $(event.target));
+      }
+
+      function drop(data, target) {
         var group = document.getElementById(data);
-        ev.target.appendChild(group);
+        $(target).append(group);
 
         var guestKeys = $(".guestKey", $(group));
         for (var i=0; i < guestKeys.length; i++) {
-	   $("[name='roomingSlot_" + $(guestKeys[i]).text() + "']").val(ev.target.id);
+			  $("[name='roomingSlot_" + $(guestKeys[i]).text() + "']").val(target.attr("id"));
 	}
 
-        var properties = $(".guestProperties", $(group));
+        var properties = $(".guestProperties", target);
         var totalProperties = parseInt($(properties[0]).text())
         if (properties.length > 1) {
            for (var i=1; i<properties.length; i++) {
 	      totalProperties = combineProperties(totalProperties, parseInt($(properties[i]).text()));
 	   }
 	}
-	roomProperties = parseInt($(".roomProperties", $(ev.target)).text());
+	roomProperties = parseInt($(".roomProperties", $(target)).text());
         if (propertiesMatch(roomProperties, totalProperties)) {
 	    $(group).removeClass("constraintsNotMet");
 	} else {
@@ -112,36 +115,31 @@
         }      
       }
 
-      function explodeInvitee(inviteeId) {
-        $("#inv" + inviteeId) .removeClass().addClass("guestContainer");
-        $("#inv" + inviteeId + " .exploder").remove();
-        $("#inv" + inviteeId).attr("draggable", "false").attr("ondragstart", "").attr("ondragend", "");     
-        $("#inv" + inviteeId + " .guest").attr("draggable", "true").attr("ondragstart", "drag(event)");
-        $("#inv" + inviteeId + " .guest").each(function(index, g) {
-           var guestId = parseInt($(g).attr("id").substring(5));
-      $(g).attr("ondragend", "recordRoom(event, " + guestId + " , true)");
-        });
+      function explodeInvitee(groupId) {
+        $("#" + groupId) .removeClass();//.addClass("guestContainer");
+        $("#" + groupId + " .exploder").remove();
+        $("#" + groupId).attr("draggable", "false").attr("ondragstart", "").attr("ondragend", "");     
+        $("#" + groupId + " .guest").attr("draggable", "true").attr("ondragstart", "drag(event)");
+	$("#" + groupId + " .guest").addClass("groupContainer")
       }
 
 
       $(document).ready(function() {
-{{/*      
-        {%for inv, room in invitees.items%}
-          $("#{{room}}").append($("#inv{{inv.id}}"));
-          {%for g in inv.guest_set.all%}
-            $('[name=room_assignment_guest{{g.id}}]').val("{{room}}");
-          {%endfor%}
-        {%endfor%}
-        {%for g, room in guests.items%}
-          explodeInvitee({{g.invitee_id}});
-          $("#{{room}}").append($("#guest{{g.id}}"));
-          $('[name=room_assignment_guest{{g.id}}]').val("{{room}}");
-        {%endfor%}
-        {%for g, room in guests.items%}
-          $("#inv{{g.invitee.id}}").remove();          
-        {%endfor%}
-*/}}
 
+     {{range .InvitationsToExplode}}
+	  var parent = $("#guest_{{.}}").parent();				    
+          $(".exploder", parent).click();
+     {{end}}
+     {{range .BookingInfos}}
+	{{$roomString := .RoomString}}				    
+	{{range .Booking.Roommates}}
+           var group = $("#guest_{{.Encode}}").closest(".groupContainer");
+	   var target = $("#{{$roomString}}");
+   	   target.append(group);
+	   drop($(group).attr("id"), target)
+        {{end}}
+     {{end}}
+    
       // binding with jquery --> $!#$!@#$!%@
 //      $(".buildingWithImage div").bind("dragover", function(ev) {allowDrop(ev);});
 //      $(".buildingWithImage div").bind("drop", function(ev) {drop(ev);});
@@ -164,6 +162,7 @@
     </script>
   </head>
   <body>
+
   <div class="allBuildings">
 
   {{$buildingsToRoomsMap := .BuildingsToRooms}}
@@ -175,7 +174,7 @@
       <img src="/media/floorplan/{{.FloorplanImageUrl}}" style="width:350px;position:absolute;top:78px"/>
 
    {{range $rooms}}
-      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if (len .Room.Partition) gt 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="drop(event);"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}}</div><span class="roomProperties">{{.AllProperties}}</span></div>
+      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if (len .Room.Partition) gt 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="dropFromEvent(event)"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}}</div><span class="roomProperties">{{.AllProperties}}</span></div>
    {{end}}
    </div>
  {{end}}
@@ -195,12 +194,12 @@
 <div class="unassigned">
 {{range $i, $status := .StatusOrder}}
   {{range $j, $listOfGroups := (index $RsvpToGroupsMap $status)}}
-    <div id="inv{{$i}}_{{$j}}" class="group invitee {{(index $allStatuses $status).ShortDescription}}" draggable="true" ondragstart="drag(event)" ondragend="">
-    {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('{{$i}}_{{$j}}')">+</div>{{end}}
+    <div id="inv{{$i}}_{{$j}}" class="group groupContainer invitee {{(index $allStatuses $status).ShortDescription}}" draggable="true" ondragstart="drag(event)" ondragend="">
+    {{if gt (len .) 1}}<div class="exploder" onclick="explodeInvitee('inv{{$i}}_{{$j}}')">+</div>{{end}}
     {{range $k, $person := .}}
-      <div id="guest{{$i}}_{{$j}}_{{$k}}" class="guest group {{(index $allStatuses $status).ShortDescription}}">{{$person.FirstNameWithAge $eventDate}}
+      <div id="guest_{{$person.DatastoreKey.Encode}}" class="guest group {{(index $allStatuses $status).ShortDescription}}">{{$person.FirstNameWithAge $eventDate}}
 	<span class="guestProperties">{{index $peopleToProperties $person.DatastoreKey}}</span>
-	<span class="guestKey guestProperties">{{$person.DatastoreKey.Encode}}</span>
+	<span class="guestKey">{{$person.DatastoreKey.Encode}}</span>
 </div>
     {{end}}
     </div>

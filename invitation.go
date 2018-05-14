@@ -746,6 +746,7 @@ func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus
 	for _, invitee := range invitation.Invitees {
 		var person Person
 		datastore.Get(ctx, invitee, &person)
+		person.DatastoreKey = invitee
 
 		if rsvp, present := personKeyToRsvp[*invitee]; present {
 			listForStatus := rsvpMap[rsvp]
