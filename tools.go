@@ -207,10 +207,60 @@ func handleSaveRooming(wr WrappedRequest) {
 		}
 	}
 
+	var invitations []*Invitation
+	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	invitationKeys, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
+	}
+
+	personToInvitationMap := make(map[int64]int64)
+	personToInvitationIndexMap := make(map[int64]int)
+	invitationMap := make(map[int64]Invitation)
+	var peopleToLookUp []*datastore.Key
+	for i, inv := range invitations {
+		invitationMap[invitationKeys[i].IntID()] = *inv
+		for p, person := range inv.Invitees {
+			peopleToLookUp = append(peopleToLookUp, person)
+			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
+			personToInvitationIndexMap[person.IntID()] = p
+		}
+
+	}
+	var people = make([]*Person, len(peopleToLookUp))
+	datastore.GetMulti(ctx, peopleToLookUp, people)
+	personMap := make(map[int64]Person)
+	for i, person := range people {
+		personMap[peopleToLookUp[i].IntID()] = *person
+	}
+
 	for rmStr, people := range roomingMap {
 		if len(people) == 0 {
 			continue
 		}
+
+		countByInvitation := make(map[int64]int)
+		peopleForRoom := make(map[int64]bool)
+		for _, person := range people {
+			countByInvitation[personToInvitationMap[person.IntID()]]++
+			peopleForRoom[person.IntID()] = true
+		}
+
+		sort.Slice(people, func(a, b int) bool {
+			invA := personToInvitationMap[people[a].IntID()]
+			invB := personToInvitationMap[people[b].IntID()]
+			if invA == invB {
+				return personToInvitationIndexMap[people[a].IntID()] < personToInvitationIndexMap[people[b].IntID()]
+			}
+			invCountA := countByInvitation[invA]
+			invCountB := countByInvitation[invB]
+			if invCountA != invCountB {
+				return invCountA > invCountB
+			}
+			// really we want to sort by first person on each invitation, close enough for now.
+			return SortByLastFirstName(personMap[people[a].IntID()], personMap[people[b].IntID()])
+		})
+
 		booking := Booking{Event: wr.EventKey, Room: roomMap[rmStr], Roommates: people}
 		datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Booking", wr.EventKey), &booking)
 	}
