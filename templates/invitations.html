@@ -25,6 +25,7 @@
 
 <form action="addInvitation" method="POST">
 {{range .RealizedInvitations}}
+{{if .FixMeFlag}}<span style="background-color:red;color:white">&nbsp;FIX&nbsp;</span>{{end}}
   <input type="radio" name="invitation" value="{{.EncodedKey}}">
   <a href="viewInvitation?invitation={{.EncodedKey}}">{{ListInvitees .Invitees}}</a><br>
 {{end}}

@@ -29,6 +29,7 @@ type RealizedInvitation struct {
 	LastUpdatedPerson         PersonWithKey
 	LastUpdatedTimestamp      time.Time
 	InviteePeople             []Person
+	FixMeFlag                 bool
 }
 
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation) RealizedInvitation {
@@ -124,6 +125,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		OtherInfo:                 invitation.OtherInfo,
 		LastUpdatedPerson:         lastUpdatedPerson,
 		LastUpdatedTimestamp:      invitation.LastUpdatedTimestamp,
+		FixMeFlag:                 (invitation.HasHousingPreference(ShareBed) != invitation.HasHousingPreference(FartherBuilding)),
 	}
 
 	return realizedInvitation
