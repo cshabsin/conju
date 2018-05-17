@@ -1,9 +1,8 @@
 package conju
 
 import (
-	//	"context"
+	"fmt"
 	"html/template"
-	//	"net/http"
 	"sort"
 
 	"google.golang.org/appengine"
@@ -229,12 +228,19 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	personToInvitationMap := make(map[int64]int64)
 	invitationMap := make(map[int64]Invitation)
+	personToRsvpStatus := make(map[int64]RsvpStatus)
 	for i, inv := range invitations {
 		invitationMap[invitationKeys[i].IntID()] = *inv
+		if inv.RsvpMap != nil {
+			for p, r := range inv.RsvpMap {
+				personToRsvpStatus[(*p).IntID()] = r
+			}
+		}
 		for _, person := range inv.Invitees {
 			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
 		}
 	}
+
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
 	type RealBooking struct {
@@ -242,6 +248,11 @@ func handleRoomingReport(wr WrappedRequest) {
 		Building            Building
 		Roommates           []Person
 		ShowConvertToDouble bool
+		FriSat              int
+		PlusThurs           int
+		AddThurs            []bool
+		Cost                float64
+		CostString          string
 	}
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
@@ -250,15 +261,28 @@ func handleRoomingReport(wr WrappedRequest) {
 	for _, booking := range bookings {
 		people := make([]Person, len(booking.Roommates))
 
-		//FridaySaturday := 0
-		//PlusThursday := 0
+		FridaySaturday := 0
+		PlusThursday := 0
+		addThurs := make([]bool, len(booking.Roommates))
 		doubleBedNeeded := false // for now don't deal with more than one double needed
 
 		for i, person := range booking.Roommates {
 			people[i] = personMap[person.IntID()]
 			invitation := invitationMap[personToInvitationMap[person.IntID()]]
-			//rsvpStatus = invitation.RsvpMap
 			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
+			rsvpStatus := personToRsvpStatus[person.IntID()]
+			if people[i].IsBabyAtTime(wr.Event.StartDate) {
+				continue
+			}
+			if rsvpStatus == FriSat {
+				FridaySaturday++
+			}
+			if rsvpStatus == ThuFriSat {
+				FridaySaturday++
+				PlusThursday++
+				addThurs[i] = true
+			}
+
 		}
 
 		room := roomsMap[booking.Room.IntID()]
@@ -276,11 +300,42 @@ func handleRoomingReport(wr WrappedRequest) {
 			}
 		}
 
+		basePPCost := float64(0)
+		basePPCostString := "???"
+		if FridaySaturday <= 4 {
+			basePPCost = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
+			basePPCostString = fmt.Sprintf("$%.2f", basePPCost)
+		}
+		addOnPPCost := float64(0)
+		addOnPPCostString := "???"
+		if PlusThursday <= 4 {
+			addOnPPCost = GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
+			addOnPPCostString = fmt.Sprintf("$%.2f", addOnPPCost)
+		}
+
+		addOnTotalString := ""
+		if PlusThursday > 0 {
+			addOnTotalString = fmt.Sprintf(" + %d * %s", PlusThursday, addOnPPCostString)
+		}
+
+		totalCost := float64(FridaySaturday)*basePPCost + float64(PlusThursday)*addOnPPCost
+		totalCostString := fmt.Sprintf("$%.2f", totalCost)
+		if FridaySaturday > 4 || PlusThursday > 4 {
+			totalCostString = "???"
+		}
+
+		costEquationString := fmt.Sprintf("%d * %s %s = %s", FridaySaturday, basePPCostString, addOnTotalString, totalCostString)
+
 		realBooking := RealBooking{
 			Room:                roomsMap[booking.Room.IntID()],
 			Building:            building,
 			Roommates:           people,
+			FriSat:              FridaySaturday,
+			PlusThurs:           PlusThursday,
+			AddThurs:            addThurs,
 			ShowConvertToDouble: showConvertToDouble,
+			Cost:                totalCost,
+			CostString:          costEquationString,
 		}
 		buildingIndex := buildingOrderMap[buildingId]
 		bookingsForBuilding := realBookingsByBuilding[buildingIndex]

@@ -8,9 +8,12 @@
      <div class="buildingName">{{(index . 0).Building.Name}}</div>
        <div class="roomingList">
          {{range .}}
+	 {{$addOns := (ne .FriSat .PlusThurs)}}
+	 {{$addThurs := .AddThurs}}
            <div> <span class="roomNumber">{{.Room.RoomNumber}}:</span>
-           {{range $i, $person := .Roommates}}{{if $i}}, {{end}}{{$person.FullNameWithAge $eventDate}}{{end}}
+	   {{range $i, $person := .Roommates}}{{if $i}}, {{end}}{{$person.FullNameWithAge $eventDate}}{{if (and $addOns (index $addThurs $i))}} (+Thu){{end}}{{end}}
 	   {{if .ShowConvertToDouble}} -- Want Double Bed{{end}}
+	               <span style="font-weight:bold">{{if eq .FriSat .PlusThurs}}{{.FriSat}} people Thu/Fri/Sat{{else if eq .PlusThurs 0}}{{.FriSat}} people Fri/Sat{{else}}{{.FriSat}} people Fri/Sat plus {{.PlusThurs}} people Thursday{{end}}: </span>{{.CostString}}
 	   </div>
          {{end}}
       </div>
