@@ -220,10 +220,28 @@ func handleRoomingReport(wr WrappedRequest) {
 		personMap[peopleToLookUp[i].IntID()] = *person
 	}
 
+	var invitations []*Invitation
+	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	invitationKeys, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
+	}
+
+	personToInvitationMap := make(map[int64]int64)
+	invitationMap := make(map[int64]Invitation)
+	for i, inv := range invitations {
+		invitationMap[invitationKeys[i].IntID()] = *inv
+		for _, person := range inv.Invitees {
+			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
+		}
+	}
+	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
+
 	type RealBooking struct {
-		Room      Room
-		Building  Building
-		Roommates []Person
+		Room                Room
+		Building            Building
+		Roommates           []Person
+		ShowConvertToDouble bool
 	}
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
@@ -231,14 +249,38 @@ func handleRoomingReport(wr WrappedRequest) {
 	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
 	for _, booking := range bookings {
 		people := make([]Person, len(booking.Roommates))
+
+		//FridaySaturday := 0
+		//PlusThursday := 0
+		doubleBedNeeded := false // for now don't deal with more than one double needed
+
 		for i, person := range booking.Roommates {
 			people[i] = personMap[person.IntID()]
+			invitation := invitationMap[personToInvitationMap[person.IntID()]]
+			//rsvpStatus = invitation.RsvpMap
+			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
 		}
+
+		room := roomsMap[booking.Room.IntID()]
 		buildingId := booking.Room.Parent().IntID()
+		building := buildingsMap[buildingId]
+		// for now? ignore case where they want a double bed and aren't getting it
+		showConvertToDouble := doubleBedNeeded
+
+		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
+			for _, bed := range room.Beds {
+				if bed == Double || bed == Queen || bed == King {
+					showConvertToDouble = false
+					break
+				}
+			}
+		}
+
 		realBooking := RealBooking{
-			Room:      roomsMap[booking.Room.IntID()],
-			Building:  buildingsMap[buildingId],
-			Roommates: people,
+			Room:                roomsMap[booking.Room.IntID()],
+			Building:            building,
+			Roommates:           people,
+			ShowConvertToDouble: showConvertToDouble,
 		}
 		buildingIndex := buildingOrderMap[buildingId]
 		bookingsForBuilding := realBookingsByBuilding[buildingIndex]

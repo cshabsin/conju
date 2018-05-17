@@ -9,7 +9,9 @@
        <div class="roomingList">
          {{range .}}
            <div> <span class="roomNumber">{{.Room.RoomNumber}}:</span>
-           {{range $i, $person := .Roommates}}{{if $i}}, {{end}}{{$person.FullNameWithAge $eventDate}}{{end}}</div>
+           {{range $i, $person := .Roommates}}{{if $i}}, {{end}}{{$person.FullNameWithAge $eventDate}}{{end}}
+	   {{if .ShowConvertToDouble}} -- Want Double Bed{{end}}
+	   </div>
          {{end}}
       </div>
     </div>
