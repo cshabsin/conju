@@ -157,8 +157,8 @@ const (
 	FarBuilding
 	CanCrossRoad
 	PreferFar
-	ShareBed
 	FartherBuilding
+	ShareBed
 )
 
 type HousingPreferenceBooleanType int
