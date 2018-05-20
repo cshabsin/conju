@@ -31,7 +31,7 @@ func handleRoomingTool(wr WrappedRequest) {
 	var invitationsToExplode []string
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
-	var buildingsInOrder []*Building
+	var buildingsInOrder []Building
 	var availableRooms []RealRoom
 	var buildingsToRooms = make(map[Building][]RealRoom)
 
@@ -40,8 +40,8 @@ func handleRoomingTool(wr WrappedRequest) {
 		datastore.Get(ctx, room, &rm)
 		buildingKey := room.Parent()
 		building := buildingsMap[buildingKey.IntID()]
-		if i == 0 || buildingsInOrder[len(buildingsInOrder)-1] != building {
-			buildingsInOrder = append(buildingsInOrder, building)
+		if i == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
+			buildingsInOrder = append(buildingsInOrder, *building)
 		}
 
 		bedstring := ""
