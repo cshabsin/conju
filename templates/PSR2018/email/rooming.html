@@ -41,13 +41,11 @@
       </div><p>Be sure to coordinate with your roommates to make sure that only one person reserves this room.</p>
     {{end}}
 
-    {{if .ReservationMade}}
+    {{if eq (len .Unreserved) 0}}
       <br>Your reservation has already been made with Purity Spring!  Consider this a purely informative email.
     {{end}}
   </div>
-  {{end}}
-
-  {{if gt (len .Unreserved) 1}}
+  {{else if gt (len .Unreserved) 1}}
   <br><br>
   Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 8-11, and ask to reserve:
   <br>
