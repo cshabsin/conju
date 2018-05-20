@@ -123,6 +123,7 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 		"PronounString":               GetPronouns,
 		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
 		"SharerName":                  MakeSharerName,
+		"DerefPeople":                 DerefPeople,
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2018/email/rooming.html"))
 	for invitation, bookings := range allInviteeBookings {
@@ -152,4 +153,12 @@ func MakeSharerName(p *Person) string {
 		s = s + "(" + p.Email + ")"
 	}
 	return s
+}
+
+func DerefPeople(people []*Person) []Person {
+	dp := make([]Person, len(people))
+	for i, p := range people {
+		dp[i] = *p
+	}
+	return dp
 }
