@@ -112,7 +112,7 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 					Roommates:           roommates,
 					RoomSharers:         roomSharers,
 					ShowConvertToDouble: showConvertToDouble,
-					ReservationMade:     false, // TODO(dana): Fill this data.
+					ReservationMade:     booking.Reserved,
 				}
 			}
 		}
