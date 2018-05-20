@@ -1,8 +1,8 @@
 {{define "rooming_subject"}}
-  {{if .ReservationMade}}
-    Your room assignment for Purity Spring Resort
-  {{else}}
+  {{if gt (len .Unreserved) 0}}
     Please reserve your room at Purity Spring Resort!
+  {{else}}
+    Your room assignment for Purity Spring Resort
   {{end}}
 {{end}}
 
@@ -69,7 +69,7 @@
   {{end}}
 
 <p>As always, you can update your rsvp or profile on our event website:</p>
-<p style="margin-left: 5em;"><a href="{{.LoginLink}}">{{.LoginLink}}/</a></p>
+<p style="margin-left: 5em;"><a href="{{.LoginLink}}">PSR 2018 Login Link</a></p>
 
   <p>We can't wait to see you in New Hampshire!</p>
 

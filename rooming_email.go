@@ -1,13 +1,35 @@
 package conju
 
 import (
+	"bytes"
+	"fmt"
 	"html/template"
+	"net/http"
+	text_template "text/template"
 
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
+type RenderedMail struct {
+	Person  Person
+	Text    string
+	Html    string
+	Subject string
+}
+
 func handleSendRoomingEmail(wr WrappedRequest) {
+	rendered_mail, err := getRoomingEmails(wr)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
+			http.StatusInternalServerError)
+	}
+	for _, rm := range rendered_mail {
+		wr.ResponseWriter.Write([]byte(rm.Html))
+	}
+}
+
+func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 	// Cribbed heavily from handleRoomingReport
 	ctx := wr.Context
 
@@ -126,6 +148,17 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 		"DerefPeople":                 DerefPeople,
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2018/email/rooming.html"))
+
+	textFunctionMap := text_template.FuncMap{
+		"HasHousingPreference":        RealInvHasHousingPreference,
+		"PronounString":               GetPronouns,
+		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"SharerName":                  MakeSharerName,
+		"DerefPeople":                 DerefPeople,
+	}
+	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/rooming.html"))
+
+	rendered_mail := make(map[int64]RenderedMail, 0)
 	for invitation, bookings := range allInviteeBookings {
 		// invitation is ID from key.
 		ri := makeRealizedInvitation(ctx, *datastore.NewKey(ctx, "Invitation", "", invitation, nil), *invitationMap[invitation])
@@ -141,19 +174,36 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
 			}
 		}
-		// TODO: iterate over people in invitation for sending email, and generate
-		// login link per person. makeLoginUrl(person) should do it.
-		data := wr.MakeTemplateData(map[string]interface{}{
-			"Invitation":      ri,
-			"InviteeBookings": bookings,
-			"LoginLink":       "login link here",
-			"PeopleComing":    people_coming,
-			"Unreserved":      unreserved,
-		})
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rooming_html", data); err != nil {
-			log.Errorf(wr.Context, "%v", err)
+		for i, p := range ri.InviteePeople {
+			if !ri.RsvpMap[ri.Invitees[i].Key].Attending {
+				continue
+			}
+			log.Errorf(ctx, "P: %v", p)
+			data := wr.MakeTemplateData(map[string]interface{}{
+				"Invitation":      ri,
+				"InviteeBookings": bookings,
+				"LoginLink":       makeLoginUrl(&p),
+				"PeopleComing":    people_coming,
+				"Unreserved":      unreserved,
+			})
+			var text bytes.Buffer
+			if err := text_tpl.ExecuteTemplate(&text, "rooming_text", data); err != nil {
+				log.Errorf(wr.Context, "%v", err)
+			}
+
+			var htmlBuf bytes.Buffer
+			if err := tpl.ExecuteTemplate(&htmlBuf, "rooming_html", data); err != nil {
+				log.Errorf(wr.Context, "%v", err)
+			}
+
+			var subject bytes.Buffer
+			if err := text_tpl.ExecuteTemplate(&subject, "rooming_subject", data); err != nil {
+				log.Errorf(wr.Context, "%v", err)
+			}
+			rendered_mail[p.DatastoreKey.IntID()] = RenderedMail{p, text.String(), htmlBuf.String(), subject.String()}
 		}
 	}
+	return rendered_mail, nil
 }
 
 func MakeSharerName(p *Person) string {
