@@ -7,6 +7,8 @@ import (
 	"net/http"
 	text_template "text/template"
 
+	"gopkg.in/sendgrid/sendgrid-go.v2"
+
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -14,18 +16,78 @@ import (
 type RenderedMail struct {
 	Person  Person
 	Text    string
-	Html    string
+	HTML    string
 	Subject string
 }
 
-func handleSendRoomingEmail(wr WrappedRequest) {
+func handleTestSendRoomingEmail(wr WrappedRequest) {
 	rendered_mail, err := getRoomingEmails(wr)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
 	}
 	for _, rm := range rendered_mail {
-		wr.ResponseWriter.Write([]byte(rm.Html))
+		wr.ResponseWriter.Write([]byte(rm.HTML))
+	}
+}
+
+func handleAskSendRoomingEmail(wr WrappedRequest) {
+	rendered_mail, err := getRoomingEmails(wr)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
+			http.StatusInternalServerError)
+	}
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(wr.ResponseWriter, `
+	Number of emails to send: %d<p>
+	<form method="POST" action="/doSendTestRoomingEmail">
+	<input type="submit" value="Send Test Mail">
+	</form>
+	<form method="POST" action="/doSendRealRoomingEmail">
+	<input type="submit" value="Send Real Mail">
+	</form>
+`, len(rendered_mail))
+}
+
+func handleSendTestRoomingEmail(wr WrappedRequest) {
+	handleSendRoomingEmail(wr, true)
+}
+
+func handleSendRealRoomingEmail(wr WrappedRequest) {
+	handleSendRoomingEmail(wr, false)
+}
+
+func handleSendRoomingEmail(wr WrappedRequest, isTest bool) {
+	if wr.Method != "POST" {
+		http.Error(wr.ResponseWriter, "Invalid GET on send mail handler.",
+			http.StatusBadRequest)
+		return
+	}
+	rendered_mail, err := getRoomingEmails(wr)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
+			http.StatusInternalServerError)
+	}
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	for _, to_render := range rendered_mail {
+		p := to_render.Person
+		message := sendgrid.NewMail()
+		if isTest {
+			message.AddTo(fmt.Sprintf("%s test <%s>", p.FullName(),
+				wr.GetBccAddress()))
+		} else {
+			message.AddTo(fmt.Sprintf("%s <%s>", p.FullName(), p.Email))
+			message.AddBcc(wr.GetBccAddress())
+		}
+		message.SetSubject(to_render.Subject)
+		message.SetHTML(to_render.HTML)
+		message.SetText(to_render.Text)
+		message.SetFrom(wr.GetSenderAddress())
+		fmt.Fprintf(wr.ResponseWriter, "Sending to %s (isTest = %v)<p>", p.FullName(), isTest)
+		err = wr.GetEmailClient().Send(message)
+		if err != nil {
+			log.Errorf(wr.Context, "Error sending mail: %v", err)
+		}
 	}
 }
 
@@ -175,10 +237,12 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 			}
 		}
 		for i, p := range ri.InviteePeople {
+			if p.Email == "" {
+				continue
+			}
 			if !ri.RsvpMap[ri.Invitees[i].Key].Attending {
 				continue
 			}
-			log.Errorf(ctx, "P: %v", p)
 			data := wr.MakeTemplateData(map[string]interface{}{
 				"Invitation":      ri,
 				"InviteeBookings": bookings,

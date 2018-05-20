@@ -52,7 +52,11 @@ func init() {
 	AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/testRoomingMail", handleSendRoomingEmail).Needs(AdminGetter)
+	AddSessionHandler("/testRoomingMail", handleTestSendRoomingEmail).Needs(AdminGetter)
+	AddSessionHandler("/sendRoomingMail", handleAskSendRoomingEmail).Needs(AdminGetter)
+	AddSessionHandler("/doSendTestRoomingEmail", handleSendTestRoomingEmail).Needs(AdminGetter)
+	AddSessionHandler("/doSendRealRoomingEmail", handleSendRealRoomingEmail).Needs(AdminGetter)
+
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 
