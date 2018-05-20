@@ -26,7 +26,7 @@
   {{range .InviteeBookings}}
   <div class="individualRoom" style="margin:10px 0px 15px 20px">
     {{if $MultiRoom}}
-      {{CollectiveAddressFirstNames .Roommates 0}}:
+      {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
     {{end}}
     {{if .Building}}
       <b>{{.Building.Name}}, room {{.Room.RoomNumber}}</b>
