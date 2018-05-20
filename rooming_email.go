@@ -147,7 +147,9 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 }
 
 func MakeSharerName(p *Person) string {
-	return "test"
-	//        {{/*{{ .full_name }} {%if guest.email %}({{ guest.email }}){%endif%}<br> */}}
-
+	s := p.FullName()
+	if p.Email != "" {
+		s = s + "(" + p.Email + ")"
+	}
+	return s
 }
