@@ -135,6 +135,8 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
 			}
 		}
+		// TODO: iterate over people in invitation for sending email, and generate
+		// login link per person. makeLoginUrl(person) should do it.
 		data := wr.MakeTemplateData(map[string]interface{}{
 			"Invitation":      ri,
 			"InviteeBookings": bookings,
