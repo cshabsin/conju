@@ -152,7 +152,7 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 func MakeSharerName(p *Person) string {
 	s := p.FullName()
 	if p.Email != "" {
-		s = s + "(" + p.Email + ")"
+		s = s + " (" + p.Email + ")"
 	}
 	return s
 }
