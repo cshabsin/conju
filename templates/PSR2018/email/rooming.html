@@ -1,5 +1,9 @@
 {{define "rooming_subject"}}
-  Your room for Purity Spring Resort
+  {{if .ReservationMade}}
+    Your room assignment for Purity Spring Resort
+  {{else}}
+    Please reserve your room at Purity Spring Resort!
+  {{end}}
 {{end}}
 
 {{define "rooming_text"}}
