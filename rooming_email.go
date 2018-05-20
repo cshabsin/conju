@@ -68,6 +68,8 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 		Building *Building
 	}
 	type InviteeRoomBookings struct {
+		Building            *Building
+		Room                *Room
 		Roommates           []*Person // People from this invitation.
 		RoomSharers         []*Person // People from outside the invitation.
 		ShowConvertToDouble bool
@@ -76,7 +78,7 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 	type InviteeBookings map[BuildingRoom]InviteeRoomBookings
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
-	allInviteeBookings := make(map[*Invitation]InviteeBookings)
+	allInviteeBookings := make(map[int64]InviteeBookings)
 	for _, booking := range bookings {
 		room := roomsMap[booking.Room.IntID()]
 		buildingId := booking.Room.Parent().IntID()
@@ -85,11 +87,12 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 		showConvertToDouble := false // TODO: Need to still implement convert to double.
 
 		for _, person := range booking.Roommates {
-			invitation := invitationMap[personToInvitationMap[person.IntID()]]
+			invitation := personToInvitationMap[person.IntID()]
 
 			inviteeBookings, found := allInviteeBookings[invitation]
 			if !found {
-				allInviteeBookings[invitation] = make(InviteeBookings)
+				inviteeBookings = make(InviteeBookings)
+				allInviteeBookings[invitation] = inviteeBookings
 			}
 			_, found = inviteeBookings[buildingRoom]
 			if !found {
@@ -97,13 +100,15 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 				roomSharers := make([]*Person, 0)
 				for _, maybeRoommate := range booking.Roommates {
 					maybeRoommatePerson := personMap[maybeRoommate.IntID()]
-					if invitationMap[personToInvitationMap[maybeRoommate.IntID()]] == invitation {
+					if personToInvitationMap[maybeRoommate.IntID()] == invitation {
 						roommates = append(roommates, maybeRoommatePerson)
 					} else {
 						roomSharers = append(roomSharers, maybeRoommatePerson)
 					}
 				}
 				inviteeBookings[buildingRoom] = InviteeRoomBookings{
+					Building:            building,
+					Room:                room,
 					Roommates:           roommates,
 					RoomSharers:         roomSharers,
 					ShowConvertToDouble: showConvertToDouble,
@@ -113,14 +118,36 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 		}
 	}
 
-	for invitation, booking := range allInviteeBookings {
-		tpl := template.Must(template.New("").ParseFiles("templates/PSR2018/email/rooming.html"))
+	functionMap := template.FuncMap{
+		"HasHousingPreference":        RealInvHasHousingPreference,
+		"PronounString":               GetPronouns,
+		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"SharerName":                  MakeSharerName,
+	}
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2018/email/rooming.html"))
+	for invitation, bookings := range allInviteeBookings {
+		// invitation is ID from key.
+		ri := makeRealizedInvitation(ctx, *datastore.NewKey(ctx, "Invitation", "", invitation, nil), *invitationMap[invitation])
+		unreserved := make([]BuildingRoom, 0)
+		for _, booking := range bookings {
+			if !booking.ReservationMade {
+				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+			}
+		}
 		data := wr.MakeTemplateData(map[string]interface{}{
-			"Invitation":      invitation,
-			"InviteeBookings": booking,
+			"Invitation":      ri,
+			"InviteeBookings": bookings,
+			"LoginLink":       "login link here",
+			"Unreserved":      unreserved,
 		})
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rooming.html", data); err != nil {
+		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rooming_html", data); err != nil {
 			log.Errorf(wr.Context, "%v", err)
 		}
 	}
+}
+
+func MakeSharerName(p *Person) string {
+	return "test"
+	//        {{/*{{ .full_name }} {%if guest.email %}({{ guest.email }}){%endif%}<br> */}}
+
 }

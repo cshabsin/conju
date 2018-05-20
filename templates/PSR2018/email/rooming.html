@@ -18,7 +18,7 @@
   {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
   {{if $MultiRoom}}
     Your rooms:<br>
-  {{else}}}
+  {{else}}
     Your room:<br>
   {{end}}
   <div class="allRooms" style="display:inline-block;margin-bottom:20px">
@@ -36,7 +36,6 @@
       <div class="roomSharers" style="margin-left:20px">
       {{range .RoomSharers}}
         {{SharerName .}}
-        {{/*{{ .full_name }} {%if guest.email %}({{ guest.email }}){%endif%}<br> */}}
       {{end}}
 
       </div><p>Be sure to coordinate with your roommates to make sure that only one person reserves this room.</p>
@@ -58,7 +57,8 @@
   {{end}}
   <p>They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.</p>
   {{else if gt (len .Unreserved) 0}}
-  <p>Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 8-11, and ask to reserve {{unreserved.0.get_building_name}}, room {{unreserved.0.room}}.  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.</p>
+  <p>Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 8-11, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.</p>
+  {{end}}
 
   {{if .ShowConvertToDouble}}
             <p>Note: your room has all twin beds.  If you would like 2 of them pushed together to make a king, let Purity Spring know when you reserve your room and it will be taken care of before you arrive.</p>
@@ -74,3 +74,4 @@
 
   </div>
 </div>
+{{end}}
