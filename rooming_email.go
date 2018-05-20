@@ -129,6 +129,12 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 	for invitation, bookings := range allInviteeBookings {
 		// invitation is ID from key.
 		ri := makeRealizedInvitation(ctx, *datastore.NewKey(ctx, "Invitation", "", invitation, nil), *invitationMap[invitation])
+		people_coming := make([]Person, 0)
+		for i, p := range ri.Invitees {
+			if ri.RsvpMap[p.Key].Attending {
+				people_coming = append(people_coming, ri.InviteePeople[i])
+			}
+		}
 		unreserved := make([]BuildingRoom, 0)
 		for _, booking := range bookings {
 			if !booking.ReservationMade {
@@ -141,6 +147,7 @@ func handleSendRoomingEmail(wr WrappedRequest) {
 			"Invitation":      ri,
 			"InviteeBookings": bookings,
 			"LoginLink":       "login link here",
+			"PeopleComing":    people_coming,
 			"Unreserved":      unreserved,
 		})
 		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rooming_html", data); err != nil {
