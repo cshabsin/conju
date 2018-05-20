@@ -14,7 +14,7 @@
     {{$IsAttending := .IsAttending}}
 <div style="margin-bottom:20px">Last updated by <b>{{.RealInvitation.LastUpdatedPerson.Person.FullName}}</b> at {{.RealInvitation.LastUpdatedTimestamp.Format "2006-01-02 15:04:05"}}.</div>
 
-{{if gt (len .AdditionalPeople) 0}} 
+{{if gt (len .AdditionalPeople) 0}}
 <table style="margin-bottom:20px"><tr>
 <td style="vertical-align:top">Requested additional guests:</td>
 <td>

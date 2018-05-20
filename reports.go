@@ -239,7 +239,7 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	type RealBooking struct {
 		Room                Room
-		Building            Building
+		Building            *Building
 		Roommates           []Person
 		ShowConvertToDouble bool
 	}

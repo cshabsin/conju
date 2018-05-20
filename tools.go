@@ -31,7 +31,7 @@ func handleRoomingTool(wr WrappedRequest) {
 	var invitationsToExplode []string
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
-	var buildingsInOrder []Building
+	var buildingsInOrder []*Building
 	var availableRooms []RealRoom
 	var buildingsToRooms = make(map[Building][]RealRoom)
 
@@ -62,18 +62,18 @@ func handleRoomingTool(wr WrappedRequest) {
 		}
 		realRoom := RealRoom{
 			Room:       rm,
-			Building:   buildingsMap[buildingKey.IntID()],
+			Building:   *buildingsMap[buildingKey.IntID()],
 			BedsString: bedstring,
 		}
 
-		roomsForBuilding := buildingsToRooms[building]
+		roomsForBuilding := buildingsToRooms[*building]
 
 		if roomsForBuilding == nil {
 			roomsForBuilding = make([]RealRoom, 0)
 
 		}
 		roomsForBuilding = append(roomsForBuilding, realRoom)
-		buildingsToRooms[building] = roomsForBuilding
+		buildingsToRooms[*building] = roomsForBuilding
 
 		availableRooms = append(availableRooms, realRoom)
 
@@ -268,9 +268,9 @@ func handleSaveRooming(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "rooming", http.StatusSeeOther)
 }
 
-func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[int64]Building {
-	buildingsMap := make(map[int64]Building)
-	var buildings []Building
+func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[int64]*Building {
+	buildingsMap := make(map[int64]*Building)
+	var buildings []*Building
 	q := datastore.NewQuery("Building").Ancestor(venueKey)
 	keys, err := q.GetAll(ctx, &buildings)
 
