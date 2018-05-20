@@ -1,9 +1,9 @@
 package conju
 
 import (
-	//	"context"
+	"fmt"
 	"html/template"
-	//	"net/http"
+	"net/http"
 	"sort"
 
 	"google.golang.org/appengine"
@@ -183,7 +183,7 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	_, _ = q.GetAll(ctx, &bookings)
+	bookingKeys, _ := q.GetAll(ctx, &bookings)
 
 	roomsMap := make(map[int64]Room)
 	var rooms = make([]*Room, len(wr.Event.Rooms))
@@ -229,36 +229,63 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	personToInvitationMap := make(map[int64]int64)
 	invitationMap := make(map[int64]Invitation)
+	personToRsvpStatus := make(map[int64]RsvpStatus)
 	for i, inv := range invitations {
 		invitationMap[invitationKeys[i].IntID()] = *inv
+		if inv.RsvpMap != nil {
+			for p, r := range inv.RsvpMap {
+				personToRsvpStatus[(*p).IntID()] = r
+			}
+		}
 		for _, person := range inv.Invitees {
 			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
 		}
 	}
+
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
 	type RealBooking struct {
+		KeyString           string
 		Room                Room
 		Building            *Building
 		Roommates           []Person
 		ShowConvertToDouble bool
+		FriSat              int
+		PlusThurs           int
+		AddThurs            []bool
+		Cost                float64
+		CostString          string
+		Reserved            bool
 	}
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	// doesn't deal with consolidating partitioned rooms
 	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
-	for _, booking := range bookings {
+	for i, booking := range bookings {
 		people := make([]Person, len(booking.Roommates))
 
-		//FridaySaturday := 0
-		//PlusThursday := 0
+		FridaySaturday := 0
+		PlusThursday := 0
+		addThurs := make([]bool, len(booking.Roommates))
 		doubleBedNeeded := false // for now don't deal with more than one double needed
 
 		for i, person := range booking.Roommates {
 			people[i] = personMap[person.IntID()]
 			invitation := invitationMap[personToInvitationMap[person.IntID()]]
-			//rsvpStatus = invitation.RsvpMap
 			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
+			rsvpStatus := personToRsvpStatus[person.IntID()]
+			if people[i].IsBabyAtTime(wr.Event.StartDate) {
+				continue
+			}
+			if rsvpStatus == FriSat {
+				FridaySaturday++
+			}
+			if rsvpStatus == ThuFriSat {
+				FridaySaturday++
+				PlusThursday++
+				addThurs[i] = true
+			}
+
 		}
 
 		room := roomsMap[booking.Room.IntID()]
@@ -276,11 +303,44 @@ func handleRoomingReport(wr WrappedRequest) {
 			}
 		}
 
+		basePPCost := float64(0)
+		basePPCostString := "???"
+		if FridaySaturday <= 4 {
+			basePPCost = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
+			basePPCostString = fmt.Sprintf("$%.2f", basePPCost)
+		}
+		addOnPPCost := float64(0)
+		addOnPPCostString := "???"
+		if PlusThursday <= 4 {
+			addOnPPCost = GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
+			addOnPPCostString = fmt.Sprintf("$%.2f", addOnPPCost)
+		}
+
+		addOnTotalString := ""
+		if PlusThursday > 0 {
+			addOnTotalString = fmt.Sprintf(" + %d * %s", PlusThursday, addOnPPCostString)
+		}
+
+		totalCost := float64(FridaySaturday)*basePPCost + float64(PlusThursday)*addOnPPCost
+		totalCostString := fmt.Sprintf("$%.2f", totalCost)
+		if FridaySaturday > 4 || PlusThursday > 4 {
+			totalCostString = "???"
+		}
+
+		costEquationString := fmt.Sprintf("%d * %s %s = %s", FridaySaturday, basePPCostString, addOnTotalString, totalCostString)
+
 		realBooking := RealBooking{
+			KeyString:           bookingKeys[i].Encode(),
 			Room:                roomsMap[booking.Room.IntID()],
 			Building:            building,
 			Roommates:           people,
+			FriSat:              FridaySaturday,
+			PlusThurs:           PlusThursday,
+			AddThurs:            addThurs,
 			ShowConvertToDouble: showConvertToDouble,
+			Cost:                totalCost,
+			CostString:          costEquationString,
+			Reserved:            booking.Reserved,
 		}
 		buildingIndex := buildingOrderMap[buildingId]
 		bookingsForBuilding := realBookingsByBuilding[buildingIndex]
@@ -305,4 +365,38 @@ func handleRoomingReport(wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingReport.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
+}
+
+func handleSaveReservations(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	bookingToBooked := make(map[int64]bool)
+
+	for k, v := range wr.Request.PostForm {
+		log.Infof(ctx, "key: %v", k)
+		if v[0] == "" {
+			continue
+		}
+		if k[0:8] == "booking_" {
+			bookingKey, _ := datastore.DecodeKey(string(k[8:]))
+			bookingToBooked[bookingKey.IntID()] = true
+		}
+	}
+
+	var bookings []*Booking
+	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	bookingKeys, _ := q.GetAll(ctx, &bookings)
+
+	for i, booking := range bookings {
+		if _, present := bookingToBooked[bookingKeys[i].IntID()]; present {
+			booking.Reserved = true
+		} else {
+			booking.Reserved = false
+		}
+	}
+
+	datastore.PutMulti(ctx, bookingKeys, bookings)
+
+	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }

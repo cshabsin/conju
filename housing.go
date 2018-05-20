@@ -70,7 +70,7 @@ func (room RealRoom) AllProperties() int {
 type Booking struct {
 	Event    *datastore.Key
 	Room     *datastore.Key
-	reserved bool
+	Reserved bool
 
 	Roommates []*datastore.Key
 }

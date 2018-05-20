@@ -25,6 +25,8 @@ type RsvpStatusInfo struct {
 	Attending        bool
 	Undecided        bool
 	NoLodging        bool
+	BaseCost         [5]float64
+	AddOnCost        [5]float64
 }
 
 func GetAllRsvpStatuses() []RsvpStatusInfo {
@@ -48,12 +50,15 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		ShortDescription: "FriSat",
 		LongDescription:  "Will attend: Friday - Sunday",
 		Attending:        true,
+		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           ThuFriSat,
 		ShortDescription: "ThuFriSat",
 		LongDescription:  "Will attend: Thursday - Sunday",
 		Attending:        true,
+		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
+		AddOnCost:        [5]float64{0, 102.46, 57.77, 42.87, 35.43},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           SatSun,
