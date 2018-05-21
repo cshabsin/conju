@@ -23,10 +23,9 @@ Our Purity Spring weekend is coming up fast!{{if gt (len .Unreserved) 0}} It's t
   {{if not .ReservationMade}}
 Be sure to coordinate with your roommates to make sure that only one person reserves this room.{{end}}
 {{end}}
-
 {{- if .ReservationMade}}
-Your reservation has already been made with Purity Spring!  Consider this a purely informative email.
-{{end}}
+
+Your reservation has already been made with Purity Spring!  Consider this a purely informative email.{{end}}
 {{- if .ShowConvertToDouble}}
     Note: your room has all twin beds.  If you would like 2 of them pushed together to make a king, let Purity Spring know when you reserve your room and it will be taken care of before you arrive.
 {{end}}
@@ -35,13 +34,11 @@ Your reservation has already been made with Purity Spring!  Consider this a pure
 Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve:
 {{range .Unreserved}}
     {{.Building.Name}}, Room {{.Room.RoomNumber}}{{end}}
-
 They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
   {{- else if gt (len .Unreserved) 0}}
 Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
 
-Because our weekend retreat is coming up alarmingly fast (eek!) we'd appreciate it if you could call in your reservation within the next few days.
-  {{end}}
+Because our weekend retreat is coming up alarmingly fast (eek!) we'd appreciate it if you could call in your reservation within the next few days.{{end}}
 
 As always, you can update your rsvp or profile on our event website: {{.LoginLink}}
 
