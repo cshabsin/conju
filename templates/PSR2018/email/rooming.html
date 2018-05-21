@@ -16,8 +16,7 @@ Our Purity Spring weekend is coming up fast!{{if gt (len .Unreserved) 0}} It's t
 {{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
 {{end}}
 {{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
-{{- if gt (len .RoomSharers) 0}}
-    with:
+{{- if gt (len .RoomSharers) 0}} with:
   {{- range .RoomSharers}}
       {{SharerName . -}}
   {{end}}
