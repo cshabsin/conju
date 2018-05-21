@@ -13,10 +13,12 @@ Our Purity Spring weekend is coming up fast!{{if gt (len .Unreserved) 0}} It's t
 {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
 {{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
 {{range .InviteeBookings}}
-{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:{{end}}
+{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+{{end}}
 {{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
-{{- if gt (len .RoomSharers) 0}}    with:
-  {{range .RoomSharers}}
+{{- if gt (len .RoomSharers) 0}}
+    with:
+  {{- range .RoomSharers}}
       {{SharerName . -}}
   {{end}}
   {{if not .ReservationMade}}
