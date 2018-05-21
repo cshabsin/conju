@@ -145,7 +145,7 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
 		}
 	}
-	// shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
+	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
 	type BuildingRoom struct {
 		Room     *Room
@@ -168,7 +168,28 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 		buildingId := booking.Room.Parent().IntID()
 		building := buildingsMap[buildingId]
 		buildingRoom := BuildingRoom{room, building}
-		showConvertToDouble := false // TODO: Need to still implement convert to double.
+
+		// Figure out if anyone's invitation signals need for a double bed.
+		doubleBedNeeded := false
+		for _, person := range booking.Roommates {
+			invitation := invitationMap[personToInvitationMap[person.IntID()]]
+			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
+		}
+
+		// Figure out if we need them to tell PSR to convert twin beds to double.
+		showConvertToDouble := doubleBedNeeded
+		log.Errorf(ctx, "%v, %v needs double bed: %v", *building, *room, doubleBedNeeded)
+		log.Errorf(ctx, "shareBedBit: %v, building.Properties: %v, room.Properties: %v", shareBedBit, building.Properties, room.Properties)
+		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
+			log.Errorf(ctx, "Trying the beds")
+			for _, bed := range room.Beds {
+				if bed == Double || bed == Queen || bed == King {
+					log.Errorf(ctx, "Found bed: %v", bed)
+					showConvertToDouble = false
+					break
+				}
+			}
+		}
 
 		for _, person := range booking.Roommates {
 			invitation := personToInvitationMap[person.IntID()]
