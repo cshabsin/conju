@@ -7,7 +7,49 @@
 {{end}}
 
 {{define "rooming_text"}}
-  TODO
+Dear {{CollectiveAddressFirstNames .PeopleComing 0}},
+
+
+Our Purity Spring weekend is coming up fast!{{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end}}
+{{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+{{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
+{{range .InviteeBookings}}
+{{if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:{{end}}
+{{if .Building}}{{- .Building.Name}}, room {{.Room.RoomNumber}}{{end}}
+{{if gt (len .RoomSharers) 0}}    with:
+  {{range .RoomSharers}}
+      {{SharerName . -}}
+  {{end}}
+{{if not .ReservationMade}}
+Be sure to coordinate with your roommates to make sure that only one person reserves this room.{{end}}
+{{end}}
+
+{{if .ReservationMade}}
+  Your reservation has already been made with Purity Spring!  Consider this a purely informative email.
+{{end}}
+{{end}}
+  {{if gt (len .Unreserved) 1}}
+  Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve:
+{{range .Unreserved}}
+    {{.Building.Name}}, Room {{.Room.RoomNumber}}
+{{end}}
+They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
+  {{else if gt (len .Unreserved) 0}}
+Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
+
+{{if .ShowConvertToDouble}}
+Note: your room has all twin beds.  If you would like 2 of them pushed together to make a king, let Purity Spring know when you reserve your room and it will be taken care of before you arrive.
+{{end}}
+Because our weekend retreat is coming up alarmingly fast (eek!) we'd appreciate it if you could call in your reservation within the next few days.
+  {{end}}
+
+As always, you can update your rsvp or profile on our event website: {{.LoginLink}}
+
+We can't wait to see you in New Hampshire!
+
+
+Chris & Dana
+
 {{end}}
 
 {{define "rooming_html"}}
@@ -42,7 +84,7 @@
         {{SharerName .}}<br>
       {{end}}
 
-      </div><p>Be sure to coordinate with your roommates to make sure that only one person reserves this room.</p>
+      </div>{{if not .ReservationMade}}<p>Be sure to coordinate with your roommates to make sure that only one person reserves this room.</p>{{end}}
     {{end}}
 
     {{if .ReservationMade}}
