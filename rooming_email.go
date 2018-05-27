@@ -57,6 +57,24 @@ func handleAskSendRoomingEmail(wr WrappedRequest) {
 `, len(rendered_mail))
 }
 
+func handleAskSendUpdatesEmail(wr WrappedRequest) {
+	rendered_mail, err := getRoomingEmails(wr, "updates")
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
+			http.StatusInternalServerError)
+	}
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprintf(wr.ResponseWriter, `
+	Number of emails to send: %d<p>
+	<form method="POST" action="/doSendTestUpdatesEmail">
+	<input type="submit" value="Send Test Mail">
+	</form>
+	<form method="POST" action="/doSendRealUpdatesEmail">
+	<input type="submit" value="Send Real Mail">
+	</form>
+`, len(rendered_mail))
+}
+
 func handleSendTestRoomingEmail(wr WrappedRequest) {
 	handleSendRoomingEmail(wr, "rooming", true)
 }
