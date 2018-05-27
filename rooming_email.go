@@ -27,7 +27,7 @@ func handleTestSendRoomingEmail(wr WrappedRequest) {
 			http.StatusInternalServerError)
 	}
 	for _, rm := range rendered_mail {
-		wr.ResponseWriter.Write([]byte(rm.HTML))
+		wr.ResponseWriter.Write([]byte(rm.Text))
 	}
 }
 
@@ -161,7 +161,7 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 	}
 	type InviteeBookings map[BuildingRoom]InviteeRoomBookings
 
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
+	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
 	allInviteeBookings := make(map[int64]InviteeBookings)
 	for _, booking := range bookings {
 		room := roomsMap[booking.Room.IntID()]
@@ -273,17 +273,17 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 			})
 			var text bytes.Buffer
 			if err := text_tpl.ExecuteTemplate(&text, "rooming_text", data); err != nil {
-				log.Errorf(wr.Context, "%v", err)
+				log.Errorf(ctx, "%v", err)
 			}
 
 			var htmlBuf bytes.Buffer
 			if err := tpl.ExecuteTemplate(&htmlBuf, "rooming_html", data); err != nil {
-				log.Errorf(wr.Context, "%v", err)
+				log.Errorf(ctx, "%v", err)
 			}
 
 			var subject bytes.Buffer
 			if err := text_tpl.ExecuteTemplate(&subject, "rooming_subject", data); err != nil {
-				log.Errorf(wr.Context, "%v", err)
+				log.Errorf(ctx, "%v", err)
 			}
 			rendered_mail[p.DatastoreKey.IntID()] = RenderedMail{p, text.String(), htmlBuf.String(), subject.String()}
 		}
