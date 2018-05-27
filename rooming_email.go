@@ -34,6 +34,7 @@ func handleTestSendRoomingRelatedEmail(wr WrappedRequest, emailName string) {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
 	}
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	for _, rm := range rendered_mail {
 		wr.ResponseWriter.Write([]byte(rm.HTML))
 	}
