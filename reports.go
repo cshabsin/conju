@@ -33,9 +33,25 @@ func handleRsvpReport(wr WrappedRequest) {
 	allRsvpMap := make(map[RsvpStatus][][]Person)
 	var allNoRsvp [][]Person
 
+	thursdayDinnerCount := 0
+	yesFridayLunch := 0
+	noFridayLunch := 0
+	fridayDinnerCount := 0
+	fridayIceCreamCount := 0
+
 	for _, invitation := range invitations {
 
 		rsvpMap, noRsvp := invitation.ClusterByRsvp(ctx)
+
+		thursdayDinnerCount += invitation.ThursdayDinnerCount
+		fridayDinnerCount += invitation.FridayDinnerCount
+		fridayIceCreamCount += invitation.FridayIceCreamCount
+		thursdayCount := len(rsvpMap[ThuFriSat])
+		if invitation.FridayLunch {
+			yesFridayLunch += thursdayCount
+		} else {
+			noFridayLunch += thursdayCount
+		}
 
 		for r, p := range rsvpMap {
 			listOfLists := allRsvpMap[r]
@@ -54,10 +70,15 @@ func handleRsvpReport(wr WrappedRequest) {
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"RsvpMap":         allRsvpMap,
-		"NoRsvp":          allNoRsvp,
-		"StatusOrder":     statusOrder,
-		"AllRsvpStatuses": GetAllRsvpStatuses(),
+		"RsvpMap":             allRsvpMap,
+		"NoRsvp":              allNoRsvp,
+		"StatusOrder":         statusOrder,
+		"AllRsvpStatuses":     GetAllRsvpStatuses(),
+		"ThursdayDinnerCount": thursdayDinnerCount,
+		"FridayLunchYes":      yesFridayLunch,
+		"FridayLunchNo":       noFridayLunch,
+		"FridayDinnerCount":   fridayDinnerCount,
+		"FridayIceCreamCount": fridayIceCreamCount,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)

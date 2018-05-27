@@ -55,6 +55,12 @@ function adjustTotals() {
 </script>
 
 <h1>RSVP Report</h1>
+Thursday Dinner: {{.ThursdayDinnerCount}}<br>
+Friday Lunch: {{.FridayLunchYes}} Yes, {{.FridayLunchNo}} No<br>
+Friday Dinner: {{.FridayDinnerCount}}<br>
+Friday Ice Cream: {{.FridayIceCreamCount}}<br>
+<br><br>
+
 {{$allStatuses := .AllRsvpStatuses}}
 {{$rsvpMap := .RsvpMap}}
 {{$currentEvent := .CurrentEvent}}
