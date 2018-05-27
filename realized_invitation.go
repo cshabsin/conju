@@ -25,6 +25,10 @@ type RealizedInvitation struct {
 	LeaveTime                 string
 	TravelNotes               string
 	AdditionalPassengers      string
+	ThursdayDinnerCount       int
+	FridayLunch               bool
+	FridayDinnerCount         int
+	FridayIceCreamCount       int
 	OtherInfo                 string
 	LastUpdatedPerson         PersonWithKey
 	LastUpdatedTimestamp      time.Time
@@ -121,6 +125,10 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 		LeaveTime:                 invitation.LeaveTime,
 		AdditionalPassengers:      invitation.AdditionalPassengers,
 		TravelNotes:               invitation.TravelNotes,
+		ThursdayDinnerCount:       invitation.ThursdayDinnerCount,
+		FridayLunch:               invitation.FridayLunch,
+		FridayDinnerCount:         invitation.FridayDinnerCount,
+		FridayIceCreamCount:       invitation.FridayIceCreamCount,
 		OtherInfo:                 invitation.OtherInfo,
 		LastUpdatedPerson:         lastUpdatedPerson,
 		LastUpdatedTimestamp:      invitation.LastUpdatedTimestamp,
