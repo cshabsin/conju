@@ -30,11 +30,14 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		"HasHousingPreference":        RealInvHasHousingPreference,
 		"PronounString":               GetPronouns,
 		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"SharerName":                  MakeSharerName,
+		"DerefPeople":                 DerefPeople,
 	}
 	tpl, err := template.New("").Funcs(functionMap).ParseGlob("templates/email/*.html")
 	if err != nil {
 		return "", "", "", err
 	}
+
 	tpl, err = tpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
 	if err != nil {
 		return "", "", "", err
@@ -44,6 +47,8 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		"HasHousingPreference":        RealInvHasHousingPreference,
 		"PronounString":               GetPronouns,
 		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"SharerName":                  MakeSharerName,
+		"DerefPeople":                 DerefPeople,
 	}
 	text_tpl, err := text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/email/*.html")
 	if err != nil {
@@ -193,6 +198,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		subject = headerData.Subject
 	}
 	if err != nil {
+		log.Errorf(wr.Context, "Error rendering mail: %v", err)
 		return err
 	}
 	message := sendgrid.NewMail()
