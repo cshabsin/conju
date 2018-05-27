@@ -33,6 +33,10 @@ type Invitation struct {
 	LeaveTime                 string
 	AdditionalPassengers      string
 	TravelNotes               string
+	ThursdayDinnerCount       int
+	FridayLunch               bool
+	FridayDinnerCount         int
+	FridayIceCreamCount       int
 	OtherInfo                 string
 	LastUpdatedPerson         *datastore.Key
 	LastUpdatedTimestamp      time.Time
@@ -178,6 +182,23 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 			Name:  "TravelNotes",
 			Value: inv.TravelNotes,
 		},
+		{
+			Name:  "ThursdayDinnerCount",
+			Value: int64(inv.ThursdayDinnerCount),
+		},
+		{
+			Name:  "FridayLunch",
+			Value: inv.FridayLunch,
+		},
+		{
+			Name:  "FridayDinnerCount",
+			Value: int64(inv.FridayDinnerCount),
+		},
+		{
+			Name:  "FridayIceCreamCount",
+			Value: int64(inv.FridayIceCreamCount),
+		},
+
 		{Name: "OtherInfo",
 			Value: inv.OtherInfo,
 		},
@@ -302,6 +323,7 @@ func handleInvitations(wr WrappedRequest) {
 	if err != nil {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
+
 	realizedInvitations := makeRealizedInvitations(ctx, invitationKeys, invitations)
 
 	type Statistics struct {
@@ -549,6 +571,7 @@ func HasPreference(total int, mask int) bool {
 }
 
 func handleSaveInvitation(wr WrappedRequest) {
+	//ctx := appengine.NewContext(wr.Request)
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -637,11 +660,33 @@ func handleSaveInvitation(wr WrappedRequest) {
 	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
 	invitation.OtherInfo = wr.Request.Form.Get("otherInfo")
 
+	thursdayDinnerCount, err := strconv.Atoi(wr.Request.Form.Get("ThursdayDinnerCount"))
+	if err == nil {
+		invitation.ThursdayDinnerCount = thursdayDinnerCount
+	} else {
+		invitation.ThursdayDinnerCount = 0
+	}
+	fridayLunch := wr.Request.Form.Get("FridayLunch")
+	invitation.FridayLunch = (fridayLunch == "on")
+
+	fridayDinnerCount, err := strconv.Atoi(wr.Request.Form.Get("FridayDinnerCount"))
+	if err == nil {
+		invitation.FridayDinnerCount = fridayDinnerCount
+	} else {
+		invitation.FridayDinnerCount = 0
+	}
+	fridayIceCreamCount, err := strconv.Atoi(wr.Request.Form.Get("FridayIceCreamCount"))
+	if err == nil {
+		invitation.FridayIceCreamCount = fridayIceCreamCount
+	} else {
+		invitation.FridayIceCreamCount = 0
+	}
+
 	invitation.LastUpdatedPerson = wr.LoginInfo.PersonKey
 
 	invitation.LastUpdatedTimestamp = time.Now()
 
-	_, err := datastore.Put(wr.Context, invitationKey, &invitation)
+	_, err = datastore.Put(wr.Context, invitationKey, &invitation)
 	if err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}

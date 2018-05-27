@@ -36,6 +36,10 @@
     return status.attending;
   }
 
+  function thursday(val) {
+    var status = allStatuses[val];
+    return status.shortDescription == "ThuFriSat";
+  }
 
   function anyoneMeetsCriteria(criteriaChecker) {
     return $(".rsvpStatus").map((index, status, statuses) => {
@@ -79,7 +83,15 @@
     } else {
       $(".anyAttendeesContainer").hide();
     }
+   
+    if (anyoneMeetsCriteria(thursday)) {
+      $(".extraInfoThursday").show();
+    } else {
+      $(".extraInfoThursday").hide();
+    }
+
   }
+
 
   function adjustDrivingFields() {
     var drivingStatus = $(".drivingPreference").val()
@@ -357,6 +369,15 @@ function validate(form) {
       Anything else we should know about your travel plans?
     </div>
     <textarea class="freeformtextfield" id="id_travel_info" name="travelNotes">{{$Invitation.TravelNotes}}</textarea>
+    
+    <div class="inverted" style="padding: 25px; margin: 25px 0px;width:1000px;">
+    <div class="extraInfoThursday" style="display:none;">
+      Thursday night we'll have dinner in the restaurant in PSR's on-site restaurant, around 7pm.  How many people in your party will join us? <input style="margin-left:20px;" type="text" name="ThursdayDinnerCount" size="1" value="{{if gt $Invitation.ThursdayDinnerCount 0}}{{$Invitation.ThursdayDinnerCount}}{{end}}"/><br>
+      We have the option to have lunch provided on Friday for an additional $11/person.  Would your party be interested? <input style="margin-left:20px" type="checkbox" name="FridayLunch"{{if $Invitation.FridayLunch}} checked{{end}}>
+    </div>
+    Friday night we'll have a sandwich bar available for a light dinner.  How many people in your party want Friday dinner? <input style="margin-left:20px;" type="text" name="FridayDinnerCount" size="1"/ value="{{if gt $Invitation.FridayDinnerCount 0}}{{$Invitation.FridayDinnerCount}}{{end}}"><br>
+    Then we'll have ice cream for dessert.  How many people in your party want ice cream?  <input style="margin-left:20px;" type="text" name="FridayIceCreamCount" size="1" value="{{if gt $Invitation.FridayIceCreamCount 0}}{{$Invitation.FridayIceCreamCount}}{{end}}"/><br>
+    </div>
 
     <h4>Anything else?</h4>
     Anything else you'd like us to know in advance of the weekend?<br>

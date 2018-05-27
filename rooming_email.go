@@ -20,8 +20,16 @@ type RenderedMail struct {
 	Subject string
 }
 
+func handleTestSendUpdatesEmail(wr WrappedRequest) {
+	handleTestSendRoomingRelatedEmail(wr, "updates")
+}
+
 func handleTestSendRoomingEmail(wr WrappedRequest) {
-	rendered_mail, err := getRoomingEmails(wr)
+	handleTestSendRoomingRelatedEmail(wr, "rooming")
+}
+
+func handleTestSendRoomingRelatedEmail(wr WrappedRequest, emailName string) {
+	rendered_mail, err := getRoomingEmails(wr, emailName)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -32,7 +40,7 @@ func handleTestSendRoomingEmail(wr WrappedRequest) {
 }
 
 func handleAskSendRoomingEmail(wr WrappedRequest) {
-	rendered_mail, err := getRoomingEmails(wr)
+	rendered_mail, err := getRoomingEmails(wr, "rooming")
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -50,20 +58,28 @@ func handleAskSendRoomingEmail(wr WrappedRequest) {
 }
 
 func handleSendTestRoomingEmail(wr WrappedRequest) {
-	handleSendRoomingEmail(wr, true)
+	handleSendRoomingEmail(wr, "rooming", true)
 }
 
 func handleSendRealRoomingEmail(wr WrappedRequest) {
-	handleSendRoomingEmail(wr, false)
+	handleSendRoomingEmail(wr, "rooming", false)
 }
 
-func handleSendRoomingEmail(wr WrappedRequest, isTest bool) {
+func handleSendTestUpdatesEmail(wr WrappedRequest) {
+	handleSendRoomingEmail(wr, "updates", true)
+}
+
+func handleSendRealUpdatesEmail(wr WrappedRequest) {
+	handleSendRoomingEmail(wr, "updates", false)
+}
+
+func handleSendRoomingEmail(wr WrappedRequest, emailName string, isTest bool) {
 	if wr.Method != "POST" {
 		http.Error(wr.ResponseWriter, "Invalid GET on send mail handler.",
 			http.StatusBadRequest)
 		return
 	}
-	rendered_mail, err := getRoomingEmails(wr)
+	rendered_mail, err := getRoomingEmails(wr, emailName)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -91,7 +107,7 @@ func handleSendRoomingEmail(wr WrappedRequest, isTest bool) {
 	}
 }
 
-func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
+func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMail, error) {
 	// Cribbed heavily from handleRoomingReport
 	ctx := wr.Context
 
@@ -230,7 +246,8 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
-	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2018/email/rooming.html"))
+
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2018/email/" + emailName + ".html"))
 
 	textFunctionMap := text_template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
@@ -257,6 +274,16 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
 			}
 		}
+
+		thursday := false
+		for i, _ := range ri.InviteePeople {
+			status := ri.RsvpMap[ri.Invitees[i].Key].Status
+			if status == ThuFriSat {
+				thursday = true
+				break
+			}
+		}
+
 		for i, p := range ri.InviteePeople {
 			if p.Email == "" {
 				continue
@@ -269,20 +296,21 @@ func getRoomingEmails(wr WrappedRequest) (map[int64]RenderedMail, error) {
 				"InviteeBookings": bookings,
 				"LoginLink":       makeLoginUrl(&p),
 				"PeopleComing":    people_coming,
+				"Thursday":        thursday,
 				"Unreserved":      unreserved,
 			})
 			var text bytes.Buffer
-			if err := text_tpl.ExecuteTemplate(&text, "rooming_text", data); err != nil {
+			if err := text_tpl.ExecuteTemplate(&text, emailName+"_text", data); err != nil {
 				log.Errorf(ctx, "%v", err)
 			}
 
 			var htmlBuf bytes.Buffer
-			if err := tpl.ExecuteTemplate(&htmlBuf, "rooming_html", data); err != nil {
+			if err := tpl.ExecuteTemplate(&htmlBuf, emailName+"_html", data); err != nil {
 				log.Errorf(ctx, "%v", err)
 			}
 
 			var subject bytes.Buffer
-			if err := text_tpl.ExecuteTemplate(&subject, "rooming_subject", data); err != nil {
+			if err := text_tpl.ExecuteTemplate(&subject, emailName+"_subject", data); err != nil {
 				log.Errorf(ctx, "%v", err)
 			}
 			rendered_mail[p.DatastoreKey.IntID()] = RenderedMail{p, text.String(), htmlBuf.String(), subject.String()}
