@@ -14,7 +14,8 @@ We can't wait to see you at Purity Spring in less than two weeks! For now, we ha
 
 * TL;DR: We need a little more information from you.  Go to your RSVP form and answer the questions in the blue box at the bottom: {{.LoginLink}}
 
-* Rooms: {{if eq (len .Unreserved) 0}}Thank you for promptly reserving your room.{{else}}Please take a few minutes to reserve your room.
+* Rooms: {{if eq (len .Unreserved) 0}}Thank you for promptly reserving your room.
+{{else}}Please take a few minutes to reserve your room.
 {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
 {{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
 {{range .InviteeBookings}}
@@ -50,7 +51,7 @@ Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Sh
 
  Please update your RSVP ({{.LoginLink}} -- there's a new, highlighted section at the bottom of the form) with your preferences.  We need you to do this pretty promptly since the event is almost here.
 {{else}}
-Friday Dinner: Because people will be arriving at all different times Friday night, we're not going to try to have dinner together. This year we're going to try having a sandwich bar and dessert and everyone can graze throughout the evening. There will be a refrigerator and a microwave available in our common space, so this dinner will be available as late as you need.  If you'll need dinner Friday, we need to know.  Please update your RSVP ({{.LoginLink}} -- there's a new, highlighted section at the bottom of the form) with your preferences.  We need you to do this pretty promptly since the event is almost here.
+* Friday Dinner: Because people will be arriving at all different times Friday night, we're not going to try to have dinner together. This year we're going to try having a sandwich bar and dessert and everyone can graze throughout the evening. There will be a refrigerator and a microwave available in our common space, so this dinner will be available as late as you need.  If you'll need dinner Friday, we need to know.  Please update your RSVP ({{.LoginLink}} -- there's a new, highlighted section at the bottom of the form) with your preferences.  We need you to do this pretty promptly since the event is almost here.
 {{end}}
 
 {{if ne .Invitation.Driving.Preference 1}}* Rides: If you need a ride to the weekend, or if you have offered to carpool, expect more email from us real soon now.{{end}}
