@@ -35,7 +35,7 @@ func handleTestSendRoomingRelatedEmail(wr WrappedRequest, emailName string) {
 			http.StatusInternalServerError)
 	}
 	for _, rm := range rendered_mail {
-		wr.ResponseWriter.Write([]byte(rm.Text))
+		wr.ResponseWriter.Write([]byte(rm.HTML))
 	}
 }
 
@@ -256,7 +256,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
-	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/rooming.html"))
+	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/" + emailName + ".html"))
 
 	rendered_mail := make(map[int64]RenderedMail, 0)
 	for invitation, bookings := range allInviteeBookings {
