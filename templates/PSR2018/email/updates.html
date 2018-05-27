@@ -12,40 +12,37 @@ Nope, just kidding.  We promise not to do anything terrible with your informatio
 
 We can't wait to see you at Purity Spring in less than two weeks! For now, we have some updates for you.
 
-TL;DR: We need a little more information from you.  Go to your RSVP form and answer the questions in the blue box at the bottom: {{.LoginLink}}
+* TL;DR: We need a little more information from you.  Go to your RSVP form and answer the questions in the blue box at the bottom: {{.LoginLink}}
 
-Rooms: {{if eq (len .Unreserved) 0}}Thank you for promptly reserving your room.{{else}}Please take a few minutes to reserve your room.
-  {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
-  {{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
-  {{range .InviteeBookings}}{{if $MultiRoom}}
-      {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
-    {{end}}
-    {{if .Building}}{{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
-    {{if gt (len .RoomSharers) 0}}
-      with:
-      {{range .RoomSharers}}
-        {{SharerName .}}
-      {{end}}
-
-      {{if not .ReservationMade}}Be sure to coordinate with your roommates to make sure that only one person reserves this room.{{end}}
-    {{end}}
-    {{if .ShowConvertToDouble}}
-      Note: your room has all twin beds.  If you would like 2 of them pushed together to make a king, let Purity Spring know when you reserve your room and it will be taken care of before you arrive.</p>
-    {{end}}
+* Rooms: {{if eq (len .Unreserved) 0}}Thank you for promptly reserving your room.{{else}}Please take a few minutes to reserve your room.
+{{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+{{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
+{{range .InviteeBookings}}
+{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+{{end}}
+{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
+{{- if gt (len .RoomSharers) 0}} with:
+  {{- range .RoomSharers}}
+      {{SharerName . -}}
   {{end}}
-  {{if gt (len .Unreserved) 1}}
+{{if not .ReservationMade}}
+Be sure to coordinate with your roommates to make sure that only one person reserves this room.{{end}}
+{{end}}
+{{- if .ShowConvertToDouble}}
+    Note: your room has all twin beds.  If you would like 2 of them pushed together to make a king, let Purity Spring know when you reserve your room and it will be taken care of before you arrive.
+{{end}}
+{{end}}
+{{- if gt (len .Unreserved) 1}}
+Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve:
+{{range .Unreserved}}
+    {{.Building.Name}}, Room {{.Room.RoomNumber}}{{end}}
+They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
+  {{- else if gt (len .Unreserved) 0}}
+Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.{{end}}
+{{end}}
 
-  Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve:
-  {{range .Unreserved}}
-    {{.Building.Name}}, Room {{.Room.RoomNumber}}
-  {{end}}
-  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
-  {{else if gt (len .Unreserved) 0}}
-  Please call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of June 7-10, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.  They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.{{end}}
-  {{end}}
-
-{{if .Thursday}}
-More info: We need a few more pieces of information from you:
+{{- if .Thursday}}
+* More info: We need a few more pieces of information from you:
 
   -- Thursday Dinner: Thursday night we'll be having dinner at Traditions Restaurant in the building next door to the check in desk, tentatively at 7:00.  We need to give them a headcount for the reservation. (If a slightly different time would work better for your family, let us know via email.)
   -- Friday Lunch: We have the option to have PSR provide lunch for us on Friday, for an additional $11/person.  This is an all-or-nothing thing; if we opt in, even people who won't be around would be charged.  So if a comfortable majority wants lunch, we'll do it.  If we don't do lunch at the resort, then we can all go into Conway or something.  
@@ -56,14 +53,13 @@ More info: We need a few more pieces of information from you:
 Friday Dinner: Because people will be arriving at all different times Friday night, we're not going to try to have dinner together. This year we're going to try having a sandwich bar and dessert and everyone can graze throughout the evening. There will be a refrigerator and a microwave available in our common space, so this dinner will be available as late as you need.  If you'll need dinner Friday, we need to know.  Please update your RSVP ({{.LoginLink}} -- there's a new, highlighted section at the bottom of the form) with your preferences.  We need you to do this pretty promptly since the event is almost here.
 {{end}}
 
-{{if ne .Invitation.Driving.Preference 1}}Rides: If you need a ride to the weekend, or if you have offered to carpool, expect more email from us real soon now.{{end}}
+{{if ne .Invitation.Driving.Preference 1}}* Rides: If you need a ride to the weekend, or if you have offered to carpool, expect more email from us real soon now.{{end}}
 
-Puzzles: Many people are interested in doing a puzzle hunt! We will plan to do the most recent P&A Magazine, from May 19. So a) don't do it yourself and b) if you have already done it, let us know so we can pick another.
+* Puzzles: Many people are interested in doing a puzzle hunt! We will plan to do the most recent P&A Magazine, from May 19. So a) don't do it yourself and b) if you have already done it, let us know so we can pick another.
 
-More Puzzles: Unfortunately several of the people who usually bring jigsaw puzzles can't make it this year.  So if you have some you can transport easily please consider bringing them.
+* More Puzzles: Unfortunately several of the people who usually bring jigsaw puzzles can't make it this year.  So if you have some you can transport easily please consider bringing them.
 
-Role-playing: Emily has graciously offered to run a role-playing activity that would be suitable for kids.  If you or your children are interested in participating, email ekronald@gmail.com and let her know.
-
+* Role-playing: Emily has graciously offered to run a role-playing activity that would be suitable for kids.  If you or your children are interested in participating, email ekronald@gmail.com and let her know.
 
 
 As always, you can email us with questions or update your rsvp or profile on our event website: {{.LoginLink}}
