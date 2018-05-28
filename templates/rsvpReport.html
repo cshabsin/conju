@@ -64,6 +64,7 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
 {{$allStatuses := .AllRsvpStatuses}}
 {{$rsvpMap := .RsvpMap}}
 {{$currentEvent := .CurrentEvent}}
+{{$PersonToExtraInfoMap := .PersonToExtraInfoMap}}
 <div style="display:inline-block" class="rsvpSelector">
   {{range .StatusOrder}}
     <input class="statusCheckbox" type="checkbox" name="{{(index $allStatuses .).ShortDescription}}" checked>{{(index $allStatuses .).ShortDescription}}<br>
@@ -81,10 +82,12 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
 <span id="babies"></span> babies</br>
 
 <table class="rsvpReportTable">
+<tr><th>Status</th><th>Guests</th><th></th><th>Thursday Dinner</th><th>Friday Lunch</th><th>Friday Dinner</th><th>Friday Ice Cream</th></tr> 
 {{range .StatusOrder}}
   {{$status := .}}
   {{range (index $rsvpMap .)}}
-  {{$rsvpStatus := (index $allStatuses $status).ShortDescription}}
+    {{$rsvpStatus := (index $allStatuses $status).ShortDescription}}
+    {{$extraInfo := (index $PersonToExtraInfoMap (index . 0).DatastoreKey.IntID)}}
     <tr>
       <td>{{(index $allStatuses $status).ShortDescription}}</td>
       <td class="rsvpCell">
@@ -92,6 +95,11 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
 	  <div class="{{$rsvpStatus}}{{if (.IsAdultAtTime $currentEvent.StartDate)}} adult{{end}}{{if (.IsChildAtTime $currentEvent.StartDate)}} child{{end}}{{if (.IsBabyAtTime $currentEvent.StartDate)}} baby{{end}}">{{.FullNameWithAge $currentEvent.StartDate }}</div>
         {{end}}
       </td>
+      <td><a href="viewInvitation?invitation={{$extraInfo.InvitationKey}}">Invitation</td>
+      <td>{{$extraInfo.ThursdayDinnerCount}}</td>
+      <td>{{$extraInfo.FridayLunch}}</td>
+      <td>{{$extraInfo.FridayDinnerCount}}</td>
+      <td>{{$extraInfo.FridayIceCreamCount}}</td>
     </tr>
 
   {{end}}

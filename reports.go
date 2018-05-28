@@ -25,7 +25,7 @@ func handleRsvpReport(wr WrappedRequest) {
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	_, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
@@ -33,13 +33,22 @@ func handleRsvpReport(wr WrappedRequest) {
 	allRsvpMap := make(map[RsvpStatus][][]Person)
 	var allNoRsvp [][]Person
 
+	type ExtraInvitationInfo struct {
+		InvitationKey       string
+		ThursdayDinnerCount int
+		FridayLunch         bool
+		FridayDinnerCount   int
+		FridayIceCreamCount int
+	}
+
 	thursdayDinnerCount := 0
 	yesFridayLunch := 0
 	noFridayLunch := 0
 	fridayDinnerCount := 0
 	fridayIceCreamCount := 0
 
-	for _, invitation := range invitations {
+	personToExtraInfoMap := make(map[int64]*ExtraInvitationInfo)
+	for i, invitation := range invitations {
 
 		rsvpMap, noRsvp := invitation.ClusterByRsvp(ctx)
 
@@ -53,6 +62,14 @@ func handleRsvpReport(wr WrappedRequest) {
 			noFridayLunch += thursdayCount
 		}
 
+		ExtraInfo := ExtraInvitationInfo{
+			InvitationKey:       invitationKeys[i].Encode(),
+			ThursdayDinnerCount: invitation.ThursdayDinnerCount,
+			FridayLunch:         invitation.FridayLunch,
+			FridayDinnerCount:   invitation.FridayDinnerCount,
+			FridayIceCreamCount: invitation.FridayIceCreamCount,
+		}
+
 		for r, p := range rsvpMap {
 			listOfLists := allRsvpMap[r]
 			if listOfLists == nil {
@@ -60,25 +77,33 @@ func handleRsvpReport(wr WrappedRequest) {
 			}
 			listOfLists = append(listOfLists, p)
 			allRsvpMap[r] = listOfLists
+			personToExtraInfoMap[p[0].DatastoreKey.IntID()] = &ExtraInfo
+
 		}
 		if len(noRsvp) > 0 {
 			allNoRsvp = append(allNoRsvp, noRsvp)
 		}
 	}
 
+	for _, p := range allRsvpMap {
+		sort.Slice(p, func(a, b int) bool { return SortByLastFirstName(p[a][0], p[b][0]) })
+	}
+
+	sort.Slice(allNoRsvp, func(a, b int) bool { return SortByLastFirstName(allNoRsvp[a][0], allNoRsvp[b][0]) })
 	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"RsvpMap":             allRsvpMap,
-		"NoRsvp":              allNoRsvp,
-		"StatusOrder":         statusOrder,
-		"AllRsvpStatuses":     GetAllRsvpStatuses(),
-		"ThursdayDinnerCount": thursdayDinnerCount,
-		"FridayLunchYes":      yesFridayLunch,
-		"FridayLunchNo":       noFridayLunch,
-		"FridayDinnerCount":   fridayDinnerCount,
-		"FridayIceCreamCount": fridayIceCreamCount,
+		"RsvpMap":              allRsvpMap,
+		"NoRsvp":               allNoRsvp,
+		"StatusOrder":          statusOrder,
+		"AllRsvpStatuses":      GetAllRsvpStatuses(),
+		"ThursdayDinnerCount":  thursdayDinnerCount,
+		"FridayLunchYes":       yesFridayLunch,
+		"FridayLunchNo":        noFridayLunch,
+		"FridayDinnerCount":    fridayDinnerCount,
+		"FridayIceCreamCount":  fridayIceCreamCount,
+		"PersonToExtraInfoMap": personToExtraInfoMap,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
