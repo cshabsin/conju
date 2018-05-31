@@ -446,3 +446,70 @@ func handleSaveReservations(wr WrappedRequest) {
 
 	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }
+
+type Meal int
+
+const (
+	FriBrk = iota
+	FriLun
+	FriDin
+	SatBrk
+	SatLun
+	SatDin
+	SunBrk
+	SunLun
+)
+
+func handleFoodReport(wr WrappedRequest) {
+	ctx := wr.Context
+	currentEventKeyEncoded := wr.Values["EventKey"].(string)
+	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+
+	allRsvpStatuses := GetAllRsvpStatuses()
+	totalRestrictions := len(GetAllFoodRestrictionTags())
+
+	counts := make([]int, totalRestrictions)
+	personToRestrictions := make(map[int64][]bool)
+	var people []Person
+
+	var invitations []*Invitation
+	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
+	_, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
+	}
+
+	for _, inv := range invitations {
+
+		for p, s := range inv.RsvpMap {
+
+			status := allRsvpStatuses[s]
+			if status.Attending {
+				var person Person
+				datastore.Get(ctx, p, &person)
+				people = append(people, person)
+				restrictionsForPerson := make([]bool, totalRestrictions)
+				for _, restriction := range person.FoodRestrictions {
+					counts[restriction]++
+					restrictionsForPerson[restriction] = true
+				}
+				personToRestrictions[p.IntID()] = restrictionsForPerson
+			}
+		}
+
+	}
+
+	sort.Slice(people, func(a, b int) bool { return SortByLastFirstName(people[a], people[b]) })
+
+	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/foodReport.html"))
+	data := wr.MakeTemplateData(map[string]interface{}{
+		"AllRestrictions":      GetAllFoodRestrictionTags(),
+		"Counts":               counts,
+		"People":               people,
+		"PersonToRestrictions": personToRestrictions,
+	})
+
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "foodReport.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}

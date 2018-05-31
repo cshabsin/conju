@@ -1,0 +1,51 @@
+{{template "main.html" .}}
+{{define "body"}}
+<style>
+table {
+   margin:30px;
+   border-collapse:collapse;
+}
+td {
+  padding:3px 13px;
+  border:1px solid #1F1497; text-align:center;
+}
+
+td:first-child {
+  text-align:left;
+  padding-right:50px;
+}
+</style>
+
+
+<h1>Food Restrictions</h1>
+
+
+<table>
+{{$Counts := .Counts}}
+<!--<tr><td></td><td>Friday Breakfast</td><td>Friday Lunch</td><td>Friday Dinner</td><td>Saturday Breakfast</td><td>Saturday Lunch</td><td>Saturday Dinner</td><td>Sunday Breakfast</td><td>Sunday Lunch</td></tr>-->
+{{range $i, $r := .AllRestrictions}}
+<tr><td>{{$r.Description}}</td><td>{{index $Counts $i}}</td></tr>
+{{end}}
+</table>
+
+{{$PersonToRestrictions := .PersonToRestrictions}}
+<table class="byPersonTable">
+<tr><td></td>
+{{range .AllRestrictions}}
+<td style="width:20px">{{.Description}}</td>
+{{end}}
+<td></td></tr>
+{{range .People}}
+<tr>
+<td>{{.FullName}}</td>
+{{range (index $PersonToRestrictions .DatastoreKey.IntID)}}
+<td>{{if .}}X{{end}}</td>
+{{end}}
+<td style="text-align:left">{{.FoodNotes}}
+<tr>
+{{end}}
+
+</table>
+
+
+{{end}}
