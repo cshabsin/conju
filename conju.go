@@ -46,6 +46,7 @@ func init() {
 	AddSessionHandler("/roomingReport", handleRoomingReport).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/handleSaveReservations", handleSaveReservations).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/foodReport", handleFoodReport).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/ridesReport", handleRidesReport).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/saveRooming", handleSaveRooming).Needs(PersonGetter).Needs(AdminGetter)

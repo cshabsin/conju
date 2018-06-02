@@ -513,3 +513,108 @@ func handleFoodReport(wr WrappedRequest) {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }
+
+func handleRidesReport(wr WrappedRequest) {
+	ctx := wr.Context
+	currentEventKeyEncoded := wr.Values["EventKey"].(string)
+	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+
+	allRsvpStatuses := GetAllRsvpStatuses()
+
+	type CarRequest struct {
+		People               []*Person
+		Preference           DrivingPreference
+		AlsoDrive            bool
+		LeaveFrom            string
+		LeaveTime            string
+		AdditionalPassengers string
+		TravelNotes          string
+	}
+
+	var ThursdayDrivers []CarRequest
+	var ThursdayRiders []CarRequest
+	var FridayDrivers []CarRequest
+	var FridayRiders []CarRequest
+
+	var ThursdayIndependent []CarRequest
+	var FridayIndependent []CarRequest
+
+	var invitations []*Invitation
+	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
+	_, err := q.GetAll(ctx, &invitations)
+	if err != nil {
+		log.Errorf(ctx, "fetching invitations: %v", err)
+	}
+
+	for _, inv := range invitations {
+
+		var personKeys []*datastore.Key
+		thursday := false
+		for p, s := range inv.RsvpMap {
+			status := allRsvpStatuses[s]
+			if status.Attending {
+				personKeys = append(personKeys, p)
+			}
+			// TODO: split rides by person
+			if status.Status == ThuFriSat {
+				thursday = true
+			}
+		}
+
+		if len(personKeys) == 0 {
+			continue
+		}
+
+		var people = make([]*Person, len(personKeys))
+		err = datastore.GetMulti(ctx, personKeys, people)
+		if err != nil {
+			log.Errorf(ctx, "fetching people: %v", err)
+		}
+
+		request := CarRequest{
+			People:               people,
+			Preference:           (*inv).Driving,
+			AlsoDrive:            (*inv).Driving == DriveIfNeeded,
+			LeaveFrom:            (*inv).LeaveFrom,
+			LeaveTime:            (*inv).LeaveTime,
+			AdditionalPassengers: (*inv).AdditionalPassengers,
+			TravelNotes:          (*inv).TravelNotes,
+		}
+
+		if (*inv).Driving == Driving {
+			if thursday {
+				ThursdayDrivers = append(ThursdayDrivers, request)
+			} else {
+				FridayDrivers = append(FridayDrivers, request)
+			}
+
+		} else if (*inv).Driving == DrivingNotSet || (*inv).Driving == NoCarpool {
+			if thursday {
+				ThursdayIndependent = append(ThursdayIndependent, request)
+			} else {
+				FridayIndependent = append(FridayIndependent, request)
+			}
+		} else {
+			if thursday {
+				ThursdayRiders = append(ThursdayRiders, request)
+			} else {
+				FridayRiders = append(FridayRiders, request)
+			}
+		}
+
+	}
+
+	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/ridesReport.html"))
+	data := wr.MakeTemplateData(map[string]interface{}{
+		"ThursdayDrivers":     ThursdayDrivers,
+		"ThursdayRiders":      ThursdayRiders,
+		"ThursdayIndependent": ThursdayIndependent,
+		"FridayDrivers":       FridayDrivers,
+		"FridayRiders":        FridayRiders,
+		"FridayIndependent":   FridayIndependent,
+	})
+
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "ridesReport.html", data); err != nil {
+		log.Errorf(wr.Context, "%v", err)
+	}
+}

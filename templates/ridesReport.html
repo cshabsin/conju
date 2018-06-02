@@ -1,0 +1,140 @@
+{{template "main.html" .}}
+{{define "body"}}
+<style>
+
+.drivingInfoTable {
+   margin:15px 30px;
+   border-collapse:collapse;
+}
+.drivingInfoTable td {
+  padding:3px 13px;
+  border:1px solid #1F1497; text-align:center;
+  vertical-align: top;
+  text-align:left;
+}
+
+.frameTable {
+  margin-bottom:80px;
+}
+.frameTable td {
+  vertical-align: top;
+}
+.frameTable tr:first-child {
+  text-align: center;
+}
+
+</style>
+
+
+<h1>Rides</h1>
+
+{{/* todo: use sub-templates */}}
+<h2>Thursday</h2>
+<table class="frameTable">
+  <tr><td><h3>Drivers</h3></td><td><h3>Riders</h3></td></tr>
+  <tr>
+    <td>
+      <table class="drivingInfoTable" style="margin-bottom:50px">
+	{{range .ThursdayDrivers}}
+	  <tr>
+	    <td style="width:auto">
+	     {{range .People}}
+	        {{.FullName}}<br>
+	      {{end}}
+	    </td>
+	    <td>{{.LeaveFrom}}</td>
+	    <td>{{.LeaveTime}}</td>
+	    <td>{{.AdditionalPassengers}}</td>
+	    <td>{{.TravelNotes}}</td>
+	  </tr>
+	{{end}}
+      </table>
+      <h3>Independent</h3>
+      <table class="drivingInfoTable">
+	{{range .ThursdayIndependent}}
+	  <tr>
+	    <td style="width:auto">
+	      {{range .People}}
+	        {{.FullName}}<br>
+	      {{end}}
+	    </td>
+	    <td>{{.TravelNotes}}</td>
+	  </tr>
+	{{end}}
+      </table>
+    </td>
+    <td>
+      <table class="drivingInfoTable">
+	{{range .ThursdayRiders}}
+	  <tr>
+	    <td style="border-right:0px">{{if .AlsoDrive}}*{{end}}</td>
+	    <td style="border-left:0px">
+	      {{range .People}}
+	        {{.FullName}}<br>
+	      {{end}}
+	    </td>
+	    <td>{{.LeaveFrom}}</td>
+	    <td>{{.LeaveTime}}</td>
+	    <td>{{.TravelNotes}}</td>
+	  </tr>
+	{{end}}
+      </table>
+    </td>
+  </tr>
+</table>
+
+<h2>Friday</h2>
+<table class="frameTable">
+  <tr><td><h3>Drivers</h3></td><td><h3>Riders</h3></td></tr>
+  <tr>
+    <td>
+      <table class="drivingInfoTable">
+	{{range .FridayDrivers}}
+	  <tr>
+	    <td style="width:auto">
+	     {{range .People}}
+	        {{.FullName}}<br>
+	      {{end}}
+	    </td>
+	    <td>{{.LeaveFrom}}</td>
+	    <td>{{.LeaveTime}}</td>
+	    <td>{{.AdditionalPassengers}}</td>
+	    <td>{{.TravelNotes}}</td>
+	  </tr>
+	{{end}}
+      </table>
+      <h3>Independent</h3>
+      <table class="drivingInfoTable">
+	{{range .FridayIndependent}}
+	  <tr>
+	    <td style="width:auto">
+	      {{range .People}}
+	        {{.FullName}}<br>
+	      {{end}}
+	    </td>
+	    <td>{{.TravelNotes}}</td>
+	  </tr>
+	{{end}}
+      </table>
+    </td>
+    <td>
+      <table class="drivingInfoTable">
+	{{range .FridayRiders}}
+	  <tr>
+	    <td style="border-right:0px">{{if .AlsoDrive}}*{{end}}</td>
+	    <td style="border-left:0px">
+	      {{range .People}}
+	        {{.FullName}}<br>
+	      {{end}}
+	    </td>
+	    <td>{{.LeaveFrom}}</td>
+	    <td>{{.LeaveTime}}</td>
+	    <td>{{.TravelNotes}}</td>
+	  </tr>
+	{{end}}
+      </table>
+    </td>
+  </tr>
+</table>
+
+{{end}}
