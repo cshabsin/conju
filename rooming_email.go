@@ -28,15 +28,19 @@ func handleTestSendRoomingEmail(wr WrappedRequest) {
 	handleTestSendRoomingRelatedEmail(wr, "rooming")
 }
 
+func handleTestSendFinalEmail(wr WrappedRequest) {
+	handleTestSendRoomingRelatedEmail(wr, "final")
+}
+
 func handleTestSendRoomingRelatedEmail(wr WrappedRequest, emailName string) {
 	rendered_mail, err := getRoomingEmails(wr, emailName)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	for _, rm := range rendered_mail {
-		wr.ResponseWriter.Write([]byte(rm.Text))
+		wr.ResponseWriter.Write([]byte(rm.HTML))
 	}
 }
 
@@ -213,13 +217,10 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 
 		// Figure out if we need them to tell PSR to convert twin beds to double.
 		showConvertToDouble := doubleBedNeeded
-		log.Errorf(ctx, "%v, %v needs double bed: %v", *building, *room, doubleBedNeeded)
-		log.Errorf(ctx, "shareBedBit: %v, building.Properties: %v, room.Properties: %v", shareBedBit, building.Properties, room.Properties)
+
 		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
-			log.Errorf(ctx, "Trying the beds")
 			for _, bed := range room.Beds {
 				if bed == Double || bed == Queen || bed == King {
-					log.Errorf(ctx, "Found bed: %v", bed)
 					showConvertToDouble = false
 					break
 				}

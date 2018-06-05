@@ -64,6 +64,8 @@ func init() {
 	AddSessionHandler("/doSendTestUpdatesEmail", handleSendTestUpdatesEmail).Needs(AdminGetter)
 	AddSessionHandler("/doSendRealUpdatesEmail", handleSendRealUpdatesEmail).Needs(AdminGetter)
 
+	AddSessionHandler("/testFinalEmail", handleTestSendFinalEmail).Needs(AdminGetter)
+
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 
