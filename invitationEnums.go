@@ -60,7 +60,7 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		LongDescription:  "Will attend: Thursday - Sunday",
 		Attending:        true,
 		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
-		AddOnCost:        [5]float64{0, 102.46, 57.77, 42.87, 35.43},
+		AddOnCost:        [5]float64{0, 113.36, 68.67, 53.77, 46.33},
 		Meals:            []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
