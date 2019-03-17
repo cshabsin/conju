@@ -107,6 +107,11 @@ metadata:
 name: projects/.../operations/...
 ```
 
+## Adding a new DNS entry
+
+Go to Google Cloud Console, select AppEngine > Settings > Custom Domains. Click Add Custom Domain. 
+Follow [instructions](https://cloud.google.com/appengine/docs/standard/python/mapping-custom-domains).
+
 ## Useful Links
 
 Useful Go tutorial: http://tour.golang.org/  
