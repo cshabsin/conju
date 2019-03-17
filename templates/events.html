@@ -1,0 +1,96 @@
+{{template "main.html" .}}
+
+{{define "body"}}
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script type="text/JavaScript" src="/media/jquery-3.3.1.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script>
+    $( function() {
+      $( "#startDatepicker" ).datepicker();
+      $( "#endDatepicker" ).datepicker();
+    } );
+
+    function selectRoomsForBuilding(buildingCode) {
+      $("." + buildingCode + "_room").show();
+      var checked = $("#" + buildingCode + "Checkbox").is(':checked');
+      $("." + buildingCode + "_room input:checkbox").attr("checked", checked);
+    }
+
+  </script>
+
+
+<table class="listTable">
+  <tr><th>Short Name</th><th>Name</th><th>Dates</th><th>Venue</th></tr>
+  {{$VenueMap := .VenueMap}}
+  {{range .Events}}
+    <tr{{if .Current}} class="currentEvent"{{end}}>
+      <td>{{.ShortName}}</td>
+      <td>{{.Name}}</td>
+      <td>{{.StartDate.Format "01/02/2006"}} - {{.EndDate.Format "01/02/2006"}}</td>
+      <td>{{(index $VenueMap (dereferenceKey .Venue)).Name}}</td>
+    </tr>
+{{end}}
+</table>
+{{$VenueKeyMap := .VenueEncodedKeyMap}}
+<form action="createUpdateEvent" method="GET">
+  <table class="formtable">
+      <tr><td>Short Name:</td><td><input type="text" name="shortName" value=""></td></tr>
+      <tr><td>Name:</td><td><input type="text" name="name" value=""></td></tr>
+      <tr><td>Start Date:</td><td><input type="text" id="startDatepicker" name="startDate" value=""></td></tr>
+      <tr><td>End Date:</td><td><input type="text" id="endDatepicker" name="endDate" value=""></td></tr>
+      <tr>
+        <td>Venue:</td>
+        <td>
+	  <select id="venueSelect" name="venue">
+	    {{range $key, $value := .VenueMap}}
+  	        <option value="{{(index $VenueKeyMap $key)}}">{{$value.Name}}</option>
+            {{end}}
+        </td>
+      </tr>
+      <tr>
+	<td>Rooms:</td>
+	<td>
+	  <table>
+	    {{$BuildingRoomMap := .BuildingRoomMap}}
+	    {{$BuildingKeyMap := .BuildingKeyMap}}
+	    {{range $buildingId := .BuildingOrder}}
+	    {{$building := (index $BuildingKeyMap $buildingId)}}
+	    {{$roomList := (index $BuildingRoomMap $buildingId)}}
+  	      <tr><td><input type="checkbox" value="{{$building.Code}}" id="{{$building.Code}}Checkbox" onchange="selectRoomsForBuilding('{{$building.Code}}')"> {{$building.Name}} <span onclick="$('.{{$building.Code}}_room').show()">+</span></td></tr>
+	        {{range $room := $roomList}}
+	          <tr style="display:none" class="{{$building.Code}}_room"><td style="padding-left: 50px"><input type="checkbox" name="rooms" value="{{$building.Code}}_{{$room.RoomNumber}}">{{$room.RoomNumber}} {{$room.Partition}}</td></tr>
+	        {{end}}
+	    {{end}}
+	  </table>
+        </td>
+      </tr>
+      <tr>
+	<td>RSVP statuses:</td>
+	<td>
+	  <table>
+	    {{range $i, $rsvpStatus := .RsvpStatuses}}
+	      <tr><td><input name="rsvpStatus" value="{{$i}}" type="checkbox"></td><td>{{.ShortDescription}}</td></tr>
+	    {{end}}
+	  </table>
+        </td>
+      </tr>
+      <tr>
+	<td>Activities:</td>
+	<td>
+	  <table>
+	    {{range $activity := .ActivitiesWithKeys}}
+	      <tr><td><input name="activity" type="checkbox" value="{{.EncodedKey}}"></td><td>{{.Activity.Keyword}}</td></tr>
+	    {{end}}
+	  </table>
+        </td>
+      </tr>
+      <tr>
+	<td>Set as Current?</td>
+	<td><input name="current" type="checkbox"></td>
+      </tr>
+  </table>
+
+  <input type="submit">
+</form>
+{{end}}
+
