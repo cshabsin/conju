@@ -8,7 +8,7 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-const SiteLink = "https://psr2018.shabsin.com"
+const SiteLink = "https://psr2019.shabsin.com"
 
 func init() {
 
@@ -38,6 +38,9 @@ func init() {
 	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/viewInvitation", handleViewInvitationAdmin).Needs(PersonGetter).Needs(AdminGetter)
 	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(InvitationGetter)
+
+	AddSessionHandler("/events", handleEvents).Needs(PersonGetter).Needs(AdminGetter)
+	AddSessionHandler("/createUpdateEvent", handleCreateUpdateEvent).Needs(PersonGetter).Needs(AdminGetter)
 
 	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(InvitationGetter)
 

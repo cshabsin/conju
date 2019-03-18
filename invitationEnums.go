@@ -16,6 +16,7 @@ const (
 	WeddingOnly
 	Fri
 	Sat
+	MealsOnly
 )
 
 type RsvpStatusInfo struct {
@@ -98,6 +99,12 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		Status:           Sat,
 		ShortDescription: "Sat",
 		LongDescription:  "Will attend: Saturday - Sunday",
+		Attending:        true,
+	})
+	toReturn = append(toReturn, RsvpStatusInfo{
+		Status:           MealsOnly,
+		ShortDescription: "Meals",
+		LongDescription:  "Will need meals but not lodging",
 		Attending:        true,
 	})
 	return toReturn

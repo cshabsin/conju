@@ -427,15 +427,18 @@ func handleCopyInvitations(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	baseEventKeyEncoded := wr.Request.Form.Get("baseEvent")
+	log.Infof(ctx, "Found base event: %v", baseEventKeyEncoded)
 	if baseEventKeyEncoded == "" {
 		return
 	}
 
-	baseEventKey, _ := datastore.DecodeKey(baseEventKeyEncoded)
+	baseEventKey, err := datastore.DecodeKey(baseEventKeyEncoded)
+	log.Infof(ctx, "error decoding event key: %v", err)
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", baseEventKey)
 	q.GetAll(ctx, &invitations)
 
+	log.Infof(ctx, "Found %d invitations from copied event", len(invitations))
 	var newInvitations []Invitation
 	var newInvitationKeys []*datastore.Key
 	for _, invitation := range invitations {

@@ -327,3 +327,8 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
 .roomNumber {
   font-weight:bold;
 }
+
+.currentEvent {
+  background-color: #1F1497;
+  color: #EEEEEE;
+}
