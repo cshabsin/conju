@@ -11,6 +11,11 @@ indexes:
 # your application using appcfg.py.
 
 - kind: Building
+  properties:
+  - name: Venue
+  - name: Name
+
+- kind: Building
   ancestor: yes
   properties:
   - name: Name

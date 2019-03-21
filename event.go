@@ -129,6 +129,7 @@ func handleEvents(wr WrappedRequest) {
 
 		}
 
+		// whoops this query doesn't use venue
 		q = datastore.NewQuery("Room").Order("RoomNumber").Order("Partition")
 		_, _ = q.GetAll(ctx, &rooms)
 
@@ -251,5 +252,5 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	datastore.Put(ctx, EventKey, &event)
 
 	log.Infof(ctx, "event: %v", event)
-
+	http.Redirect(wr.ResponseWriter, wr.Request, "events", http.StatusSeeOther)
 }

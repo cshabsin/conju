@@ -502,6 +502,23 @@ func handleAddInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
+func handleDeleteInvitation(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	invitationKeyEncoded := wr.Request.Form.Get("invitation")
+	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
+	if err != nil {
+		log.Errorf(ctx, "key decryption error: %v", err)
+	}
+
+	err = datastore.Delete(ctx, invitationKey)
+	if err != nil {
+		log.Errorf(ctx, "invitation deletion error: %v", err)
+	}
+	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+}
+
 // handleViewInvitationUser handles /viewInvitation URLs.
 func handleViewInvitationAdmin(wr WrappedRequest) {
 	wr.Request.ParseForm()
