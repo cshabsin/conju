@@ -9,7 +9,7 @@ import (
 )
 
 func ClearAllData(wr WrappedRequest, entityNames []string) {
-	fmt.Fprintf(wr.ResponseWriter, "Disabled for now.")
+	fmt.Fprintf(wr.ResponseWriter, "Disabled for now.\n")
 	wr.Values["event"] = nil
 	wr.SaveSession()
 
