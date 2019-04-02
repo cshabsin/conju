@@ -35,14 +35,10 @@ type Event struct {
 	Current               bool
 }
 
-func getEventForHost(wr *WrappedRequest, e *Event, key **datastore.Key) (bool, error) {
-	host, ok := wr.Header["Host"]
-	if !ok {
-		return false, nil
-	}
-	// Potentially override event from hostname.
+func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, error) {
+	host := wr.GetHost()
 	// TODO: generalize this for multiple hostnames/events.
-	if strings.ToLower(host[0]) != "psr2019.shabsin.com" {
+	if host != "psr2019.shabsin.com" {
 		return false, nil
 	}
 	shortname := "PSR2019"
@@ -63,7 +59,7 @@ func getEventForHost(wr *WrappedRequest, e *Event, key **datastore.Key) (bool, e
 		log.Errorf(wr.Context, "Found more than one %s(url) event (%d)", shortname, len(keys))
 		return false, nil
 	}
-	*e = *events[0]
+	*e = events[0]
 	*key = keys[0]
 	return true, nil
 }
@@ -75,7 +71,7 @@ func EventGetter(wr *WrappedRequest) error {
 	}
 	wr.hasRunEventGetter = true
 	var key *datastore.Key
-	found, err := getEventForHost(wr, wr.Event, &key)
+	found, err := getEventForHost(wr, &wr.Event, &key)
 	if err != nil {
 		return err
 	}
