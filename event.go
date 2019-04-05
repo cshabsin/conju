@@ -35,13 +35,53 @@ type Event struct {
 	Current               bool
 }
 
+func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, error) {
+	host := wr.GetHost()
+	// TODO: generalize this for multiple hostnames/events.
+	if host != "psr2019.shabsin.com" {
+		return false, nil
+	}
+	shortname := "PSR2019"
+
+	var keys []*datastore.Key
+	var events []*Event
+	q := datastore.NewQuery("Event").Filter("ShortName =", shortname)
+	keys, err := q.GetAll(wr.Context, &events)
+	if err != nil {
+		log.Errorf(wr.Context, "Error querying for %s(url) event: %v", shortname, err)
+		return false, nil
+	}
+	if len(keys) == 0 {
+		log.Errorf(wr.Context, "Found no %s(url) event", shortname)
+		return false, nil
+	}
+	if len(keys) > 1 {
+		log.Errorf(wr.Context, "Found more than one %s(url) event (%d)", shortname, len(keys))
+		return false, nil
+	}
+	*e = events[0]
+	*key = keys[0]
+	return true, nil
+}
+
 // Sets up Event in the WrappedRequest.
 func EventGetter(wr *WrappedRequest) error {
 	if wr.hasRunEventGetter {
 		return nil // Only retrieve once.
 	}
 	wr.hasRunEventGetter = true
-	key, err := wr.RetrieveKeyFromSession("EventKey")
+	var key *datastore.Key
+	found, err := getEventForHost(wr, &wr.Event, &key)
+	if err != nil {
+		return err
+	}
+	if found {
+		wr.TemplateData["CurrentEvent"] = wr.Event
+		wr.EventKey = key
+		return nil
+	}
+
+	key, err = wr.RetrieveKeyFromSession("EventKey")
 	if err != nil {
 		return err
 	}

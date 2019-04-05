@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/sessions"
 	"gopkg.in/sendgrid/sendgrid-go.v2"
@@ -189,6 +190,20 @@ func (w WrappedRequest) GetBccAddress() string {
 
 func (w WrappedRequest) GetErrorAddress() string {
 	return os.Getenv("ERROR_ADDRESS")
+}
+
+func (w WrappedRequest) GetHost() string {
+	w.Request.ParseForm()
+	host, ok := w.Request.Form["host_override"]
+	if ok {
+		return host[0]
+	}
+	// TODO: add debug override.
+	host, ok = w.Header["Host"]
+	if !ok || len(host) == 0 {
+		return ""
+	}
+	return strings.ToLower(host[0])
 }
 
 /// WrappedResponseWriter simply records when the header has been
