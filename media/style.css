@@ -332,3 +332,7 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
   background-color: #1F1497;
   color: #EEEEEE;
 }
+
+.currentEvent a {
+  color: #EEEEEE;
+}
