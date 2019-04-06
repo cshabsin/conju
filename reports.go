@@ -20,7 +20,7 @@ func handleReports(wr WrappedRequest) {
 
 func handleRsvpReport(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKey = wr.EventKey
+	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
@@ -111,7 +111,7 @@ func handleRsvpReport(wr WrappedRequest) {
 
 func handleActivitiesReport(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKey = wr.EventKey
+	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
@@ -460,7 +460,7 @@ const (
 
 func handleFoodReport(wr WrappedRequest) {
 	ctx := wr.Context
-	currentEventKey = wr.EventKey
+	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 	totalRestrictions := len(GetAllFoodRestrictionTags())
@@ -513,7 +513,7 @@ func handleFoodReport(wr WrappedRequest) {
 
 func handleRidesReport(wr WrappedRequest) {
 	ctx := wr.Context
-	currentEventKey = wr.EventKey
+	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 
