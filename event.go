@@ -61,6 +61,7 @@ func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, 
 	}
 	*e = events[0]
 	*key = keys[0]
+	log.Errorf(wr.Context, "Found event for host: %v / %v", *e, *key)
 	return true, nil
 }
 
