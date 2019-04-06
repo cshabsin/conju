@@ -130,12 +130,17 @@ func handleEvents(wr WrappedRequest) {
 	q := datastore.NewQuery("Event").Order("-StartDate")
 
 	var allEvents []*Event
-	_, err := q.GetAll(ctx, &allEvents)
+	var allEventsEncodedKeys []string
+	eventKeys, err := q.GetAll(ctx, &allEvents)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
 		log.Errorf(ctx, "GetAll: %v", err)
 		return
 	}
+	for ev := 0; ev < len(eventKeys); ev++ {
+		allEventsEncodedKeys = append(allEventsEncodedKeys, eventKeys[ev].Encode())
+	}
+
 	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
 	log.Infof(ctx, "Rendering %d events", len(allEvents))
 
@@ -155,6 +160,7 @@ func handleEvents(wr WrappedRequest) {
 	var buildingPtrs []*Building
 	var buildingInts []int64
 	var rooms []*Room
+	roomMap := make(map[int64]Room)
 	buildingRoomMap := make(map[int64][]Room)
 	buildingKeyMap := make(map[int64]Building)
 	if len(allVenues) == 1 {
@@ -172,7 +178,7 @@ func handleEvents(wr WrappedRequest) {
 
 		// whoops this query doesn't use venue
 		q = datastore.NewQuery("Room").Order("RoomNumber").Order("Partition")
-		_, _ = q.GetAll(ctx, &rooms)
+		roomKeys, _ := q.GetAll(ctx, &rooms)
 
 		for j := 0; j < len(rooms); j++ {
 			//building := buildingKeyMap[rooms[j].Building.IntID()]
@@ -181,6 +187,7 @@ func handleEvents(wr WrappedRequest) {
 			roomList = append(roomList, *(rooms[j]))
 			buildingRoomMap[rooms[j].Building.IntID()] = roomList
 			//log.Infof(ctx, "room list size: %d", len(roomList))
+			roomMap[(*roomKeys[j]).IntID()] = *rooms[j]
 		}
 	}
 
@@ -194,22 +201,58 @@ func handleEvents(wr WrappedRequest) {
 		activitiesWithKeys = append(activitiesWithKeys, ActivityWithKey{Activity: activities[i], EncodedKey: encodedKey})
 	}
 
+	wr.Request.ParseForm()
+	editEventKeyEncoded := wr.Request.Form.Get("editEvent")
+	editEventKey, err := datastore.DecodeKey(editEventKeyEncoded)
+	var editEvent Event
+	err = datastore.Get(wr.Context, editEventKey, &editEvent)
+
+	eventRoomMap := make(map[string]bool)
+	rsvpStatusMap := make(map[int]bool)
+	activityMap := make(map[string]bool)
+	if editEventKey != nil {
+		for _, roomKey := range editEvent.Rooms {
+			room := roomMap[roomKey.IntID()]
+			building := buildingKeyMap[room.Building.IntID()]
+			eventRoomMap[building.Code+"_"+strconv.Itoa(room.RoomNumber)] = true
+		}
+		for _, status := range editEvent.RsvpStatuses {
+			rsvpStatusMap[int(status)] = true
+		}
+		for _, activityKey := range editEvent.Activities {
+			activityMap[activityKey.Encode()] = true
+		}
+	}
+
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"Events":             allEvents,
-		"VenueMap":           venueMap,
-		"VenueEncodedKeyMap": venueEncodedKeyMap,
-		"BuildingOrder":      buildingInts,
-		"BuildingKeyMap":     buildingKeyMap,
-		"BuildingRoomMap":    buildingRoomMap,
-		"RsvpStatuses":       GetAllRsvpStatuses(),
-		"ActivitiesWithKeys": activitiesWithKeys,
+		"Events":              allEvents,
+		"EventKeys":           allEventsEncodedKeys,
+		"VenueMap":            venueMap,
+		"VenueEncodedKeyMap":  venueEncodedKeyMap,
+		"BuildingOrder":       buildingInts,
+		"BuildingKeyMap":      buildingKeyMap,
+		"BuildingRoomMap":     buildingRoomMap,
+		"RsvpStatuses":        GetAllRsvpStatuses(),
+		"ActivitiesWithKeys":  activitiesWithKeys,
+		"EditEvent":           editEvent,
+		"EditEventKeyEncoded": editEventKeyEncoded,
+		"RsvpStatusMap":       rsvpStatusMap,
+		"ActivityMap":         activityMap,
+		"RoomMap":             eventRoomMap,
 	})
 
 	functionMap := template.FuncMap{
 		"makeLoginUrl":   makeLoginUrl,
 		"dereferenceKey": func(key *datastore.Key) datastore.Key { return *key },
+		"encodeKey": func(key *datastore.Key) string {
+			if key == nil {
+				return ""
+			} else {
+				return key.Encode()
+			}
+		},
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/events.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "events.html", data); err != nil {
@@ -229,6 +272,12 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	}
 
 	event := Event{}
+	eventKey := datastore.NewIncompleteKey(ctx, "Event", nil)
+	if form["editEventKeyEncoded"] != nil {
+		eventKey, _ = datastore.DecodeKey(form["editEventKeyEncoded"][0])
+		_ = datastore.Get(wr.Context, eventKey, &event)
+	}
+
 	venue, err := datastore.DecodeKey(form["venue"][0])
 	if err != nil {
 		log.Infof(ctx, "%v", err)
@@ -254,16 +303,15 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	for _, room := range form["rooms"] {
 
 		components := strings.Split(room, "_")
-		log.Infof(ctx, "found room in building "+components[0]+" with number "+components[1])
+		//log.Infof(ctx, "found room in building "+components[0]+" with number "+components[1])
 		q := datastore.NewQuery("Building").Filter("Code =", components[0]).KeysOnly()
 		buildingKeys, _ := q.GetAll(ctx, nil)
-		log.Infof(ctx, "Found building keys: %v", buildingKeys)
-		//q = datastore.NewQuery("Room").Ancestor(buildingKeys[0])
+		//log.Infof(ctx, "Found building keys: %v", buildingKeys)
 		roomNumber, _ := strconv.ParseInt(components[1], 10, 64)
-		log.Infof(ctx, "Room number: %v", roomNumber)
-		q = datastore.NewQuery("Room").Filter("Building =", buildingKeys[0]).KeysOnly() //.Filter("RoomNumber =", roomNumber).KeysOnly()
+		//log.Infof(ctx, "Room number: %v", roomNumber)
+		q = datastore.NewQuery("Room").Filter("Building =", buildingKeys[0]).Filter("RoomNumber =", roomNumber).KeysOnly()
 		roomKeys, _ := q.GetAll(ctx, nil)
-		log.Infof(ctx, "room keys: %v", roomKeys)
+		//log.Infof(ctx, "room keys: %v", roomKeys)
 
 		rooms = append(rooms, roomKeys[0])
 	}
@@ -289,8 +337,7 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	}
 
 	event.Current = current
-	EventKey := datastore.NewIncompleteKey(ctx, "Event", nil)
-	datastore.Put(ctx, EventKey, &event)
+	datastore.Put(ctx, eventKey, &event)
 
 	log.Infof(ctx, "event: %v", event)
 	http.Redirect(wr.ResponseWriter, wr.Request, "events", http.StatusSeeOther)
