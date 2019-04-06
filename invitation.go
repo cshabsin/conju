@@ -303,8 +303,7 @@ func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean)
 
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 
 	var notInvitedSet = make(map[datastore.Key]PersonWithKey)
 	personQuery := datastore.NewQuery("Person")
