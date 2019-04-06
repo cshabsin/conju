@@ -106,6 +106,7 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		ShortDescription: "Meals",
 		LongDescription:  "Will need meals but not lodging",
 		Attending:        true,
+		NoLodging:        true,
 	})
 	return toReturn
 }
