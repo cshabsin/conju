@@ -52,17 +52,19 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		ShortDescription: "FriSat",
 		LongDescription:  "Will attend: Friday - Sunday",
 		Attending:        true,
-		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
-		Meals:            []Meal{FriBrk, FriLun, FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
+		// TODO: make costs a property of the event
+		BaseCost: [5]float64{0, 272.50, 176.58, 144.61, 128.62},
+		Meals:    []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           ThuFriSat,
 		ShortDescription: "ThuFriSat",
 		LongDescription:  "Will attend: Thursday - Sunday",
 		Attending:        true,
-		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
-		AddOnCost:        [5]float64{0, 113.36, 68.67, 53.77, 46.33},
-		Meals:            []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
+		// TODO: make costs a property of the event
+		BaseCost:  [5]float64{0, 272.50, 176.58, 144.61, 128.62},
+		AddOnCost: [5]float64{0, 124.26, 76.30, 60.31, 52.32},
+		Meals:     []Meal{FriBrk, FriLun, FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           SatSun,
