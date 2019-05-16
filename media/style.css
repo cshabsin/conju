@@ -336,3 +336,8 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
 .currentEvent a {
   color: #EEEEEE;
 }
+
+.hostLiability {
+  font-weight: bold;
+  font-size: 200%;
+}

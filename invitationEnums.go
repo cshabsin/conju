@@ -26,8 +26,8 @@ type RsvpStatusInfo struct {
 	Attending        bool
 	Undecided        bool
 	NoLodging        bool
-	BaseCost         [5]float64
-	AddOnCost        [5]float64
+	BaseCost         [6]float64
+	AddOnCost        [6]float64
 	Meals            []Meal
 }
 
@@ -53,7 +53,7 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		LongDescription:  "Will attend: Friday - Sunday",
 		Attending:        true,
 		// TODO: make costs a property of the event
-		BaseCost: [5]float64{0, 272.50, 176.58, 144.61, 128.62},
+		BaseCost: [6]float64{0, 272.50, 176.58, 144.61, 128.62, 119.00},
 		Meals:    []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
@@ -62,8 +62,8 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		LongDescription:  "Will attend: Thursday - Sunday",
 		Attending:        true,
 		// TODO: make costs a property of the event
-		BaseCost:  [5]float64{0, 272.50, 176.58, 144.61, 128.62},
-		AddOnCost: [5]float64{0, 124.26, 76.30, 60.31, 52.32},
+		BaseCost:  [6]float64{0, 272.50, 176.58, 144.61, 128.62, 119.00},
+		AddOnCost: [6]float64{0, 124.26, 76.30, 60.31, 52.32, 47.52},
 		Meals:     []Meal{FriBrk, FriLun, FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
@@ -112,6 +112,16 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 	})
 	return toReturn
 }
+
+type PaymentType int
+
+const (
+	Cash = iota
+	Check
+	GoogleWallet
+	Venmo
+	PayPal
+)
 
 type HousingPreference int
 
