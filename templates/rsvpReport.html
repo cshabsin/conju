@@ -81,8 +81,11 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
 <span id="children"></span> children<br>
 <span id="babies"></span> babies</br>
 
+
+{{$personToCost := .PersonToCost}}
+
 <table class="rsvpReportTable">
-<tr><th>Status</th><th>Guests</th><th></th><th>Thursday Dinner</th><th>Friday Lunch</th><th>Friday Dinner</th><th>Friday Ice Cream</th></tr> 
+<tr><th>Status</th><th>Guests</th><th></th><!-- <th>Thursday Dinner</th><th>Friday Lunch</th><th>Friday Dinner</th><th>Friday Ice Cream</th>--> <th>Cost/Person</th><th>Total Cost</th></tr> 
 {{range .StatusOrder}}
   {{$status := .}}
   {{range (index $rsvpMap .)}}
@@ -96,10 +99,12 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
         {{end}}
       </td>
       <td><a href="viewInvitation?invitation={{$extraInfo.InvitationKey}}">Invitation</td>
-      <td>{{$extraInfo.ThursdayDinnerCount}}</td>
+<!--      <td>{{$extraInfo.ThursdayDinnerCount}}</td>
       <td>{{$extraInfo.FridayLunch}}</td>
       <td>{{$extraInfo.FridayDinnerCount}}</td>
-      <td>{{$extraInfo.FridayIceCreamCount}}</td>
+      <td>{{$extraInfo.FridayIceCreamCount}}</td> -->
+      <td>{{range .}}{{(index $personToCost .DatastoreKey.IntID)}}<br> {{end}}</td>
+      <td>{{$extraInfo.TotalCost}}</td>
     </tr>
 
   {{end}}

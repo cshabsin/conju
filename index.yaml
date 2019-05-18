@@ -10,6 +10,16 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
+- kind: Building
+  properties:
+  - name: Venue
+  - name: Name
+
+- kind: Building
+  ancestor: yes
+  properties:
+  - name: Name
+
 - kind: Event
   properties:
   - name: Current
@@ -25,3 +35,8 @@ indexes:
   properties:
   - name: LastName
   - name: FirstName
+
+- kind: Room
+  properties:
+  - name: RoomNumber
+  - name: Partition

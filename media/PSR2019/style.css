@@ -1,0 +1,135 @@
+@media only screen and (max-width:1000px) {
+  .sidebarPictures { display: none !important; }
+  .headerSidePicture { display: none !important; }
+  .mainContent { padding-left: 0px !important; }
+  .headerMainPicture img {width:100% !important; height:auto !important }
+  .homeMain { padding: 30px 0px !important }
+}
+
+.homeMain {
+    padding: 30px;
+    text-align: justify;
+    overflow: auto;
+    max-width: 800px;
+}
+
+.headerMainPicture {
+   display: inline-block; 
+   vertical-align:top;
+}
+
+.headerMainPicture img {
+   height:187px;
+   width: max-width;
+   margin: 3px;
+
+}
+
+.headerPictures, .textHeader {
+    white-space: nowrap;
+    width:100%;
+}
+
+.headerPictures img {
+    display: inline-block;
+}
+
+.headerSidePicture:nth-child(odd) img {
+    width: 250px;
+}
+
+.bottom {
+/*    white-space: nowrap;*/
+/*    width: 100% */
+}
+
+.sidebarPictures {
+    float: left;
+    vertical-align: top;
+    display: inline-block;
+}
+
+.sidebarPictures img{
+    vertical-align: top;
+    width: 250px;
+    margin:0px 3px 6px 3px;     
+    display: block;
+}
+
+.headerSidePicture {
+    display: inline-block;
+}
+
+.headerSidePicture img {
+    max-width: 100%;
+    max-height: 100%;
+    margin: 3px;
+}
+
+.textHeader {
+    text-align: center;
+}
+
+.lydia-superscript {
+    font-family: "Comic Sans MS", cursive, sans-serif;
+    position: relative;
+    top: 0px;
+    left: 10px;
+    font-size: 150%;
+    transform: rotate(-10deg);
+    color: #AA66FF;
+}
+
+.caret-subscript {
+    font-family: "Comic Sans MS", cursive, sans-serif;
+    font-size: 250%;
+    position: relative;
+    top: -35px;
+    left: -7px;
+    height: 0px;
+    color: #AA66FF;
+}
+
+.strike {
+    color: #AA66FF;
+    text-decoration: line-through;
+}
+
+.stricken {
+    color: #1F1497;
+}
+
+.textHeaderTitle {
+    margin-top:0px;
+}
+
+.textHeaderPlace {
+    margin:0px 0px 5px 0px;
+}
+
+.textHeaderDate {
+    margin:0px;
+}
+
+.mainContent {
+    padding-left:40px;
+    text-align: justify;
+}
+
+.rateTableContainer {
+    width: 100%;
+    text-align: center;
+    margin: 30px;
+}
+
+.rateTable {
+    margin: auto;
+    border-collapse: collapse;
+}
+
+.rateTable td, th {
+    border: 1px solid #1F1497;
+    padding:5px;
+    text-align: center;
+    vertical-align:top;
+}

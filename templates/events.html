@@ -1,0 +1,130 @@
+{{template "main.html" .}}
+
+{{define "body"}}
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script type="text/JavaScript" src="/media/jquery-3.3.1.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script>
+    $( function() {
+      $( "#startDatepicker" ).datepicker();
+      $( "#endDatepicker" ).datepicker();
+    } );
+
+    function selectRoomsForBuilding(buildingCode) {
+      $("." + buildingCode + "_room").show();
+      var checked = $("#" + buildingCode + "Checkbox").is(':checked');
+      $("." + buildingCode + "_room input:checkbox").attr("checked", checked);
+    }
+
+    $(function() {
+       $(".room:checked").each(function(i, val) {
+        $("." + $(val).attr("value").split("_")[0] + "_room").show();
+      });
+    });
+
+
+  </script>
+
+<table class="listTable">
+  <tr><th>Short Name</th><th>Name</th><th>Dates</th><th>Venue</th><th>Edit</th></tr>
+  {{$VenueMap := .VenueMap}}
+  {{$EventKeys := .EventKeys}}
+  {{range $i, $event := .Events}}
+    <tr{{if $event.Current}} class="currentEvent"{{end}}>
+      <td>{{$event.ShortName}}</td>
+      <td>{{$event.Name}}</td>
+      <td>{{$event.StartDate.Format "01/02/2006"}} - {{.EndDate.Format "01/02/2006"}}</td>
+      <td>{{(index $VenueMap (dereferenceKey .Venue)).Name}}</td>
+      <td><a href="events?editEvent={{(index $EventKeys $i)}}">Edit</a></td>
+    </tr>
+{{end}}
+</table>
+{{$VenueKeyMap := .VenueEncodedKeyMap}}
+{{$EditEvent := .EditEvent}}
+<form action="createUpdateEvent" method="GET">
+  <input type="hidden" name="editEventKeyEncoded" value="{{.EditEventKeyEncoded}}"/>
+  <table class="formtable">
+      <tr><td>Short Name:</td><td><input type="text" name="shortName" value="{{$EditEvent.ShortName}}"></td></tr>
+      <tr><td>Name:</td><td><input type="text" name="name" value="{{$EditEvent.Name}}"></td></tr>
+      <tr><td>Start Date:</td><td><input type="text" id="startDatepicker" name="startDate"
+          value="{{if (gt (len .EditEventKeyEncoded) 0)}}{{$EditEvent.StartDate.Format "01/02/2006"}}{{end}}"></td></tr> 
+      <tr><td>End Date:</td><td><input type="text" id="endDatepicker" name="endDate" 
+          value="{{if (gt (len .EditEventKeyEncoded) 0)}}{{$EditEvent.EndDate.Format "01/02/2006"}}{{end}}"></td></tr> 
+
+      <tr>
+        <td>Venue:</td>
+        <td>
+	  <select id="venueSelect" name="venue">
+	    {{range $key, $value := .VenueMap}}
+	        {{$optionValue := (index $VenueKeyMap $key)}} 
+  	        <option value="{{$optionValue}}"
+			{{if (eq (encodeKey $EditEvent.Venue) $optionValue)}} checked{{end}}
+                >{{$value.Name}}</option>
+            {{end}}
+	  </select>
+        </td>
+      </tr>
+      <tr>
+	<td>Rooms:</td>
+	<td>
+	  <table>
+	    {{$BuildingRoomMap := .BuildingRoomMap}}
+	    {{$BuildingKeyMap := .BuildingKeyMap}}
+	    {{$roomMap := .RoomMap}}
+	    {{range $buildingId := .BuildingOrder}}
+	    {{$building := (index $BuildingKeyMap $buildingId)}}
+	    {{$roomList := (index $BuildingRoomMap $buildingId)}}
+  	      <tr><td><input type="checkbox" value="{{$building.Code}}" id="{{$building.Code}}Checkbox" onchange="selectRoomsForBuilding('{{$building.Code}}')"> {{$building.Name}} <span onclick="$('.{{$building.Code}}_room').show()">+</span></td></tr>
+	        {{range $room := $roomList}}
+	          <tr style="display:none" class="{{$building.Code}}_room">
+		    <td style="padding-left: 50px">
+		      <input type="checkbox" class="room" name="rooms" value="{{$building.Code}}_{{$room.RoomNumber}}"{{if (index $roomMap (print $building.Code (print "_" $room.RoomNumber)))}} checked{{end}}>
+		      {{$room.RoomNumber}} {{$room.Partition}}
+		    </td></tr>
+	        {{end}}
+	    {{end}}
+	  </table>
+        </td>
+      </tr>
+      <tr>
+	    {{$rsvpStatusMap := .RsvpStatusMap}}
+	<td>RSVP statuses:</td>
+	<td>
+	  <table>
+
+	    {{range $i, $rsvpStatus := .RsvpStatuses}}
+	      <tr>
+		<td><input name="rsvpStatus" value="{{$i}}" type="checkbox"
+			   {{if (index $rsvpStatusMap $i)}} checked{{end}}
+			   ></td>
+                <td>{{.ShortDescription}}</td>
+	      </tr>
+	    {{end}}
+	  </table>
+        </td>
+      </tr>
+      <tr>
+	<td>Activities:</td>
+	<td>
+	  <table>
+	    {{$activityMap := .ActivityMap}}
+	    {{range $activity := .ActivitiesWithKeys}}
+	      <tr>
+		<td>
+		  <input name="activity" type="checkbox" value="{{.EncodedKey}}"{{if (index $activityMap .EncodedKey)}} checked{{end}}>
+		</td>
+		<td>{{.Activity.Keyword}}</td></tr>
+	    {{end}}
+	  </table>
+        </td>
+      </tr>
+      <tr>
+	<td>Set as Current?</td>
+	<td><input name="current" type="checkbox"{{if $EditEvent.Current}} checked{{end}}></td>
+      </tr>
+  </table>
+  <strong>If editing an event this does not yet deal with accommodating existing RSVP information!  Beware!</strong><br><br>
+  <input type="submit">
+</form>
+{{end}}
+

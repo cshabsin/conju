@@ -303,8 +303,7 @@ func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean)
 
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 
 	var notInvitedSet = make(map[datastore.Key]PersonWithKey)
 	personQuery := datastore.NewQuery("Person")
@@ -427,15 +426,18 @@ func handleCopyInvitations(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	baseEventKeyEncoded := wr.Request.Form.Get("baseEvent")
+	log.Infof(ctx, "Found base event: %v", baseEventKeyEncoded)
 	if baseEventKeyEncoded == "" {
 		return
 	}
 
-	baseEventKey, _ := datastore.DecodeKey(baseEventKeyEncoded)
+	baseEventKey, err := datastore.DecodeKey(baseEventKeyEncoded)
+	log.Infof(ctx, "error decoding event key: %v", err)
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", baseEventKey)
 	q.GetAll(ctx, &invitations)
 
+	log.Infof(ctx, "Found %d invitations from copied event", len(invitations))
 	var newInvitations []Invitation
 	var newInvitationKeys []*datastore.Key
 	for _, invitation := range invitations {
@@ -496,6 +498,23 @@ func handleAddInvitation(wr WrappedRequest) {
 		}
 	}
 
+	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+}
+
+func handleDeleteInvitation(wr WrappedRequest) {
+	ctx := appengine.NewContext(wr.Request)
+	wr.Request.ParseForm()
+
+	invitationKeyEncoded := wr.Request.Form.Get("invitation")
+	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
+	if err != nil {
+		log.Errorf(ctx, "key decryption error: %v", err)
+	}
+
+	err = datastore.Delete(ctx, invitationKey)
+	if err != nil {
+		log.Errorf(ctx, "invitation deletion error: %v", err)
+	}
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 

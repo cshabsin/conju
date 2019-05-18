@@ -3,6 +3,7 @@ package conju
 import (
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"sort"
 
@@ -20,8 +21,7 @@ func handleReports(wr WrappedRequest) {
 
 func handleRsvpReport(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
@@ -39,6 +39,7 @@ func handleRsvpReport(wr WrappedRequest) {
 		FridayLunch         bool
 		FridayDinnerCount   int
 		FridayIceCreamCount int
+		TotalCost           float64
 	}
 
 	thursdayDinnerCount := 0
@@ -48,8 +49,16 @@ func handleRsvpReport(wr WrappedRequest) {
 	fridayIceCreamCount := 0
 
 	personToExtraInfoMap := make(map[int64]*ExtraInvitationInfo)
-	for i, invitation := range invitations {
 
+	var bookings []Booking
+	b := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	_, _ = b.GetAll(ctx, &bookings)
+
+	personToCost := make(map[int64]float64)
+	personToRsvpStatus := make(map[int64]RsvpStatus)
+	personIdToPerson := make(map[int64]Person)
+
+	for i, invitation := range invitations {
 		rsvpMap, noRsvp := invitation.ClusterByRsvp(ctx)
 
 		thursdayDinnerCount += invitation.ThursdayDinnerCount
@@ -71,6 +80,10 @@ func handleRsvpReport(wr WrappedRequest) {
 		}
 
 		for r, p := range rsvpMap {
+			for _, personForStatus := range p {
+				personToRsvpStatus[personForStatus.DatastoreKey.IntID()] = r
+				personIdToPerson[personForStatus.DatastoreKey.IntID()] = personForStatus
+			}
 			listOfLists := allRsvpMap[r]
 			if listOfLists == nil {
 				listOfLists = make([][]Person, 0)
@@ -92,6 +105,59 @@ func handleRsvpReport(wr WrappedRequest) {
 	sort.Slice(allNoRsvp, func(a, b int) bool { return SortByLastFirstName(allNoRsvp[a][0], allNoRsvp[b][0]) })
 	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
 
+	for _, booking := range bookings {
+
+		FridaySaturday := 0
+		PlusThursday := 0
+		addThurs := make([]bool, len(booking.Roommates))
+
+		for i, person := range booking.Roommates {
+			rsvpStatus := personToRsvpStatus[person.IntID()]
+			if personIdToPerson[person.IntID()].IsBabyAtTime(wr.Event.StartDate) {
+				continue
+			}
+			if rsvpStatus == FriSat {
+				FridaySaturday++
+			}
+			if rsvpStatus == ThuFriSat {
+				FridaySaturday++
+				PlusThursday++
+				addThurs[i] = true
+			}
+		}
+
+		for i, person := range booking.Roommates {
+			if personIdToPerson[person.IntID()].IsBabyAtTime(wr.Event.StartDate) {
+				personToCost[person.IntID()] = 0
+				continue
+			}
+			costForPerson := float64(0)
+			if FridaySaturday <= 5 {
+				costForPerson = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
+			}
+
+			if addThurs[i] && PlusThursday <= 5 {
+				costForPerson += GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
+			}
+			costForPerson = math.Floor(costForPerson*100) / 100
+			personToCost[person.IntID()] = costForPerson
+		}
+	}
+
+	for status, personLists := range allRsvpMap {
+		if !GetAllRsvpStatuses()[status].Attending {
+			continue
+		}
+		for _, personList := range personLists {
+			totalCost := float64(0)
+			for _, person := range personList {
+				totalCost += personToCost[person.DatastoreKey.IntID()]
+			}
+			personToExtraInfoMap[personList[0].DatastoreKey.IntID()].TotalCost = math.Floor(totalCost*100) / 100
+		}
+
+	}
+
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"RsvpMap":              allRsvpMap,
@@ -104,6 +170,7 @@ func handleRsvpReport(wr WrappedRequest) {
 		"FridayDinnerCount":    fridayDinnerCount,
 		"FridayIceCreamCount":  fridayIceCreamCount,
 		"PersonToExtraInfoMap": personToExtraInfoMap,
+		"PersonToCost":         personToCost,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
@@ -112,8 +179,7 @@ func handleRsvpReport(wr WrappedRequest) {
 
 func handleActivitiesReport(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
@@ -307,6 +373,7 @@ func handleRoomingReport(wr WrappedRequest) {
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	// doesn't deal with consolidating partitioned rooms
 	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
+	var totalCostForEveryone float64
 	for i, booking := range bookings {
 		people := make([]Person, len(booking.Roommates))
 
@@ -351,13 +418,13 @@ func handleRoomingReport(wr WrappedRequest) {
 
 		basePPCost := float64(0)
 		basePPCostString := "???"
-		if FridaySaturday <= 4 {
+		if FridaySaturday <= 5 {
 			basePPCost = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
 			basePPCostString = fmt.Sprintf("$%.2f", basePPCost)
 		}
 		addOnPPCost := float64(0)
 		addOnPPCostString := "???"
-		if PlusThursday <= 4 {
+		if PlusThursday <= 5 {
 			addOnPPCost = GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
 			addOnPPCostString = fmt.Sprintf("$%.2f", addOnPPCost)
 		}
@@ -368,8 +435,9 @@ func handleRoomingReport(wr WrappedRequest) {
 		}
 
 		totalCost := float64(FridaySaturday)*basePPCost + float64(PlusThursday)*addOnPPCost
+		totalCostForEveryone += totalCost
 		totalCostString := fmt.Sprintf("$%.2f", totalCost)
-		if FridaySaturday > 4 || PlusThursday > 4 {
+		if FridaySaturday > 5 || PlusThursday > 5 {
 			totalCostString = "???"
 		}
 
@@ -406,7 +474,8 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingReport.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"BookingsByBuilding": realBookingsByBuilding,
+		"BookingsByBuilding":   realBookingsByBuilding,
+		"TotalCostForEveryone": totalCostForEveryone,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingReport.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
@@ -462,8 +531,7 @@ const (
 
 func handleFoodReport(wr WrappedRequest) {
 	ctx := wr.Context
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 	totalRestrictions := len(GetAllFoodRestrictionTags())
@@ -516,8 +584,7 @@ func handleFoodReport(wr WrappedRequest) {
 
 func handleRidesReport(wr WrappedRequest) {
 	ctx := wr.Context
-	currentEventKeyEncoded := wr.Values["EventKey"].(string)
-	currentEventKey, _ := datastore.DecodeKey(currentEventKeyEncoded)
+	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 

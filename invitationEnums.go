@@ -16,6 +16,7 @@ const (
 	WeddingOnly
 	Fri
 	Sat
+	MealsOnly
 )
 
 type RsvpStatusInfo struct {
@@ -25,8 +26,8 @@ type RsvpStatusInfo struct {
 	Attending        bool
 	Undecided        bool
 	NoLodging        bool
-	BaseCost         [5]float64
-	AddOnCost        [5]float64
+	BaseCost         [6]float64
+	AddOnCost        [6]float64
 	Meals            []Meal
 }
 
@@ -51,17 +52,19 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		ShortDescription: "FriSat",
 		LongDescription:  "Will attend: Friday - Sunday",
 		Attending:        true,
-		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
-		Meals:            []Meal{FriBrk, FriLun, FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
+		// TODO: make costs a property of the event
+		BaseCost: [6]float64{0, 272.50, 176.58, 144.61, 128.62, 119.00},
+		Meals:    []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           ThuFriSat,
 		ShortDescription: "ThuFriSat",
 		LongDescription:  "Will attend: Thursday - Sunday",
 		Attending:        true,
-		BaseCost:         [5]float64{0, 253.97, 164.59, 134.80, 119.90},
-		AddOnCost:        [5]float64{0, 102.46, 57.77, 42.87, 35.43},
-		Meals:            []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
+		// TODO: make costs a property of the event
+		BaseCost:  [6]float64{0, 272.50, 176.58, 144.61, 128.62, 119.00},
+		AddOnCost: [6]float64{0, 124.26, 76.30, 60.31, 52.32, 47.52},
+		Meals:     []Meal{FriBrk, FriLun, FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           SatSun,
@@ -100,8 +103,25 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		LongDescription:  "Will attend: Saturday - Sunday",
 		Attending:        true,
 	})
+	toReturn = append(toReturn, RsvpStatusInfo{
+		Status:           MealsOnly,
+		ShortDescription: "Meals",
+		LongDescription:  "Will need meals but not lodging",
+		Attending:        true,
+		NoLodging:        true,
+	})
 	return toReturn
 }
+
+type PaymentType int
+
+const (
+	Cash = iota
+	Check
+	GoogleWallet
+	Venmo
+	PayPal
+)
 
 type HousingPreference int
 
