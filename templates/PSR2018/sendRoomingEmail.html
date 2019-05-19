@@ -1,0 +1,18 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<h1>Sending Rooming Email</h1>
+
+<div id="email">
+  <label>Headers:</label>
+  <div id="headerEmail">
+    <b>Subject:</b> {{.Subject}}<br>
+    <b>To:</b> {{.To}}
+  </div>
+  <label>Text:</label>
+  <div id="textEmail">{{.Body}}</div>
+
+  <label>HTML:</label>
+  <div id="htmlEmail">{{.HTMLBody}}</div>>
+</div>
+{{end}}
