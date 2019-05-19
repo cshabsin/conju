@@ -572,14 +572,18 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		"AllParkingTypes":              GetAllParkingTypes(),
 		"InvitationHasChildren":        invitation.HasChildren(wr.Context),
 		"IsAdminUser":                  wr.IsAdminUser(),
+		"RoomingInfo":                  getRoomingInfo(wr, invitationKey),
 	})
 
 	functionMap := template.FuncMap{
-		"PronounString": GetPronouns,
-		"HasPreference": HasPreference,
+		"PronounString":               GetPronouns,
+		"HasPreference":               HasPreference,
+		"DerefPeople":                 DerefPeople,
+		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"SharerName":                  MakeSharerName,
 	}
 
-	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html"))
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}

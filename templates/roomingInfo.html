@@ -1,0 +1,48 @@
+{{define "roomingInfo"}}
+
+<div style="margin:20px">
+  {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+  {{if $MultiRoom}}
+    <strong>Your rooms:</strong><br>
+  {{else}}
+    <strong>Your room:</strong><br>
+  {{end}}
+  <div style="display:inline-block;margin-bottom:20px">
+
+  {{range .InviteeBookings}}
+  <div style="margin:10px 0px 15px 20px">
+    {{if $MultiRoom}}
+      {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+    {{end}}
+    {{if .Building}}
+      <b>{{.Building.Name}}, room {{.Room.RoomNumber}}</b>
+    {{end}}
+    {{if gt (len .RoomSharers) 0}}
+      with:<br>
+      <div style="margin-left:20px">
+      {{range .RoomSharers}}
+        {{SharerName .}}<br>
+      {{end}}
+
+      </div>
+    {{end}}
+
+  </div>
+  {{end}}
+
+  <strong>Cost:</strong>
+  <table style="margin:10px">
+  {{$PersonToCost := .PersonToCost}}
+  {{range $person := .OrderedInvitees}}
+    <tr><td>{{$person.FullName}}: </td><td style="text-align:right">{{index $PersonToCost $person}}</td></tr>
+  {{end}}
+  <tr><td style="padding-top:10px"><strong>Total Cost</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.TotalCost}}</strong></td></tr>
+</table>
+</div>
+</div>  
+
+  {{end}}
+
+
+
+
