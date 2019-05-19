@@ -1,0 +1,60 @@
+{{define "rooming_and_costs_subject"}}
+  Housing/Cost information for Purity Spring Resort weekend
+{{end}}
+
+{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .PeopleComing 0}},
+
+
+Our Purity Spring weekend is almost upon us! 
+
+This year we're doing things a little bit differently.  Purity Spring gave us the option of saving all of you some money if we made the reservations ourselves.  So we have!  You don't need to call the resort to reserve your room.
+
+However, this means we are on the hook for about $12,000, so if you could pay us promptly, before that comes due, we'd appreciate it. :)  You can give us a check (at the weekend is fine), or pay via Google Pay (xxxxx), Venmo (xxxxx), or PayPal (xxxxx).  As a last resort we will also accept piles of cash, but would rather not if possible.
+
+ {{/*
+{{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+{{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
+{{range .InviteeBookings}}
+{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+{{end}}
+{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
+{{- if gt (len .RoomSharers) 0}} with:
+  {{- range .RoomSharers}}
+      {{SharerName . -}}
+  {{end}}
+
+{{end}}
+*/}}
+If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.
+
+As always, you can update your rsvp or profile on our event website: {{.LoginLink}}
+
+We can't wait to see you in New Hampshire!
+
+
+Chris, Dana & Lydia
+{{end}}
+
+{{define "rooming_and_costs_html"}}
+<p>Dear {{CollectiveAddressFirstNames .PeopleComing 0}},<p>
+
+
+<p>Our Purity Spring weekend is almost upon us!</p>
+
+<p>This year we're doing things a little bit differently.  Purity Spring gave us the option of saving all of you some money if we made the reservations ourselves.  So we have!  You don't need to call the resort to reserve your room.</p>
+
+<p>However, this means we are on the hook for about $12,000, so if you could pay us promptly, before that comes due, we'd appreciate it. :)  You can give us a check (at the weekend is fine), or pay via Google Pay (xxxxx), Venmo (xxxxx), or PayPal (xxxxx).  As a last resort we will also accept piles of cash, but would rather not if possible.</p>
+
+<br>
+
+ {{/* {{template "roomingInfo" .RoomingInfo}}  */}}
+
+<p>As always, you can <a href="{{.LoginLink}}">update your rsvp or profile</a> on our event website.
+
+<p>We can't wait to see you in New Hampshire!</p>
+
+  Chris & Dana
+
+  </div>
+</div>
+{{end}}
