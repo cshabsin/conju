@@ -2,9 +2,10 @@ package conju
 
 import (
 	"context"
+	"math"
+
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
-	"math"
 )
 
 type Venue struct {
@@ -104,7 +105,6 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 	ctx := wr.Context
 
-	var roomingAndCostInfo RoomingAndCostInfo
 	var invitation Invitation
 	datastore.Get(wr.Context, invitationKey, &invitation)
 
@@ -286,7 +286,6 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 	}
 
-	roomingAndCostInfo.InviteeBookings = allInviteeBookings[invitationKey.IntID()]
 	inviteePersonToCost := make(map[*Person]float64)
 	var orderedInvitees []*Person
 	var totalCost float64
@@ -297,9 +296,10 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 		totalCost += personToCost[person]
 	}
 
-	roomingAndCostInfo.OrderedInvitees = orderedInvitees
-	roomingAndCostInfo.PersonToCost = inviteePersonToCost
-	roomingAndCostInfo.TotalCost = totalCost
-	return &roomingAndCostInfo
-
+	return &RoomingAndCostInfo{
+		InviteeBookings: allInviteeBookings[invitationKey.IntID()],
+		OrderedInvitees: orderedInvitees,
+		PersonToCost:    inviteePersonToCost,
+		TotalCost:       totalCost,
+	}
 }
