@@ -105,22 +105,26 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 	ctx := wr.Context
 
+	// Load the invitation.
 	var invitation Invitation
 	datastore.Get(wr.Context, invitationKey, &invitation)
 
+	// Load all bookings for the event.
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	allBookingKeys, _ := q.GetAll(ctx, &bookings)
 
-	bookingKeyToBookingMap := make(map[int64]Booking)
+	// Construct lookup maps on bookings - booking key to booking,
+	bookingKeyToBookingMap := make(map[int64]*Booking)
 	personToBookingMap := make(map[int64]int64)
 	for b, booking := range bookings {
-		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = booking
+		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = &booking
 		for _, person := range booking.Roommates {
 			personToBookingMap[person.IntID()] = allBookingKeys[b].IntID()
 		}
 	}
 
+	// Construct set of Booking ids that contain any people.
 	bookingSet := make(map[int64]bool)
 	for _, person := range invitation.Invitees {
 		if bookingId, ok := personToBookingMap[person.IntID()]; ok {
@@ -134,7 +138,7 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	}
 
 	var roomKeys []*datastore.Key
-	var bookingsForInvitation []Booking
+	var bookingsForInvitation []*Booking
 	for bookingId, _ := range bookingSet {
 		booking := bookingKeyToBookingMap[bookingId]
 		bookingsForInvitation = append(bookingsForInvitation, booking)
@@ -206,7 +210,6 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 		// Figure out if we need them to tell PSR to convert twin beds to double.
 		showConvertToDouble := doubleBedNeeded
-
 		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
 			for _, bed := range room.Beds {
 				if bed == Double || bed == Queen || bed == King {
@@ -237,13 +240,12 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 				}
 			}
 
-			inviteeBookings, found := allInviteeBookings[roommateInvitation]
-			if !found {
+			var inviteeBookings InviteeBookingsMap
+			if inviteeBookings, found := allInviteeBookings[roommateInvitation]; !found {
 				inviteeBookings = make(InviteeBookingsMap)
 				allInviteeBookings[roommateInvitation] = inviteeBookings
 			}
-			_, found = inviteeBookings[buildingRoom]
-			if !found {
+			if _, found := inviteeBookings[buildingRoom]; !found {
 				roommates := make([]*Person, 0)
 				roomSharers := make([]*Person, 0)
 				for _, maybeRoommate := range booking.Roommates {

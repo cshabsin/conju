@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+
 	//"reflect"
 	"regexp"
 	"strconv"
@@ -225,7 +226,7 @@ func getRoomsFromString(roomsString string, ctx context.Context, buildingsMap ma
 			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).Filter("RoomNumber =", roomNumber).KeysOnly()
 			roomKeys, err := q.GetAll(ctx, nil)
 			if err != nil {
-				log.Errorf(ctx, "fetching room %s %d: %v", parts[0], parts[1], err)
+				log.Errorf(ctx, "fetching room %v %d: %v", parts[0], parts[1], err)
 			}
 			rooms = append(rooms, roomKeys...)
 		}
