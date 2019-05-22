@@ -272,5 +272,6 @@ func (wr *WrappedRequest) GetBookingInfo() *BookingInfo {
 		}
 	}
 	wr.BookingInfo = &BookingInfo{bookingKeyToBookingMap, personToBookingMap}
+	log.Errorf(wr.Context, "Setting booking info: %v", *wr.BookingInfo)
 	return wr.BookingInfo
 }
