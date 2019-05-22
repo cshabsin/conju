@@ -44,6 +44,12 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		return "", "", "", err
 	}
 
+	// Hard-code that we want the roomingInfo template available for now.
+	tpl, err = tpl.ParseFiles("templates/roomingInfo.html")
+	if err != nil {
+		return "", "", "", err
+	}
+
 	textFunctionMap := text_template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
 		"PronounString":               GetPronouns,
