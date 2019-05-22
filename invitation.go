@@ -539,7 +539,10 @@ func handleViewInvitationUser(wr WrappedRequest) {
 
 func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	var invitation Invitation
-	datastore.Get(wr.Context, invitationKey, &invitation)
+	err := datastore.Get(wr.Context, invitationKey, &invitation)
+	if err != nil {
+		log.Errorf(wr.Context, "error getting invitation: %v", err)
+	}
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
 	realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKey, invitation)
@@ -551,7 +554,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 
 	activityKeys := realizedInvitation.Event.Activities
 	var activities = make([]*Activity, len(activityKeys))
-	err := datastore.GetMulti(wr.Context, activityKeys, activities)
+	err = datastore.GetMulti(wr.Context, activityKeys, activities)
 	if err != nil {
 		log.Infof(wr.Context, "%v", err)
 	}
