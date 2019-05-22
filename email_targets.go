@@ -27,7 +27,7 @@ var AllDistributors = map[string]EmailDistributorEntry{
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
 	realizedInvitation := makeRealizedInvitation(wr.Context, *wr.LoginInfo.InvitationKey,
 		*wr.LoginInfo.Invitation)
-	roomingInfo := getRoomingInfoWithInvitation(wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	roomingInfo := getRoomingInfo(wr, wr.LoginInfo.InvitationKey)
 	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
