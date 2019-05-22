@@ -179,7 +179,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 				inviteeBookings = make(InviteeBookingsMap)
 				allInviteeBookings[roommateInvitation] = inviteeBookings
 			}
-			if _, found := inviteeBookings[buildingRoom]; !found {
+			_, found := inviteeBookings[buildingRoom]
+			if !found {
 				roommates := make([]*Person, 0)
 				roomSharers := make([]*Person, 0)
 				for _, maybeRoommate := range booking.Roommates {
