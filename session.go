@@ -256,7 +256,11 @@ func (wr *WrappedRequest) GetBookingInfo() *BookingInfo {
 	// Load all bookings for the event.
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	allBookingKeys, _ := q.GetAll(wr.Context, &bookings)
+	allBookingKeys, err := q.GetAll(wr.Context, &bookings)
+	if err != nil {
+		log.Errorf(wr.Context, "Error reading all booking keys: %v", err)
+		return nil
+	}
 
 	// Construct lookup maps on bookings - booking key to booking, person to booking.
 	bookingKeyToBookingMap := make(map[int64]*Booking)
