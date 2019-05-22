@@ -46,11 +46,15 @@ type RoomingAndCostInfo struct {
 }
 
 func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
-	bookingInfo := wr.GetBookingInfo()
-
 	// Load the invitation.
 	var invitation Invitation
 	datastore.Get(wr.Context, invitationKey, &invitation)
+	return getRoomingInfoWithInvitation(wr, &invitation, invitationKey)
+}
+
+func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
+	invitationKey *datastore.Key) *RoomingAndCostInfo {
+	bookingInfo := wr.GetBookingInfo()
 
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
