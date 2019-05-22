@@ -7,6 +7,30 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+type Booking struct {
+	Event    *datastore.Key
+	Room     *datastore.Key
+	Reserved bool
+
+	Roommates []*datastore.Key
+}
+
+type InviteeRoomBookings struct {
+	Building            *Building
+	Room                *Room
+	Roommates           []*Person // People from this invitation.
+	RoomSharers         []*Person // People from outside the invitation.
+	ShowConvertToDouble bool
+	ReservationMade     bool
+}
+
+type BuildingRoom struct {
+	Room     *Room
+	Building *Building
+}
+
+type InviteeBookingsMap map[BuildingRoom]InviteeRoomBookings
+
 type RoomingAndCostInfo struct {
 	InviteeBookings InviteeBookingsMap
 	OrderedInvitees []*Person
@@ -15,7 +39,6 @@ type RoomingAndCostInfo struct {
 }
 
 func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
-
 	ctx := wr.Context
 
 	// Load the invitation.
