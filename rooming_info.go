@@ -39,8 +39,6 @@ type RoomingAndCostInfo struct {
 }
 
 func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
-	ctx := wr.Context
-
 	bookingInfo := wr.GetBookingInfo()
 
 	// Load the invitation.
@@ -68,9 +66,9 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	}
 
 	var rooms = make([]*Room, len(roomKeys))
-	err := datastore.GetMulti(ctx, roomKeys, rooms)
+	err := datastore.GetMulti(wr.Context, roomKeys, rooms)
 	if err != nil {
-		log.Errorf(ctx, "fetching rooms: %v", err)
+		log.Errorf(wr.Context, "fetching rooms: %v", err)
 	}
 
 	// Map room ID -> Room
@@ -86,9 +84,9 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 	personMap := make(map[int64]*Person)
 	var people = make([]*Person, len(peopleToLookUp))
-	err = datastore.GetMulti(ctx, peopleToLookUp, people)
+	err = datastore.GetMulti(wr.Context, peopleToLookUp, people)
 	if err != nil {
-		log.Errorf(ctx, "fetching people: %v", err)
+		log.Errorf(wr.Context, "fetching people: %v", err)
 	}
 
 	for i, person := range people {
@@ -97,9 +95,9 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := q.GetAll(wr.Context, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Errorf(wr.Context, "fetching invitations: %v", err)
 	}
 
 	personToRsvp := make(map[int64]RsvpStatus)
@@ -114,7 +112,7 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
-	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
+	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	allInviteeBookings := make(map[int64]InviteeBookingsMap)
 	personToCost := make(map[*Person]float64)
 	for _, booking := range bookingsForInvitation {
