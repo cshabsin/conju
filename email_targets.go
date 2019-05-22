@@ -27,11 +27,13 @@ var AllDistributors = map[string]EmailDistributorEntry{
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
 	realizedInvitation := makeRealizedInvitation(wr.Context, *wr.LoginInfo.InvitationKey,
 		*wr.LoginInfo.Invitation)
+	roomingInfo := getRoomingInfo(wr, wr.LoginInfo.InvitationKey)
 	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
 	emailData := map[string]interface{}{
-		"Event":      wr.Event,
-		"Invitation": realizedInvitation,
-		"Person":     wr.LoginInfo.Person,
+		"Event":       wr.Event,
+		"Invitation":  realizedInvitation,
+		"Person":      wr.LoginInfo.Person,
+		"RoomingInfo": roomingInfo,
 	}
 	err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
 	return err
@@ -50,14 +52,16 @@ func AllInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
 			*invitations[i])
+		roomingInfo := getRoomingInfo(wr, invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
 			}
 			emailData := map[string]interface{}{
-				"Event":      wr.Event,
-				"Invitation": realizedInvitation,
-				"Person":     &p.Person,
+				"Event":       wr.Event,
+				"Invitation":  realizedInvitation,
+				"Person":      &p.Person,
+				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 			err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
@@ -83,14 +87,16 @@ func AllInviteesDistributor(wr WrappedRequest, sender EmailSender) error {
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
 			*invitations[i])
+		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
 			}
 			emailData := map[string]interface{}{
-				"Event":      wr.Event,
-				"Invitation": realizedInvitation,
-				"Person":     &p.Person,
+				"Event":       wr.Event,
+				"Invitation":  realizedInvitation,
+				"Person":      &p.Person,
+				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
 			err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{p.Person.Email}})
