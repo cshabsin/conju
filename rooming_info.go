@@ -59,6 +59,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 	invitationKey *datastore.Key) *RoomingAndCostInfo {
 	bookingInfo := wr.GetBookingInfo()
 
+	log.Errorf(wr.Context, "Received invitation: %v", *invitation)
+
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
 	for _, person := range invitation.Invitees {
