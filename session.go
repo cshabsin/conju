@@ -243,7 +243,7 @@ func (wrw WrappedResponseWriter) HasWrittenHeader() bool {
 
 type BookingInfo struct {
 	// map of booking key ID to booking object
-	BookingKeyMap map[int64]*Booking
+	BookingKeyMap map[int64]Booking
 
 	// map of person ID to booking ID
 	PersonToBookingMap map[int64]int64
@@ -263,10 +263,10 @@ func (wr *WrappedRequest) GetBookingInfo() *BookingInfo {
 	}
 
 	// Construct lookup maps on bookings - booking key to booking, person to booking.
-	bookingKeyToBookingMap := make(map[int64]*Booking)
+	bookingKeyToBookingMap := make(map[int64]Booking)
 	personToBookingMap := make(map[int64]int64)
 	for b, booking := range bookings {
-		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = &booking
+		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = booking
 		for _, person := range booking.Roommates {
 			personToBookingMap[person.IntID()] = allBookingKeys[b].IntID()
 		}
