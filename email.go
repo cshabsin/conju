@@ -16,6 +16,7 @@ import (
 	"google.golang.org/appengine/mail"
 )
 
+// MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
 type MailHeaderInfo struct {
 	To      []string
 	Cc      []string
@@ -50,17 +51,17 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
-	text_tpl, err := text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/email/*.html")
+	textTpl, err := text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/email/*.html")
 	if err != nil {
 		return "", "", "", err
 	}
-	text_tpl, err = text_tpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
+	textTpl, err = textTpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
 	if err != nil {
 		return "", "", "", err
 	}
 
 	var text bytes.Buffer
-	if err := text_tpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
+	if err := textTpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
 		return "", "", "", err
 	}
 	var htmlBuf bytes.Buffer
@@ -69,7 +70,7 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 	}
 	if needSubject {
 		var subject bytes.Buffer
-		if err := text_tpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
+		if err := textTpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
 			return text.String(), htmlBuf.String(), "", err
 		}
 		return text.String(), htmlBuf.String(), subject.String(), nil
@@ -162,7 +163,7 @@ func handleListMail(wr WrappedRequest) {
 	if err != nil {
 		log.Errorf(wr.Context, "Error globbing email templates: %v", err)
 	}
-	for i, _ := range templateNames {
+	for i := range templateNames {
 		templateNames[i] = strings.TrimPrefix(templateNames[i], "templates/email/")
 		templateNames[i] = strings.TrimSuffix(templateNames[i], ".html")
 	}
@@ -170,7 +171,7 @@ func handleListMail(wr WrappedRequest) {
 	if err != nil {
 		log.Errorf(wr.Context, "Error globbing event email templates: %v", err)
 	}
-	for i, _ := range eventTemplateNames {
+	for i := range eventTemplateNames {
 		eventTemplateNames[i] = strings.TrimPrefix(eventTemplateNames[i], "templates/"+wr.Event.ShortName+"/email/")
 		eventTemplateNames[i] = strings.TrimSuffix(eventTemplateNames[i], ".html")
 	}
