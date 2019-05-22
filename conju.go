@@ -8,6 +8,7 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+// SiteLink holds the current URL to base absolute links on.
 const SiteLink = "https://psr2019.shabsin.com"
 
 func init() {

@@ -7,6 +7,7 @@ import (
 	"google.golang.org/appengine/log"
 )
 
+// Booking holds the booking info and is kept in the datastore.
 type Booking struct {
 	Event    *datastore.Key
 	Room     *datastore.Key
@@ -15,6 +16,8 @@ type Booking struct {
 	Roommates []*datastore.Key
 }
 
+// InviteeRoomBookings holds the info for a given room's people.
+// TODO: should this be renamed? Why is "Invitee" in the name?
 type InviteeRoomBookings struct {
 	Building            *Building
 	Room                *Room
@@ -24,13 +27,17 @@ type InviteeRoomBookings struct {
 	ReservationMade     bool
 }
 
+// BuildingRoom holds a room of a building, for use as a key in a amp.
 type BuildingRoom struct {
 	Room     *Room
 	Building *Building
 }
 
+// InviteeBookingsMap maps rooms to the InviteeRoomBookings that holds info
+// about the people in the room.
 type InviteeBookingsMap map[BuildingRoom]InviteeRoomBookings
 
+// RoomingAndCostInfo contains the cost info for the people in one invitation.
 type RoomingAndCostInfo struct {
 	InviteeBookings InviteeBookingsMap
 	OrderedInvitees []*Person
@@ -48,8 +55,8 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
 	for _, person := range invitation.Invitees {
-		if bookingId, ok := bookingInfo.PersonToBookingMap[person.IntID()]; ok {
-			bookingSet[bookingId] = true
+		if bookingID, ok := bookingInfo.PersonToBookingMap[person.IntID()]; ok {
+			bookingSet[bookingID] = true
 		}
 	}
 
@@ -59,8 +66,8 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 
 	var roomKeys []*datastore.Key
 	var bookingsForInvitation []*Booking
-	for bookingId, _ := range bookingSet {
-		booking := bookingInfo.BookingKeyMap[bookingId]
+	for bookingID := range bookingSet {
+		booking := bookingInfo.BookingKeyMap[bookingID]
 		bookingsForInvitation = append(bookingsForInvitation, booking)
 		roomKeys = append(roomKeys, booking.Room)
 	}
@@ -117,8 +124,8 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	personToCost := make(map[*Person]float64)
 	for _, booking := range bookingsForInvitation {
 		room := roomsMap[booking.Room.IntID()]
-		buildingId := booking.Room.Parent().IntID()
-		building := buildingsMap[buildingId]
+		buildingID := booking.Room.Parent().IntID()
+		building := buildingsMap[buildingID]
 		buildingRoom := BuildingRoom{room, building}
 
 		// Figure out if anyone's invitation signals need for a double bed.
