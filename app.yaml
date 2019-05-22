@@ -15,3 +15,6 @@ env_variables:
   SENDER_ADDRESS: "*** sender address ***"
   BCC_ADDRESS: "*** bcc address ***"
   ERROR_ADDRESS: "*** error address ***"
+  GOOGLE_WALLET_ADDRESS: "..."
+  VENMO_ADDRESS: "..."
+  PAYPAL_ADDRESS: "...
