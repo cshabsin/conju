@@ -41,29 +41,16 @@ type RoomingAndCostInfo struct {
 func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
 	ctx := wr.Context
 
+	bookingInfo := wr.GetBookingInfo()
+
 	// Load the invitation.
 	var invitation Invitation
 	datastore.Get(wr.Context, invitationKey, &invitation)
 
-	// Load all bookings for the event.
-	var bookings []Booking
-	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	allBookingKeys, _ := q.GetAll(ctx, &bookings)
-
-	// Construct lookup maps on bookings - booking key to booking,
-	bookingKeyToBookingMap := make(map[int64]*Booking)
-	personToBookingMap := make(map[int64]int64)
-	for b, booking := range bookings {
-		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = &booking
-		for _, person := range booking.Roommates {
-			personToBookingMap[person.IntID()] = allBookingKeys[b].IntID()
-		}
-	}
-
-	// Construct set of Booking ids that contain any people.
+	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
 	for _, person := range invitation.Invitees {
-		if bookingId, ok := personToBookingMap[person.IntID()]; ok {
+		if bookingId, ok := bookingInfo.PersonToBookingMap[person.IntID()]; ok {
 			bookingSet[bookingId] = true
 		}
 	}
@@ -75,7 +62,7 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	var roomKeys []*datastore.Key
 	var bookingsForInvitation []*Booking
 	for bookingId, _ := range bookingSet {
-		booking := bookingKeyToBookingMap[bookingId]
+		booking := bookingInfo.BookingKeyMap[bookingId]
 		bookingsForInvitation = append(bookingsForInvitation, booking)
 		roomKeys = append(roomKeys, booking.Room)
 	}
@@ -109,7 +96,7 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	}
 
 	var invitations []*Invitation
-	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
 	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
 		log.Errorf(ctx, "fetching invitations: %v", err)

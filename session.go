@@ -36,6 +36,7 @@ type WrappedRequest struct {
 	BccAddress    *string
 	ErrorAddress  *string
 	EmailClient   *sendgrid.SGClient
+	*BookingInfo
 }
 
 type Getter func(*WrappedRequest) error
@@ -238,4 +239,34 @@ func (wrw WrappedResponseWriter) WriteHeader(statuscode int) {
 
 func (wrw WrappedResponseWriter) HasWrittenHeader() bool {
 	return wrw.stats.hasWrittenHeader
+}
+
+type BookingInfo struct {
+	// map of booking key ID to booking object
+	BookingKeyMap map[int64]*Booking
+
+	// map of person ID to booking ID
+	PersonToBookingMap map[int64]int64
+}
+
+func (wr *WrappedRequest) GetBookingInfo() *BookingInfo {
+	if wr.BookingInfo != nil {
+		return wr.BookingInfo
+	}
+	// Load all bookings for the event.
+	var bookings []Booking
+	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	allBookingKeys, _ := q.GetAll(wr.Context, &bookings)
+
+	// Construct lookup maps on bookings - booking key to booking, person to booking.
+	bookingKeyToBookingMap := make(map[int64]*Booking)
+	personToBookingMap := make(map[int64]int64)
+	for b, booking := range bookings {
+		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = &booking
+		for _, person := range booking.Roommates {
+			personToBookingMap[person.IntID()] = allBookingKeys[b].IntID()
+		}
+	}
+	wr.BookingInfo = &BookingInfo{bookingKeyToBookingMap, personToBookingMap}
+	return wr.BookingInfo
 }
