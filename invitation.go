@@ -572,7 +572,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		"AllParkingTypes":              GetAllParkingTypes(),
 		"InvitationHasChildren":        invitation.HasChildren(wr.Context),
 		"IsAdminUser":                  wr.IsAdminUser(),
-		"RoomingInfo":                  getRoomingInfoWithInvitation(wr, &invitation, invitationKey),
+		"RoomingInfo":                  getRoomingInfo(wr, invitationKey),
 	})
 
 	functionMap := template.FuncMap{
