@@ -171,8 +171,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 				}
 			}
 
-			var inviteeBookings InviteeBookingsMap
-			if inviteeBookings, found := allInviteeBookings[roommateInvitation]; !found {
+			inviteeBookings, ok := allInviteeBookings[roommateInvitation]
+			if !ok {
 				inviteeBookings = make(InviteeBookingsMap)
 				allInviteeBookings[roommateInvitation] = inviteeBookings
 			}
