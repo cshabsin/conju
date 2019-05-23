@@ -200,9 +200,23 @@ func handleEvents(wr WrappedRequest) {
 		activitiesWithKeys = append(activitiesWithKeys, ActivityWithKey{Activity: activities[i], EncodedKey: encodedKey})
 	}
 
-	wr.Request.ParseForm()
+	err = wr.Request.ParseForm()
+	if err != nil {
+		log.Errorf(wr.Context, "Error parsing form: %v", err)
+	}
+	setCurrentKeyEncoded := wr.Request.Form.Get("setCurrent")
+	if setCurrentKeyEncoded != "" {
+		wr.SetSessionValue("EventKey", setCurrentKeyEncoded)
+		wr.SaveSession()
+	}
 	editEventKeyEncoded := wr.Request.Form.Get("editEvent")
-	editEventKey, err := datastore.DecodeKey(editEventKeyEncoded)
+	var editEventKey *datastore.Key
+	if editEventKeyEncoded != "" {
+		editEventKey, err = datastore.DecodeKey(editEventKeyEncoded)
+		if err != nil {
+			log.Errorf(wr.Context, "Error decoding key from editEvent: %v", err)
+		}
+	}
 	var editEvent Event
 	err = datastore.Get(wr.Context, editEventKey, &editEvent)
 
@@ -248,9 +262,8 @@ func handleEvents(wr WrappedRequest) {
 		"encodeKey": func(key *datastore.Key) string {
 			if key == nil {
 				return ""
-			} else {
-				return key.Encode()
 			}
+			return key.Encode()
 		},
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/events.html"))
@@ -272,7 +285,7 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 
 	event := Event{}
 	eventKey := datastore.NewIncompleteKey(ctx, "Event", nil)
-	if form["editEventKeyEncoded"] != nil {
+	if form["editEventKeyEncoded"] != nil && form["editEventKeyEncoded"][0] != "" {
 		eventKey, _ = datastore.DecodeKey(form["editEventKeyEncoded"][0])
 		_ = datastore.Get(wr.Context, eventKey, &event)
 	}
