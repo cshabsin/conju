@@ -193,6 +193,14 @@ func (w WrappedRequest) GetErrorAddress() string {
 	return os.Getenv("ERROR_ADDRESS")
 }
 
+func (w WrappedRequest) GetEnvForTemplates() map[string]string {
+	rc := make(map[string]string)
+	for _, s := range []string{"GOOGLE_WALLET_ADDRESS", "VENMO_ADDRESS", "PAYPAL_ADDRESS"} {
+		rc[s] = os.Getenv(s)
+	}
+	return rc
+}
+
 func (w WrappedRequest) GetHost() string {
 	w.Request.ParseForm()
 	host, ok := w.Request.Form["host_override"]

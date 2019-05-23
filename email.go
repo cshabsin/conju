@@ -105,6 +105,7 @@ func handleSendMail(wr WrappedRequest) {
 		"Person":      wr.LoginInfo.Person,
 		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person),
 		"RoomingInfo": roomingInfo,
+		"Env":         wr.GetEnvForTemplates(),
 	}
 	text, html, subject, err := renderMail(wr, emailTemplate, emailData, true)
 	if err != nil {
@@ -157,6 +158,9 @@ func handleDoSendMail(wr WrappedRequest) {
 	senderFunc = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		if _, ok := emailData["LoginLink"]; !ok {
 			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
+		}
+		if _, ok := emailData["Env"]; !ok {
+			emailData["Env"] = wr.GetEnvForTemplates()
 		}
 		return sendMail(wr, emailTemplate, emailData, headerData)
 	}
