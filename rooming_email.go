@@ -282,12 +282,6 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	for invitation, bookings := range allInviteeBookings {
 		// invitation is ID from key.
 		ri := makeRealizedInvitation(ctx, *datastore.NewKey(ctx, "Invitation", "", invitation, nil), *invitationMap[invitation])
-		people_coming := make([]Person, 0)
-		for i, p := range ri.Invitees {
-			if ri.RsvpMap[p.Key].Attending {
-				people_coming = append(people_coming, ri.InviteePeople[i])
-			}
-		}
 		unreserved := make([]BuildingRoom, 0)
 		for _, booking := range bookings {
 			if !booking.ReservationMade {
@@ -315,7 +309,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 				"Invitation":      ri,
 				"InviteeBookings": bookings,
 				"LoginLink":       makeLoginUrl(&p),
-				"PeopleComing":    people_coming,
+				"PeopleComing":    ri.GetPeopleComing(),
 				"Thursday":        thursday,
 				"Unreserved":      unreserved,
 			})

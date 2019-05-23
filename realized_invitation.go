@@ -35,6 +35,16 @@ type RealizedInvitation struct {
 	InviteePeople             []Person
 }
 
+func (ri RealizedInvitation) GetPeopleComing() []Person {
+	peopleComing := make([]Person, 0)
+	for i, p := range ri.Invitees {
+		if ri.RsvpMap[p.Key].Attending {
+			peopleComing = append(peopleComing, ri.InviteePeople[i])
+		}
+	}
+	return peopleComing
+}
+
 func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation) RealizedInvitation {
 	personKeys := invitation.Invitees
 	var inviteePeople []Person

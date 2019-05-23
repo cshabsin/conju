@@ -2,7 +2,7 @@
   Housing/Cost information for Purity Spring Resort weekend
 {{end}}
 
-{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .PeopleComing 0}},
+{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
 
 
 Our Purity Spring weekend is almost upon us! 
@@ -36,7 +36,7 @@ Chris, Dana & Lydia
 {{end}}
 
 {{define "rooming_and_costs_html"}}
-<p>Dear {{CollectiveAddressFirstNames .PeopleComing 0}},<p>
+<p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
 
 
 <p>Our Purity Spring weekend is almost upon us!</p>
