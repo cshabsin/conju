@@ -18,7 +18,7 @@ promptly, before that comes due, we'd appreciate it. :)
 There are several ways you can pay us. In approximate order of preference:
   Google Wallet: {{.Env.GOOGLE_WALLET_ADDRESS}}
   Venmo: {{.Env.VENMO_ADDRESS}}
-  PayPal: {{.Env.PAYPAL_ADDRESS}} {{if .Env.PAYPAL_URL}}({{.Env.PAYPAL_URL}}){{end}}
+  PayPal: {{if .Env.PAYPAL_URL}}{{.Env.PAYPAL_URL}}{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
   Check (giving it to us at the weekend is fine)
   Pile of Cash (please don't do this)
 
@@ -51,7 +51,7 @@ Chris, Dana & Lydia
 <ul>
   <li>Google Wallet: {{.Env.GOOGLE_WALLET_ADDRESS}}
   <li>Venmo: {{.Env.VENMO_ADDRESS}}
-  <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_ADDRESS}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
+  <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_URL}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
   <li>Check (giving it to us at the weekend is fine)
   <li>Pile of Cash (please don't do this)
 </ul>
