@@ -11,20 +11,8 @@ This year we're doing things a little bit differently.  Purity Spring gave us th
 
 However, this means we are on the hook for about $12,000, so if you could pay us promptly, before that comes due, we'd appreciate it. :)  You can give us a check (at the weekend is fine), or pay via Google Pay (xxxxx), Venmo (xxxxx), or PayPal (xxxxx).  As a last resort we will also accept piles of cash, but would rather not if possible.
 
- {{/*
-{{$MultiRoom := (gt (len .InviteeBookings) 1)}}
-{{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
-{{range .InviteeBookings}}
-{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
-{{end}}
-{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
-{{- if gt (len .RoomSharers) 0}} with:
-  {{- range .RoomSharers}}
-      {{SharerName . -}}
-  {{end}}
+{{template "roomingInfo_text" .RoomingInfo}}
 
-{{end}}
-*/}}
 If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.
 
 As always, you can update your rsvp or profile on our event website: {{.LoginLink}}
@@ -49,15 +37,15 @@ Chris, Dana & Lydia
   PayPal ({{.Env.PAYPAL_ADDRESS}}).  As a last resort we will also accept piles of cash, but 
   would rather not, if possible.</p>
 
-<br>
+ {{template "roomingInfo_html" .RoomingInfo}}
 
- {{/* {{template "roomingInfo" .RoomingInfo}}  */}}
+If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.
 
 <p>As always, you can <a href="{{.LoginLink}}">update your rsvp or profile</a> on our event website.
 
 <p>We can't wait to see you in New Hampshire!</p>
 
-  Chris & Dana
+  Chris, Dana & Lydia
 
   </div>
 </div>

@@ -1,4 +1,4 @@
-{{define "roomingInfo"}}
+{{define "roomingInfo_html"}}
 
 <div style="margin:20px">
   {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
@@ -41,8 +41,20 @@
 </div>
 </div>  
 
+{{end}}
+
+
+{{define "roomingInfo_text"}}
+{{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+{{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
+{{range .InviteeBookings}}
+{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+{{end}}
+{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
+{{- if gt (len .RoomSharers) 0}} with:
+  {{- range .RoomSharers}}
+      {{SharerName . -}}
   {{end}}
-
-
-
-
+{{end}}
+{{end}}
+{{end}}
