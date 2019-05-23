@@ -16,7 +16,7 @@ However, this means we are on the hook for about $12,000, so if you could pay us
 promptly, before that comes due, we'd appreciate it. :)
 
 There are several ways you can pay us. In approximate order of preference:
-  Google Wallet: {{.Env.GOOGLE_WALLET_ADDRESS}}
+  Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
   Venmo: {{.Env.VENMO_ADDRESS}}
   PayPal: {{if .Env.PAYPAL_URL}}{{.Env.PAYPAL_URL}}{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
   Check (giving it to us at the weekend is fine)
@@ -49,7 +49,7 @@ Chris, Dana & Lydia
 
 <p>There are several ways you can pay us. In approximate order of preference:</p>
 <ul>
-  <li>Google Wallet: {{.Env.GOOGLE_WALLET_ADDRESS}}
+  <li>Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
   <li>Venmo: {{.Env.VENMO_ADDRESS}}
   <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_URL}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
   <li>Check (giving it to us at the weekend is fine)
