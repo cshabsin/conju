@@ -195,7 +195,7 @@ func (w WrappedRequest) GetErrorAddress() string {
 
 func (w WrappedRequest) GetEnvForTemplates() map[string]string {
 	rc := make(map[string]string)
-	for _, s := range []string{"GOOGLE_WALLET_ADDRESS", "VENMO_ADDRESS", "PAYPAL_ADDRESS"} {
+	for _, s := range []string{"GOOGLE_WALLET_ADDRESS", "VENMO_ADDRESS", "PAYPAL_ADDRESS", "PAYPAL_URL"} {
 		rc[s] = os.Getenv(s)
 	}
 	return rc

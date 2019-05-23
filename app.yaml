@@ -18,3 +18,4 @@ env_variables:
   GOOGLE_WALLET_ADDRESS: "..."
   VENMO_ADDRESS: "..."
   PAYPAL_ADDRESS: "..."
+  PAYPAL_URL: "https://www.paypal.com/"
