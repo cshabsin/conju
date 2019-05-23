@@ -98,11 +98,13 @@ func handleSendMail(wr WrappedRequest) {
 	// TODO: What data do we send this?
 	realizedInvitation := makeRealizedInvitation(wr.Context, *wr.LoginInfo.InvitationKey,
 		*wr.LoginInfo.Invitation)
+	roomingInfo := getRoomingInfoWithInvitation(wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	emailData := map[string]interface{}{
-		"Event":      wr.Event,
-		"Invitation": realizedInvitation,
-		"Person":     wr.LoginInfo.Person,
-		"LoginLink":  makeLoginUrl(wr.LoginInfo.Person),
+		"Event":       wr.Event,
+		"Invitation":  realizedInvitation,
+		"Person":      wr.LoginInfo.Person,
+		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person),
+		"RoomingInfo": roomingInfo,
 	}
 	text, html, subject, err := renderMail(wr, emailTemplate, emailData, true)
 	if err != nil {
