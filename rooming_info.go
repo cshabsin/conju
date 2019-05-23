@@ -229,7 +229,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 	for _, invitee := range invitation.Invitees {
 		person := personMap[invitee.IntID()]
 		if person == nil {
-			log.Errorf(wr.Context, "Nil person found in invitees: %v", invitee)
+			continue
 		}
 		orderedInvitees = append(orderedInvitees, person)
 		inviteePersonToCost[person] = personToCost[person]
