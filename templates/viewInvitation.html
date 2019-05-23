@@ -210,7 +210,7 @@ function validate(form) {
 {{end}}
 
 {{if .RoomingInfo}}
-     {{template "roomingInfo" .RoomingInfo}}
+     {{template "roomingInfo_html" .RoomingInfo}}
 {{end}}
 
 <form action="saveInvitation" method="POST" onsubmit="return validate(this)">
