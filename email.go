@@ -66,6 +66,9 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		return "", "", "", err
 	}
 
+	// Hard-code that we want the roomingInfo template available for now.
+	textTpl, err = textTpl.ParseFiles("templates/roomingInfo.html")
+
 	var text bytes.Buffer
 	if err := textTpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
 		return "", "", "", err
