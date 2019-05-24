@@ -22,6 +22,7 @@ var AllDistributors = map[string]EmailDistributorEntry{
 	"SelfOnly":          {false, SelfOnlyDistributor},
 	"AllInviteesDryRun": {false, AllInviteesDryRunDistributor},
 	"AllInvitees*REAL*": {true, AllInviteesDistributor},
+	"AttendeesDryRun":   {false, AttendeesDryRunDistributor},
 }
 
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
@@ -104,6 +105,47 @@ func AllInviteesDistributor(wr WrappedRequest, sender EmailSender) error {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+func AttendeesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
+
+	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	var invitations []*Invitation
+	invitationKeys, err := q.GetAll(wr.Context, &invitations)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(invitations); i++ {
+		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
+			*invitations[i])
+		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
+		if roomingInfo == nil {
+			continue
+		}
+		for _, p := range realizedInvitation.Invitees {
+			if p.Person.Email == "" {
+				continue
+			}
+			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.IntID()]; !found {
+				continue
+			}
+			// emailData := map[string]interface{}{
+			// 	"Event":       wr.Event,
+			// 	"Invitation":  realizedInvitation,
+			// 	"Person":      &p.Person,
+			// 	"RoomingInfo": roomingInfo,
+			// }
+			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			// err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+			// if err != nil {
+			// 	fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+			// 	return err
+			// }
 		}
 	}
 	return nil
