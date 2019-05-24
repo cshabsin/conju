@@ -5,10 +5,10 @@
 {{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
 
 
-Our Purity Spring weekend is almost upon us! 
+Our Purity Spring weekend is almost here! 
 
 This year we're doing things a little bit differently.  Purity Spring gave us
-the option of saving all of you some money if we made the reservations
+the option of saving all of our guests some money if we made the reservations
 ourselves.  So we have!  You don't need to call the resort to reserve your
 room.
 
@@ -16,9 +16,9 @@ However, this means we are on the hook for about $12,000, so if you could pay us
 promptly, before that comes due, we'd appreciate it. :)
 
 There are several ways you can pay us. In approximate order of preference:
-  Google Wallet: {{.Env.GOOGLE_WALLET_ADDRESS}}
+  Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
   Venmo: {{.Env.VENMO_ADDRESS}}
-  PayPal: {{.Env.PAYPAL_ADDRESS}} {{if .Env.PAYPAL_URL}}({{.Env.PAYPAL_URL}}){{end}}
+  PayPal: {{if .Env.PAYPAL_URL}}{{.Env.PAYPAL_URL}}{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
   Check (giving it to us at the weekend is fine)
   Pile of Cash (please don't do this)
 
@@ -41,17 +41,17 @@ Chris, Dana & Lydia
 <p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
 
 
-<p>Our Purity Spring weekend is almost upon us!</p>
+<p>Our Purity Spring weekend is almost here!</p>
 
-<p>This year we're doing things a little bit differently.  Purity Spring gave us the option of saving all of you some money if we made the reservations ourselves.  So we have!  You don't need to call the resort to reserve your room.</p>
+<p>This year we're doing things a little bit differently.  Purity Spring gave us the option of saving all of our guests some money if we made the reservations ourselves.  So we have!  You don't need to call the resort to reserve your room.</p>
 
 <p>However, this means we are on the hook for about $12,000, so if you could pay us promptly, before that comes due, we'd appreciate it. :)</p>
 
 <p>There are several ways you can pay us. In approximate order of preference:</p>
 <ul>
-  <li>Google Wallet: {{.Env.GOOGLE_WALLET_ADDRESS}}
+  <li>Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
   <li>Venmo: {{.Env.VENMO_ADDRESS}}
-  <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_ADDRESS}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
+  <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_URL}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
   <li>Check (giving it to us at the weekend is fine)
   <li>Pile of Cash (please don't do this)
 </ul>
