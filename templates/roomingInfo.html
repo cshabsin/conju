@@ -57,4 +57,10 @@
   {{end}}
 {{end}}
 {{end}}
+Cost:
+{{$PersonToCost := .PersonToCost}}
+{{range $person := .OrderedInvitees}}{{(print "  "  $person.FullName ":") | printf "%-25s"}} {{index $PersonToCost $person | printf "%6.2f"}}
+{{end}}
+  Total Cost:             {{.TotalCost | printf "%.2f"}}
+
 {{end}}
