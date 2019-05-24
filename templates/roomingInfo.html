@@ -34,9 +34,9 @@
   <table style="margin:10px">
   {{$PersonToCost := .PersonToCost}}
   {{range $person := .OrderedInvitees}}
-    <tr><td>{{$person.FullName}}: </td><td style="text-align:right">{{index $PersonToCost $person}}</td></tr>
+    <tr><td>{{$person.FullName}}: </td><td style="text-align:right">{{index $PersonToCost $person | printf "%.2f"}}</td></tr>
   {{end}}
-  <tr><td style="padding-top:10px"><strong>Total Cost</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.TotalCost}}</strong></td></tr>
+  <tr><td style="padding-top:10px"><strong>Total Cost</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.TotalCost | printf "%.2f"}}</strong></td></tr>
 </table>
 </div>
 </div>  
