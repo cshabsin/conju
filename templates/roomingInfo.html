@@ -37,7 +37,10 @@
     <tr><td>{{$person.FullName}}: </td><td style="text-align:right">{{index $PersonToCost $person | printf "%.2f"}}</td></tr>
   {{end}}
   <tr><td style="padding-top:10px"><strong>Total Cost</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.TotalCost | printf "%.2f"}}</strong></td></tr>
-</table>
+  {{if .Invitation.ReceivedPay}}
+    <tr><td style="padding-top:10px"><strong>Received</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.Invitation.ReceivedPay | printf "%.2f"}}</strong></td></tr>
+  {{end}}
+  </table>
 </div>
 </div>  
 
@@ -56,5 +59,6 @@
       {{SharerName . -}}
   {{end}}
 {{end}}
+{{if .Invitation.ReceivedPay}}Pay received: ${{.Invitation.ReceivedPay | printf "%.2f"}}{{end}}
 {{end}}
 {{end}}

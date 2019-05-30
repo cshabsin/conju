@@ -421,7 +421,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 				log.Errorf(ctx, "RSVPs: %v -- %s", err, rsvpRow)
 			}
 
-			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s (%v)\n", printInvitation(ctx, *invitationKey, invitation), *invitationKey)))
+			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s (%v)\n", printInvitation(ctx, invitationKey, &invitation), *invitationKey)))
 
 		}
 		processedHeader = true

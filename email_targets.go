@@ -28,8 +28,8 @@ var AllDistributors = map[string]EmailDistributorEntry{
 }
 
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
-	realizedInvitation := makeRealizedInvitation(wr.Context, *wr.LoginInfo.InvitationKey,
-		*wr.LoginInfo.Invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, wr.LoginInfo.InvitationKey,
+		wr.LoginInfo.Invitation)
 	roomingInfo := getRoomingInfoWithInvitation(wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
 	emailData := map[string]interface{}{
@@ -53,8 +53,8 @@ func AllInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
 		return err
 	}
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
-			*invitations[i])
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
 		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
@@ -88,8 +88,8 @@ func AllInviteesDistributor(wr WrappedRequest, sender EmailSender) error {
 		return err
 	}
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
-			*invitations[i])
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
 		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
@@ -123,8 +123,8 @@ func AttendeesListDistributor(wr WrappedRequest, sender EmailSender) error {
 		return err
 	}
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
-			*invitations[i])
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
 		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
@@ -153,8 +153,8 @@ func AttendeesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
 		return err
 	}
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
-			*invitations[i])
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
 		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
@@ -194,8 +194,8 @@ func AttendeesDistributor(wr WrappedRequest, sender EmailSender) error {
 		return err
 	}
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKeys[i],
-			*invitations[i])
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
 		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue

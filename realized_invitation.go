@@ -9,6 +9,7 @@ import (
 )
 
 type RealizedInvitation struct {
+	Invitation                *Invitation
 	EncodedKey                string
 	Invitees                  []PersonWithKey
 	Event                     Event
@@ -45,7 +46,7 @@ func (ri RealizedInvitation) GetPeopleComing() []Person {
 	return peopleComing
 }
 
-func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, invitation Invitation) RealizedInvitation {
+func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, invitation *Invitation) RealizedInvitation {
 	personKeys := invitation.Invitees
 	var inviteePeople []Person
 	var invitees []PersonWithKey
@@ -118,6 +119,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	}
 
 	realizedInvitation := RealizedInvitation{
+		Invitation:                invitation,
 		EncodedKey:                invitationKey.Encode(),
 		Invitees:                  invitees,
 		InviteePeople:             inviteePeople,
@@ -147,7 +149,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey datastore.Key, in
 	return realizedInvitation
 }
 
-func printInvitation(ctx context.Context, key datastore.Key, inv Invitation) string {
+func printInvitation(ctx context.Context, key *datastore.Key, inv *Invitation) string {
 	real := makeRealizedInvitation(ctx, key, inv)
 	toReturn := real.Event.ShortName + ": "
 	for _, invitee := range real.Invitees {
@@ -165,7 +167,7 @@ func printInvitation(ctx context.Context, key datastore.Key, inv Invitation) str
 func makeRealizedInvitations(ctx context.Context, invitationKeys []*datastore.Key, invitations []*Invitation) []RealizedInvitation {
 	realizedInvitations := make([]RealizedInvitation, len(invitations))
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitations[i] = makeRealizedInvitation(ctx, *invitationKeys[i], *invitations[i])
+		realizedInvitations[i] = makeRealizedInvitation(ctx, invitationKeys[i], invitations[i])
 	}
 	return realizedInvitations
 }

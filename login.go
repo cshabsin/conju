@@ -178,7 +178,7 @@ func InvitationGetter(wr *WrappedRequest) error {
 // Simple URL handler that prints out the invitation retrieved by
 // LoginGetter, for testing.
 func checkLogin(wr WrappedRequest) {
-	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(wr.Context, *wr.LoginInfo.InvitationKey, *wr.LoginInfo.Invitation))))
+	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(wr.Context, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation))))
 }
 
 func handleLoginError(wr WrappedRequest) {

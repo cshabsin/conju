@@ -281,7 +281,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	rendered_mail := make(map[int64]RenderedMail, 0)
 	for invitation, bookings := range allInviteeBookings {
 		// invitation is ID from key.
-		ri := makeRealizedInvitation(ctx, *datastore.NewKey(ctx, "Invitation", "", invitation, nil), *invitationMap[invitation])
+		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", invitation, nil), invitationMap[invitation])
 		unreserved := make([]BuildingRoom, 0)
 		for _, booking := range bookings {
 			if !booking.ReservationMade {

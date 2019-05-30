@@ -1,0 +1,10 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<p>Receive Pay</p>
+
+{{if .RoomingInfo}}
+     {{template "roomingInfo_html" .RoomingInfo}}
+{{end}}
+
+{{end}}

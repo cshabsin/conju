@@ -39,6 +39,7 @@ type InviteeBookingsMap map[BuildingRoom]InviteeRoomBookings
 
 // RoomingAndCostInfo contains the cost info for the people in one invitation.
 type RoomingAndCostInfo struct {
+	Invitation      *Invitation
 	InviteeBookings InviteeBookingsMap
 	Attendees       map[int64]*Person
 	OrderedInvitees []*Person
@@ -238,6 +239,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 	}
 
 	return &RoomingAndCostInfo{
+		Invitation:      invitation,
 		InviteeBookings: allInviteeBookings[invitationKey.IntID()],
 		Attendees:       personMap,
 		OrderedInvitees: orderedInvitees,

@@ -40,6 +40,7 @@ type Invitation struct {
 	OtherInfo                 string
 	LastUpdatedPerson         *datastore.Key
 	LastUpdatedTimestamp      time.Time
+	ReceivedPay               float32 // US Dollars
 }
 
 const delimiter = "|_|"
@@ -198,15 +199,21 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 			Name:  "FridayIceCreamCount",
 			Value: int64(inv.FridayIceCreamCount),
 		},
-
-		{Name: "OtherInfo",
+		{
+			Name:  "OtherInfo",
 			Value: inv.OtherInfo,
 		},
-		{Name: "LastUpdatedPerson",
+		{
+			Name:  "LastUpdatedPerson",
 			Value: inv.LastUpdatedPerson,
 		},
-		{Name: "LastUpdatedTimestamp",
+		{
+			Name:  "LastUpdatedTimestamp",
 			Value: inv.LastUpdatedTimestamp,
+		},
+		{
+			Name:  "ReceivedPay",
+			Value: float32(inv.ReceivedPay),
 		},
 	}
 
@@ -301,6 +308,7 @@ func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean)
 	return (inv.HousingPreferenceBooleans & GetAllHousingPreferenceBooleans()[preference].Bit) > 0
 }
 
+// Handles /invitations, listing invitations.
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
 	currentEventKey := wr.EventKey
@@ -545,7 +553,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	}
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
-	realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKey, invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &invitation)
 	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
 		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, i, true)
@@ -757,7 +765,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	datastore.Get(wr.Context, invitation.Event, &e)
 	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
-	realizedInvitation := makeRealizedInvitation(wr.Context, *invitationKey, invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &invitation)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
@@ -805,7 +813,6 @@ func handleSaveInvitation(wr WrappedRequest) {
 }
 
 func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus][]Person, []Person) {
-
 	var personKeyToRsvp = make(map[datastore.Key]RsvpStatus)
 	for p, r := range invitation.RsvpMap {
 		personKeyToRsvp[*p] = r
@@ -833,5 +840,4 @@ func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus
 	}
 
 	return rsvpMap, noRsvp
-
 }

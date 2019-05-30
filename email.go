@@ -99,8 +99,8 @@ func handleSendMail(wr WrappedRequest) {
 	}
 	emailTemplate := emailTemplates[0]
 	// TODO: What data do we send this?
-	realizedInvitation := makeRealizedInvitation(wr.Context, *wr.LoginInfo.InvitationKey,
-		*wr.LoginInfo.Invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, wr.LoginInfo.InvitationKey,
+		wr.LoginInfo.Invitation)
 	roomingInfo := getRoomingInfoWithInvitation(wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
