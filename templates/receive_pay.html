@@ -7,4 +7,10 @@
      {{template "roomingInfo_html" .RoomingInfo}}
 {{end}}
 
+<form action="doReceivePay" method="POST">
+    <input type="hidden" name="invitation" value="{{.Invitation.EncodedKey}}"/>
+    Receive pay: <input type="text" name="pay"></input>
+    <input type="submit"></input>
+</form>
+
 {{end}}

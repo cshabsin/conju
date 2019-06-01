@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
 
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -44,4 +45,34 @@ func handleReceivePay(wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "receive_pay.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
+}
+
+func handleDoReceivePay(wr WrappedRequest) {
+	wr.Request.ParseForm()
+
+	payStr := wr.Request.Form.Get("pay")
+	pay, err := strconv.ParseFloat(payStr, 75)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error retrieving pay from form: %v", err), http.StatusBadRequest)
+	}
+
+	invitationKeyEncoded := wr.Request.Form.Get("invitation")
+	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
+	if err != nil {
+		http.Error(wr.ResponseWriter,
+			fmt.Sprintf("Error decoding invitation key: %v", err),
+			http.StatusBadRequest)
+	}
+
+	var invitation Invitation
+	err = datastore.Get(wr.Context, invitationKey, &invitation)
+	if err != nil {
+		log.Errorf(wr.Context, "error getting invitation: %v", err)
+	}
+	invitation.ReceivedPay += float64(pay)
+	_, err = datastore.Put(wr.Context, invitationKey, &invitation)
+	if err != nil {
+		log.Errorf(wr.Context, "error saving invitation: %v", err)
+	}
+	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
