@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"time"
 
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -54,6 +55,13 @@ func handleDoReceivePay(wr WrappedRequest) {
 	pay, err := strconv.ParseFloat(payStr, 75)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Error retrieving pay from form: %v", err), http.StatusBadRequest)
+		return
+	}
+	payDateStr := wr.Request.Form.Get("pay_date")
+	payDate, err := time.Parse("2006-01-02", payDateStr)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Invalid date string from form: %v", err), http.StatusBadRequest)
+		return
 	}
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -69,7 +77,9 @@ func handleDoReceivePay(wr WrappedRequest) {
 	if err != nil {
 		log.Errorf(wr.Context, "error getting invitation: %v", err)
 	}
-	invitation.ReceivedPay += float64(pay)
+	invitation.ReceivedPay = float64(pay)
+	invitation.ReceivedPayDate = payDate
+	invitation.ReceivedPayMethod = wr.Request.Form.Get("pay_method")
 	_, err = datastore.Put(wr.Context, invitationKey, &invitation)
 	if err != nil {
 		log.Errorf(wr.Context, "error saving invitation: %v", err)

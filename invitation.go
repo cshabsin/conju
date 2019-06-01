@@ -41,6 +41,8 @@ type Invitation struct {
 	LastUpdatedPerson         *datastore.Key
 	LastUpdatedTimestamp      time.Time
 	ReceivedPay               float64 // US Dollars
+	ReceivedPayMethod         string
+	ReceivedPayDate           time.Time
 }
 
 const delimiter = "|_|"
@@ -214,6 +216,14 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		{
 			Name:  "ReceivedPay",
 			Value: float64(inv.ReceivedPay),
+		},
+		{
+			Name:  "ReceivedPayDate",
+			Value: inv.ReceivedPayDate,
+		},
+		{
+			Name:  "ReceivedPayMethod",
+			Value: inv.ReceivedPayMethod,
 		},
 	}
 

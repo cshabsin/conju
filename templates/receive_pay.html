@@ -1,7 +1,7 @@
 {{template "main.html" .}}
 {{define "body"}}
 
-<p>Receive Pay</p>
+<h1>Receive Pay</h1>
 
 {{if .RoomingInfo}}
      {{template "roomingInfo_html" .RoomingInfo}}
@@ -9,8 +9,10 @@
 
 <form action="doReceivePay" method="POST">
     <input type="hidden" name="invitation" value="{{.Invitation.EncodedKey}}"/>
-    Receive pay: <input type="text" name="pay"></input>
-    <input type="submit"></input>
+    Received pay: <input type="text" name="pay" value="{{.Invitation.Invitation.ReceivedPay}}"></input><p>
+    Received pay date: <input type="text" name="pay_date" value="{{.Invitation.ReceivedPayDateStr}}"></input><p>
+    Received pay method: <input type="text" name="pay_method" value="{{.Invitation.Invitation.ReceivedPayMethod}}"></input>
+    <input type="submit" value="Update"></input>
 </form>
 
 {{end}}

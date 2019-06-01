@@ -34,6 +34,7 @@ type RealizedInvitation struct {
 	LastUpdatedPerson         PersonWithKey
 	LastUpdatedTimestamp      time.Time
 	InviteePeople             []Person
+	ReceivedPayDateStr        string
 }
 
 func (ri RealizedInvitation) GetPeopleComing() []Person {
@@ -144,6 +145,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		OtherInfo:                 invitation.OtherInfo,
 		LastUpdatedPerson:         lastUpdatedPerson,
 		LastUpdatedTimestamp:      invitation.LastUpdatedTimestamp,
+		ReceivedPayDateStr:        invitation.ReceivedPayDate.Format("2006-01-02"),
 	}
 
 	return realizedInvitation
