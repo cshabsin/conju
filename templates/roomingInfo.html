@@ -1,3 +1,8 @@
+{{define "roomingAndCosts_html"}}
+{{template "roomingInfo_html" .}}
+{{template "costs_html" .}}
+{{end}}
+
 {{define "roomingInfo_html"}}
 
 <div style="margin:20px">
@@ -23,28 +28,36 @@
       {{range .RoomSharers}}
         {{SharerName .}}<br>
       {{end}}
-
       </div>
     {{end}}
-
   </div>
   {{end}}
+</div>
+</div>
+{{end}}
 
+{{define "costs_html"}}
+  <div style="margin:20px">
   <strong>Cost:</strong>
   <table style="margin:10px">
   {{$PersonToCost := .PersonToCost}}
   {{range $person := .OrderedInvitees}}
-    <tr><td>{{$person.FullName}}: </td><td style="text-align:right">{{index $PersonToCost $person | printf "%.2f"}}</td></tr>
+    <tr><td style="padding-right:25px">{{$person.FullName}}: </td><td style="text-align:right">{{index $PersonToCost $person | printf "$%.2f"}}</td></tr>
   {{end}}
-  <tr><td style="padding-top:10px"><strong>Total Cost</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.TotalCost | printf "%.2f"}}</strong></td></tr>
+  <tr><td style="padding-top:10px"><strong>Total Cost</strong></td><td style="padding-top:10px; text-align:right"><strong>${{.TotalCost | printf "%.2f"}}</strong></td></tr>
   {{if .Invitation.ReceivedPay}}
-    <tr><td style="padding-top:10px"><strong>Received</strong></td><td style="padding-top:10px; text-align:right"><strong>{{.Invitation.ReceivedPay | printf "%.2f"}}</strong></td></tr>
+    <tr><td style="padding-top:10px"><strong>Received</strong></td><td style="padding-top:10px; text-align:right"><strong>${{.Invitation.ReceivedPay | printf "%.2f"}}</strong></td></tr>
   {{end}}
   </table>
 </div>
-</div>  
 
 {{end}}
+
+{{define "roomingAndCosts_text"}}
+{{template "roomingInfo_text" .}}
+{{template "costs_text" .}}
+{{end}}
+
 
 
 {{define "roomingInfo_text"}}
@@ -57,14 +70,15 @@
 {{- if gt (len .RoomSharers) 0}} with:
   {{- range .RoomSharers}}
       {{SharerName . -}}
-  {{end}}
+  {{end}}{{end}}{{end}}
 {{end}}
-{{if .Invitation.ReceivedPay}}Pay received: ${{.Invitation.ReceivedPay | printf "%.2f"}}{{end}}
-{{end}}
+
+{{define "costs_text"}}
 Cost:
 {{$PersonToCost := .PersonToCost}}
 {{range $person := .OrderedInvitees}}{{(print "  "  $person.FullName ":") | printf "%-25s"}} {{index $PersonToCost $person | printf "%6.2f"}}
 {{end}}
   Total Cost:             {{.TotalCost | printf "%.2f"}}
 
+  {{if .Invitation.ReceivedPay}}Received:               {{.Invitation.ReceivedPay | printf "%.2f"}}{{end}}
 {{end}}

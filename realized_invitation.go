@@ -35,6 +35,7 @@ type RealizedInvitation struct {
 	LastUpdatedTimestamp      time.Time
 	InviteePeople             []Person
 	ReceivedPayDateStr        string
+	Thursday                  bool
 }
 
 func (ri RealizedInvitation) GetPeopleComing() []Person {
@@ -82,9 +83,12 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 	realizedRsvpMap := make(map[string]RsvpStatusInfo)
-
+	thursday := false
 	for k, v := range invitation.RsvpMap {
 		realizedRsvpMap[k.Encode()] = allRsvpStatuses[v]
+		if v == ThuFriSat {
+			thursday = true
+		}
 	}
 
 	var activities []ActivityWithKey
@@ -146,6 +150,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		LastUpdatedPerson:         lastUpdatedPerson,
 		LastUpdatedTimestamp:      invitation.LastUpdatedTimestamp,
 		ReceivedPayDateStr:        invitation.ReceivedPayDate.Format("2006-01-02"),
+		Thursday:                  thursday,
 	}
 
 	return realizedInvitation
