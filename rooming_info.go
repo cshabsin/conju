@@ -47,6 +47,11 @@ type RoomingAndCostInfo struct {
 	TotalCost       float64
 }
 
+// IsPaid returns true if the invitation's "received pay" is enough to consider the total cost paid off.
+func (r RoomingAndCostInfo) IsPaid() bool {
+	return r.TotalCost-r.Invitation.ReceivedPay < 0.05
+}
+
 func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
 	// Load the invitation.
 	var invitation Invitation

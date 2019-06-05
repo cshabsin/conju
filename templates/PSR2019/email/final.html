@@ -9,7 +9,7 @@ Spring.
 
 Some last nuts and bolts:
 
-{{if (le .RoomingInfo.TotalCost .RoomingInfo.Invitation.ReceivedPay)}}
+{{if .RoomingInfo.IsPaid}}
 Payment: Thank you for paying us promptly!  We appreciate it.
 {{else}}
 Friendly reminder: we're missing a payment from you.
