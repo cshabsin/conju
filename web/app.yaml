@@ -1,5 +1,4 @@
-runtime: go
-api_version: go1
+runtime: go111
 
 handlers:
 - url: /media
@@ -7,7 +6,7 @@ handlers:
   secure: always
 
 - url: /.*
-  script: _go_app
+  script: auto
   secure: always
 
 env_variables:
