@@ -290,7 +290,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		}
 
 		thursday := false
-		for i, _ := range ri.InviteePeople {
+		for i := range ri.InviteePeople {
 			status := ri.RsvpMap[ri.Invitees[i].Key].Status
 			if status == ThuFriSat {
 				thursday = true

@@ -10,10 +10,9 @@ import (
 	"strings"
 	text_template "text/template"
 
-	"gopkg.in/sendgrid/sendgrid-go.v2"
-
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/mail"
+	"gopkg.in/sendgrid/sendgrid-go.v2"
 )
 
 // MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
