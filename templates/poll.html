@@ -1,0 +1,18 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+Key: {{pollEncodedKey}}<br>
+Rating: {{rating}}<br>
+
+<!-- <h1>Email Templates</h1>
+<table class="listTable">
+  <tr><th>Template filename</th><th>Links</th></tr>
+  {{range .Templates}}
+  <tr>
+    <td>{{.}}</td>
+    <td><a href="{{makeSendMailLink .}}">Send</a></td>
+  </tr>
+  {{end}}
+</table> -->
+
+{{end}}
