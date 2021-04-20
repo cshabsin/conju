@@ -9,7 +9,11 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-func HandlePoll(wr *conju.WrappedRequest) {
+func init() {
+	conju.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
+}
+
+func HandlePoll(wr conju.WrappedRequest) {
 	ctx := wr.Context
 	if wr.Invitation == nil {
 		http.Redirect(wr.ResponseWriter, wr.Request, "/login", http.StatusSeeOther)
