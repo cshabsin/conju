@@ -28,6 +28,9 @@ func HandlePoll(wr conju.WrappedRequest) {
 	if key != nil {
 		data["pollEncodedKey"] = key.Encode()
 		data["rating"] = poll.Rating
+	} else {
+		data["pollEncodedKey"] = "not found"
+		data["rating"] = "unset"
 	}
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/poll.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "poll.html", data); err != nil {
