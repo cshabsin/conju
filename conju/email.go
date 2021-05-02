@@ -10,9 +10,9 @@ import (
 	"strings"
 	text_template "text/template"
 
+	mail_v3 "github.com/sendgrid/sendgrid-go/helpers/mail"
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/mail"
-	"gopkg.in/sendgrid/sendgrid-go.v2"
 )
 
 // MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
@@ -216,7 +216,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		log.Errorf(wr.Context, "Error rendering mail: %v", err)
 		return err
 	}
-	message := sendgrid.NewMail()
+	message := mail_v3.NewEmail()
 	for _, to := range headerData.To {
 		message.AddTo(to)
 	}

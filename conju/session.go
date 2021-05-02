@@ -8,12 +8,11 @@ import (
 	"strings"
 
 	"github.com/gorilla/sessions"
-	"gopkg.in/sendgrid/sendgrid-go.v2"
+	"github.com/sendgrid/sendgrid-go"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/urlfetch"
 	"google.golang.org/appengine/user"
 )
 
@@ -35,7 +34,7 @@ type WrappedRequest struct {
 	SenderAddress *string
 	BccAddress    *string
 	ErrorAddress  *string
-	EmailClient   *sendgrid.SGClient
+	EmailClient   *sendgrid.Client
 	*BookingInfo
 }
 
@@ -172,10 +171,9 @@ func (w WrappedRequest) MakeTemplateData(extraVals map[string]interface{}) map[s
 	return vals
 }
 
-func (w *WrappedRequest) GetEmailClient() *sendgrid.SGClient {
+func (w *WrappedRequest) GetEmailClient() *sendgrid.Client {
 	if w.EmailClient == nil {
-		w.EmailClient = sendgrid.NewSendGridClientWithApiKey(os.Getenv("SENDGRID_API_KEY"))
-		w.EmailClient.Client = urlfetch.Client(w.Context)
+		w.EmailClient = sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
 	}
 	return w.EmailClient
 }
