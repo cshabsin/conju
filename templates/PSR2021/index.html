@@ -1,84 +1,93 @@
 <script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
 {{template "main.html" .}}
 {{define "body"}}
-{{$photoDirectory := (printf "media/%s/photos"  .CurrentEvent.ShortName)}}
+{{$photoDirectory := (printf "media/%s/photos" .CurrentEvent.ShortName)}}
 <script>
-  $( document ).ready(function() {
+  $(document).ready(function () {
 
     $(".headerMainPicture img")
-        .mouseover(function() { 
-            $(this).attr("src", "{{$photoDirectory}}/group-2017-silly.jpg");
-        })
-        .mouseout(function() {
-            $(this).attr("src", "{{$photoDirectory}}/group-2017-normal.jpg");
-        });
-})
+      .mouseover(function () {
+        $(this).attr("src", "{{$photoDirectory}}/group-2017-silly.jpg");
+      })
+      .mouseout(function () {
+        $(this).attr("src", "{{$photoDirectory}}/group-2017-normal.jpg");
+      });
+  })
 
 </script>
 <div class="headerPictures">
-  <div class="headerSidePicture"><img src="{{$photoDirectory}}/campfire.jpg"/></div>
-  <div class="headerMainPicture"><img src="{{$photoDirectory}}/group-2017-normal.jpg"/></div>
+  <div class="headerSidePicture"><img src="{{$photoDirectory}}/campfire.jpg" /></div>
+  <div class="headerMainPicture"><img src="{{$photoDirectory}}/group-2017-normal.jpg" /></div>
   <div class="headerSidePicture"><img src="{{$photoDirectory}}/concept.jpg"></div>
 </div>
 
 <div class="bottom">
   <div class="sidebarPictures">
-    <img src="{{$photoDirectory}}/jigsaw_puzzle.jpg"/>
-    <img src="{{$photoDirectory}}/group-jumping.jpg"/>
+    <img src="{{$photoDirectory}}/jigsaw_puzzle.jpg" />
+    <img src="{{$photoDirectory}}/group-jumping.jpg" />
     {{if .LoginInfo.Person}}
-      <img src="{{$photoDirectory}}/SingingGroup.jpg"/>
-      <img src="{{$photoDirectory}}/group-hiking.jpg"/>
-      <img src="{{$photoDirectory}}/archery.jpg"/>
-      <img src="{{$photoDirectory}}/Shenanigans.jpg"/>
+    <img src="{{$photoDirectory}}/SingingGroup.jpg" />
+    <img src="{{$photoDirectory}}/group-hiking.jpg" />
+    <img src="{{$photoDirectory}}/archery.jpg" />
+    <img src="{{$photoDirectory}}/Shenanigans.jpg" />
     {{end}}
   </div>
 
   <div class="homeMain">
-    <div class="textHeader">  
+    <div class="textHeader">
       <h1 class="textHeaderTitle">Chris, Dana & Lydia's Summer Retreat</h1>
       <h2 class="textHeaderPlace">at Purity Spring Resort</h2>
-      <h2 class="textHeaderDate">June 6 - 9, 2019</h2>
+      <h2 class="textHeaderDate">August 26-29, 2021</h2>
     </div>
-    <div class="mainContent"> 
-      <p> Seven years ago we invited some of our friends and family up into the mountains of New Hampshire to hang out for the weekend while we got married.  We had so much fun that we're doing it again and skipping the wedding part!
-</p>
+    <div class="mainContent">
+      <p> Nine years ago we invited some of our friends and family up into the mountains of New Hampshire to hang out
+        for the weekend while we got married. We had so much fun that we're doing it again and skipping the wedding
+        part!
+      </p>
 
-{{if not .LoginInfo.Person}}
-<p>For more information, click on the link in your invitation to log in.  Can't find the email?  <a href="login">Fetch your login information.</a></p>
-<!-- <p style="font-size:150%">Yes, this is happening!  Save the date!  Email invitations will be going out soon.</p> -->
-{{else}}
-  <p>This year our retreat will run from Thursday, June 6th until Sunday, June 9th.  Most structured activities will happen between Friday evening and Sunday night.  Due to school and work schedules we expect that there will be a small group Thursday night and many more people around Friday - Sunday.</p>
+      {{if not .LoginInfo.Person}}
+      <p>For more information, click on the link in your invitation to log in. Can't find the email? <a
+          href="login">Fetch your login information.</a></p>
+      <!-- <p style="font-size:150%">Yes, this is happening!  Save the date!  Email invitations will be going out soon.</p> -->
+      {{else}}
+      <p>This year our retreat will run from Thursday, August 26th until Sunday, August 29th. Most structured activities
+        will happen between Friday evening and Sunday night. Due to school and work schedules we expect that there will
+        be a small group Thursday night and many more people around Friday - Sunday.</p>
 
-<p>Our goal is to provide a framework for you to have the kind of weekend that would be most fun for you, whether that means hiking and swimming, playing board games and doing jigsaw puzzles, or sitting in a quiet pretty place with a book.  If you would like to run an activity, let us know if there is any support you need from us or from Purity Spring.</p>
+      <p>
+        Of course, this year, [TODO: describe covid precautions]
+      </p>
 
-<p>Children are welcome at our Summer Weekend Retreat.  The cost for a child 3 or older is the same as for an adult.  There is no charge for children under 3.  Depending on availability, Purity Spring may be able to help you arrange childcare with a local babysitter for some of the weekend.</p>
+      <p>Our goal is to provide a framework for you to have the kind of weekend that would be most fun for you, whether
+        that means hiking and swimming, playing board games and doing jigsaw puzzles, or sitting in a quiet pretty place
+        with a book. If you would like to run an activity, let us know if there is any support you need from us or from
+        Purity Spring.</p>
 
-<p>If you'd like to attend, fill out our <a href="rsvp">RSVP form.</a>  We will take care of the arrangements with the resort and you can pay us with cash, check, Venmo, or Google Wallet.</p>
+      <p>Children are welcome at our Summer Weekend Retreat. The cost for a child 3 or older is the same as for an
+        adult. There is no charge for children under 3. Depending on availability, Purity Spring may be able to help you
+        arrange childcare with a local babysitter for some of the weekend.</p>
 
-<p>Room rates (approximate):</p>
-<div class="rateTableContainer">
-  <table class="rateTable">
-<tr><th>Room Occupancy</th><th> Friday &ndash; Sunday</th><th>Thursday night<br>(additional charge)</th></tr>
-<tr><th>2</th><td>$177</td><td>$77</td></tr>
-<tr><th>3</th><td>$145</td><td>$60</td></tr>
-  <tr><th>4</th><td>$130</td><td>$52</td></tr>
-<tr><th>1</th><td>$257</td><td>$125</td></tr>
-<tr><th>5+</th><td colspan=2>to be calculated</td></tr>
-</table>
-</div>
+      <p>If you'd like to attend, fill out our <a href="rsvp">RSVP form.</a> We will take care of the arrangements with
+        the resort and you can pay us with cash, check, Venmo, or Google Wallet.</p>
 
-<p> These rates are <b>PER PERSON.</b>  They cover:</p>
-<ul>
-<li> Lodging - most of the rooms will be "budget" rooms, which we have always found perfectly acceptable (and cheap!)
-<li> Saturday breakfast, lunch, and dinner; Sunday breakfast and lunch; Friday breakfast and lunch if arriving on Thursday
-<li> Access to resort facilities, including beach, boats, pool, fitness center, etc.
-<li> 9% state tax
-<li> Service fee paid to housekeepers and waitstaff
-</ul>
+      <p>Room rates (approximate): TODO</p>
 
-<p style="margin-top:30px;">We hope to see you in June!  <a href="rsvp">Let us know</a> if you can join us &ndash; you can always use the link at the top of this page.  Please <a href="mailto:shabsinscott@gmail.com">email us</a> if you have any concerns or questions.</p>
+      <p> These rates are <b>PER PERSON.</b> They cover:</p>
+      <ul>
+        <li> Lodging - most of the rooms will be "budget" rooms, which we have always found perfectly acceptable (and
+          cheap!)
+        <li> Saturday breakfast, lunch, and dinner; Sunday breakfast and lunch; Friday breakfast and lunch if arriving
+          on Thursday
+        <li> Access to resort facilities, including beach, boats, pool, fitness center, etc.
+        <li> 9% state tax
+        <li> Service fee paid to housekeepers and waitstaff
+      </ul>
 
-{{end}}
+      <p style="margin-top:30px;">We hope to see you in August! <a href="rsvp">Let us know</a> if you can join us &ndash;
+        you can always use the link at the top of this page. Please <a href="mailto:shabsinscott@gmail.com">email us</a>
+        if you have any concerns or questions.</p>
+
+      {{end}}
 
     </div>
   </div>
