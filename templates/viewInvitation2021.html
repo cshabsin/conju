@@ -347,16 +347,6 @@ function validate(form) {
     <textarea class="freeformtextfield" id="id_travel_info" name="travelNotes">{{$Invitation.TravelNotes}}</textarea>
     
     
-    <h4>Other meals</h4>
-    
-    If you don't know this information yet you can add it later.<br><br>
-
-    <div class="extraInfoThursday" style="display:none;">
-      Thursday night we'll have dinner in the restaurant in PSR's on-site restaurant, around 7pm.  How many people in your party will join us? <input style="margin-left:20px;" type="text" name="ThursdayDinnerCount" size="1" value="{{if gt $Invitation.ThursdayDinnerCount 0}}{{$Invitation.ThursdayDinnerCount}}{{end}}"/><br>
-    </div>
-    Friday night we'll have a sandwich bar available for a light dinner.  How many people in your party want Friday dinner? <input style="margin-left:20px;" type="text" name="FridayDinnerCount" size="1"/ value="{{if gt $Invitation.FridayDinnerCount 0}}{{$Invitation.FridayDinnerCount}}{{end}}"><br>
-    Then we'll have ice cream for dessert (plus some limited other options).  How many people in your party want dessert?  <input style="margin-left:20px;" type="text" name="FridayIceCreamCount" size="1" value="{{if gt $Invitation.FridayIceCreamCount 0}}{{$Invitation.FridayIceCreamCount}}{{end}}"/><br>
-
     <h4>Anything else?</h4>
     Anything else you'd like us to know in advance of the weekend?<br>
     <textarea class="freeformtextfield" name="otherInfo">{{$Invitation.OtherInfo}}</textarea>
