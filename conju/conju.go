@@ -81,7 +81,11 @@ func init() {
 }
 
 func handleIndex(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+wr.Event.ShortName+"/index.html"))
+	eventName := "PSR2021"
+	if wr.Event != nil {
+		eventName = wr.Event.ShortName
+	}
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+eventName+"/index.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}

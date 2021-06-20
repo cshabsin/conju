@@ -1,0 +1,369 @@
+<script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
+{{template "main.html" .}}
+{{define "body"}}
+
+<script>
+  var allStatuses = [
+  {{range .AllRsvpStatuses}}
+ {shortDescription: "{{.ShortDescription}}", attending: {{.Attending}}, undecided: {{.Undecided}}, noLodging: {{.NoLodging }}},
+  {{end}}
+];
+
+
+
+  function adjustArrows() {
+    $(".listUpArrow img").show();
+    $(".listUpArrow img:first").hide();
+    $(".listDownArrow img").show();
+    $(".listDownArrow img:last").hide();
+  }
+
+  function togglePersonalInfo(encodedKey) {
+    $("#" + encodedKey).toggle();
+    if ($("#" + encodedKey).is(":visible")) $("#showInfo_" + encodedKey).text("Hide");
+    else {
+      $("#showInfo_" + encodedKey).text("Edit Personal Info");
+    }
+  }
+
+  function needsLodging(val) {
+    var status = allStatuses[val];
+    return status.attending && !status.noLodging;
+  }
+
+  function attending(val) {
+    var status = allStatuses[val];
+    return status.attending;
+  }
+
+  function thursday(val) {
+    var status = allStatuses[val];
+    return status.shortDescription == "ThuFriSat";
+  }
+
+  function anyoneMeetsCriteria(criteriaChecker) {
+    return $(".rsvpStatus").map((index, status, statuses) => {
+       var val = $(status).val();
+       return val < 0 ? false : criteriaChecker(val);})
+         .get().reduce((tally, thing, index, things) => {return tally || thing;}, false);
+  }
+
+
+  function processRsvpStatus(index) {
+    var status = parseInt($($(".rsvpStatus")[index]).val());
+    $($(".personal-intro-positive-rsvp")[index]).hide();
+    $($(".personal-intro-negative-rsvp")[index]).hide();
+    $($(".personal-intro-maybe-rsvp")[index]).hide();
+     var foodContainer = $($(".food")[index]);
+     foodContainer.hide();
+
+    if (isNaN(status) || status < 0) return;
+    var selectedStatus = allStatuses[status];
+    if (selectedStatus.attending) {
+      foodContainer.show();
+      $($(".personal-intro-positive-rsvp")[index]).show();
+      $($(".activities")[index]).show();
+    } else if (selectedStatus.undecided) {
+      $($(".personal-intro-maybe-rsvp")[index]).show();
+    } else {
+      $($(".personal-intro-negative-rsvp")[index]).show();
+    }
+
+    $($(".personSupplementaryInfo")[index]).show();
+    $($(".personal")[index]).show();
+
+    if (anyoneMeetsCriteria(needsLodging)) {
+      $(".lodgingFormContainer").show();
+    } else {
+      $(".lodgingFormContainer").hide();
+    }
+
+    if (anyoneMeetsCriteria(attending)) {
+      $(".anyAttendeesContainer").show();
+    } else {
+      $(".anyAttendeesContainer").hide();
+    }
+   
+    if (anyoneMeetsCriteria(thursday)) {
+      $(".extraInfoThursday").show();
+    } else {
+      $(".extraInfoThursday").hide();
+    }
+
+  }
+
+
+  function adjustDrivingFields() {
+    var drivingStatus = $(".drivingPreference").val()
+    if (drivingStatus > 1) {
+      $(".rideSharingOptions").show()
+      if (drivingStatus == 2 || drivingStatus == 4) {
+        $(".sharingDrivers").show();
+      } else {
+        $(".sharingDrivers").hide();
+      }
+    } else {
+      $(".rideSharingOptions").hide()
+    }
+    if (drivingStatus != 3 && drivingStatus != 0) {
+      $(".allDrivers").show()
+    } else {
+      $(".allDrivers").hide()
+    }
+  }
+
+  function addNewPersonContainer() {
+    $("#newPersonCollectionContainer").append("<div class=\"newPersonContainer\">" +
+      "Name: <input type=\"text\" name=\"newPersonName\">" +
+      "Who is this person? <input type=\"text\" name=\"newPersonDescription\"/></div>");
+      adjustAddPersonInputs();
+  }
+
+  function adjustAddPersonInputs() {
+      $("#newPersonCollectionContainer").show();
+      if ($(".newPersonContainer").length == 0) return;
+      if ($(".newPersonContainer").length > 1) {
+        $(".newPersonInstructionsSingular").hide();
+        $(".newPersonInstructionsPlural").show();
+      } else {
+        $(".newPersonCollectionContainer").append($("#newPersonContainer").clone())
+        $(".newPersonInstructionsPlural").hide();
+        $(".newPersonInstructionsSingular").show();
+      }
+  }
+
+  $( document ).ready(function() {
+    adjustArrows();
+
+    $(".listUpArrow, .listDownArrow").click(function() {
+      var row = $(this).closest('tr');
+      if ($(this).hasClass('listUpArrow'))
+        row.prev().before(row);
+      else
+        row.next().after(row);
+
+      adjustArrows();
+    });
+
+    $(".personal").hide();
+    $(".activities").hide();
+    $(".food").hide();
+
+    adjustAddPersonInputs();
+
+    $(".housingPreference").val("{{.Invitation.Housing.Preference}}")
+    $(".drivingPreference").val("{{.Invitation.Driving.Preference}}")
+    $("#parking_{{.Invitation.Parking.Parking}}").prop("checked", true);
+    for (var i=0; i < {{(len .Invitation.Invitees)}}; i++) {
+        processRsvpStatus(i);
+    }
+    adjustDrivingFields();
+
+  })
+
+
+function validate(form) {
+    errorMessages = "";
+
+     {{range $i, $invitee := .Invitation.Invitees}}
+      if ($($(".rsvpStatus")[{{$i}}]).val() == "-1") errorMessages += "{{$invitee.Person.FullName}} has not RSVPed.\n";
+      {{if $invitee.Person.NeedBirthdate}}
+        if ($($("input[name=birthdateChanged]")[{{$i}}]).val() == "0") {
+          errorMessages += "No birthdate for {{$invitee.Person.FullName}}.\n";
+	}
+      {{end}}
+    {{end}}
+
+    var housingPreference = $(".housingPreference").val();
+    if (anyoneMeetsCriteria(needsLodging) && (housingPreference == "0")) {
+       errorMessages += "No housing preference selected.\n"
+    }
+
+    if (housingPreference == "2" && $("textarea[name=housingNotes]").val() == "") {
+       errorMessages += "No roommates listed.\n";
+    }
+
+    var drivingPreference = parseInt($(".drivingPreference").val())
+    if (anyoneMeetsCriteria(attending) && (drivingPreference == 0)) {
+       errorMessages += "No driving preference selected.\n"
+    }
+    if (drivingPreference > 1) {
+	if ($("input[name=leaveFrom]").val() == "") errorMessages += "No driving start location provided.\n";
+        if ($("input[name=leaveTime]").val() == "") errorMessages += "No driving start time provided.\n";
+	if (drivingPreference == 2 || drivingPreference == 4) {
+	  if ($("input[name=additionalPassengers]").val() == "") errorMessages += "No car capacity provided.\n";
+	}
+    }
+
+    if (errorMessages.length > 0) {
+	return confirm(errorMessages + "\n\nDo you still want to submit your RSVP?  You can update your RSVP at any time.");
+    }
+    return true;
+}
+
+</script>
+
+<h1>{{with .Invitation}}{{.Event.Name}}{{end}}</h1>
+
+{{if and .IsAdminUser (not .Invitation.LastUpdatedTimestamp.IsZero)}}
+  Last updated by <b>{{.Invitation.LastUpdatedPerson.Person.FullName}}</b> at {{.Invitation.LastUpdatedTimestamp.Format "2006-01-02 15:04:05"}}.<br><br>
+{{end}}
+
+{{if .RoomingInfo}}
+     {{template "roomingAndCosts_html" .RoomingInfo}}
+{{end}}
+
+<form action="saveInvitation" method="POST" onsubmit="return validate(this)">
+  <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
+  <table class="inviteeTable">
+    {{$Invitation := .Invitation}}
+    {{$FormInfoMap := .FormInfoMap}}
+    {{$AllRsvpStatuses := .AllRsvpStatuses}}
+    {{$AllParkingTypes := .AllParkingTypes}}
+    {{$Activities := .Invitation.Activities}}
+    {{$IsAdminUser := .IsAdminUser}}
+    {{range  $i, $invitee := .Invitation.Invitees}}
+       <tr>
+          {{if $IsAdminUser}}
+              <td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
+              <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
+          {{end}}
+          <td>
+	          <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
+	            {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
+              <span class="invitationPersonHeading">{{.Person.FullName}}</span>
+	            <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}})">
+                <option value="-1"{{if not $RsvpStatus}} selected{{end}}>-- Will you be joining us? --</option>
+	              {{range $Invitation.Event.RsvpStatuses}}
+	                <option value="{{.}}"
+                  {{if and $RsvpStatus.ShortDescription (eq $RsvpStatus.Status .)}}selected{{end}}
+                  >{{(index $AllRsvpStatuses .).LongDescription}}</option>
+	              {{end}}
+	            </select>
+
+              <input type="hidden" name="person" value="{{.Key}}">
+	              <div class="personSupplementaryInfo hidden" id="{{.Key}}">
+	              <div class="food hidden">
+
+ 		            Hooray!  We're so glad you can join us.<br>
+               
+                <div class="personal hidden">
+                  <div class="personal-intro-positive-rsvp hidden ">
+                    Please double-check the information we have for you.  The only thing we REALLY need is your email address.  A phone number can also be helpful.<br>
+                    <br>
+                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+		              </div>
+                  <div class="personal-intro-negative-rsvp hidden">
+                    We'll miss you!  But as long as you're here...<br>
+                    <br>
+                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                  </div>
+		              <div class="personal-intro-maybe-rsvp hidden">
+                    Please let us know if you'll be joining us as soon as you know!  But as long as you're here...<br>
+                    <br>
+                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                  </div>
+                  <table class="formTable">
+                    {{template "personInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
+                  </table>
+               </div>
+             </div>
+           </div>
+         </td>
+       </tr>
+    {{end}}
+  </table>
+
+  <div id="newPersonCollectionContainer" class="hidden"></div>
+  <div class="newPersonInstructionsSingular hidden">We'll let you know when this person has been added to your invitation.</div>
+  <div class="newPersonInstructionsPlural hidden">We'll let you know when these people have been added to your invitation.</div>
+
+  <input type="button" class="addNewPersonButton" onclick="addNewPersonContainer()" value="Add someone to your invitation"><br>
+
+  <div class="lodgingFormContainer hidden">
+    <h4>Housing Preferences</h4>
+    Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.<br>
+    <br>
+
+    {{$single := (eq (len .Invitation.Invitees) 1)}}
+    <table class="rsvpHousing"><tr><td>
+	  <select class="housingPreference" name="housingPreference">
+            {{range $p, $pref := .AllHousingPreferences}}
+	    <option value="{{$p}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
+            {{end}}
+    </select>
+    <div>What else do we need to know to assign you a room?</div>
+    <textarea type="text" name="housingNotes" class="freeformTextField">{{.Invitation.HousingNotes}}</textarea>
+</td>
+<td>
+  {{$InvitationHasChildren := .InvitationHasChildren}}
+  {{range $i, $pref := .AllHousingPreferenceBooleans}}
+    {{if or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples))}}
+      <div><input type="checkbox" name="housingPreferenceBooleans" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}>
+        {{if $single}}
+          {{$pref.SinglePersonDescription}}
+        {{else}}
+          {{if and (eq (len $Invitation.Invitees) 2) (ne $pref.CoupleDescription "")}}
+            {{$pref.CoupleDescription}}
+          {{else}}
+            {{$pref.MultiplePeopleDescription}}
+          {{end}}
+        {{end}}
+      </div>
+      {{if ne $pref.SupplementalInfo ""}}
+        <div style="font-size:smaller; padding-left:26px;font-style:italic">{{$pref.SupplementalInfo}}</div>
+      {{end}}
+   {{end}}
+{{end}}
+
+
+</td></tr></table>
+  </div>
+
+  <div class="anyAttendeesContainer hidden">
+    <h4>Travel information</h4>
+    How do you feel about ride sharing?  <select class="drivingPreference" id="id_driving_preference" onchange="adjustDrivingFields(this.value);" name="drivingPreference">
+    {{range $i, $pref := .AllDrivingPreferences}}
+       <option value="{{$i}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
+    {{end}}
+</select><br>
+    <div class="rideSharingOptions hidden">
+      <table>
+        <tr><td>Where are you starting from?</td><td><input type="text" name="leaveFrom" id="id_leaving_from" value="{{$Invitation.LeaveFrom}}"/></td></tr>
+        <tr><td>When would you ideally like to leave?</td><td><input type="text" name="leaveTime" id="id_leaving_around" value="{{$Invitation.LeaveTime}}" /></td></tr>
+        <tr class="sharingDrivers"><td>How many extra passengers can you take<br> (in addition to {{if $single}}yourself{{else}}yourselves{{end}})?</td><td style="vertical-align:top">
+          <input type="text" name="additionalPassengers" id="id_additional_passengers" value="{{$Invitation.AdditionalPassengers}}" /></td></tr>
+      </table>
+    </div>
+    <div class="allDrivers hidden">
+      {{range $i, $parking := $AllParkingTypes}}
+      <input type="radio" id="parking_{{$i}}" name="parking" value="{{.Parking}}">{{if $single}}{{$parking.SinglePersonDescription}}{{else}}{{$parking.MultiplePeopleDescription}}{{end}}<br>
+      {{end}}
+    </div>
+
+    <div style="margin-top:20px">
+      Anything else we should know about your travel plans?
+    </div>
+    <textarea class="freeformtextfield" id="id_travel_info" name="travelNotes">{{$Invitation.TravelNotes}}</textarea>
+    
+    
+    <h4>Other meals</h4>
+    
+    If you don't know this information yet you can add it later.<br><br>
+
+    <div class="extraInfoThursday" style="display:none;">
+      Thursday night we'll have dinner in the restaurant in PSR's on-site restaurant, around 7pm.  How many people in your party will join us? <input style="margin-left:20px;" type="text" name="ThursdayDinnerCount" size="1" value="{{if gt $Invitation.ThursdayDinnerCount 0}}{{$Invitation.ThursdayDinnerCount}}{{end}}"/><br>
+    </div>
+    Friday night we'll have a sandwich bar available for a light dinner.  How many people in your party want Friday dinner? <input style="margin-left:20px;" type="text" name="FridayDinnerCount" size="1"/ value="{{if gt $Invitation.FridayDinnerCount 0}}{{$Invitation.FridayDinnerCount}}{{end}}"><br>
+    Then we'll have ice cream for dessert (plus some limited other options).  How many people in your party want dessert?  <input style="margin-left:20px;" type="text" name="FridayIceCreamCount" size="1" value="{{if gt $Invitation.FridayIceCreamCount 0}}{{$Invitation.FridayIceCreamCount}}{{end}}"/><br>
+
+    <h4>Anything else?</h4>
+    Anything else you'd like us to know in advance of the weekend?<br>
+    <textarea class="freeformtextfield" name="otherInfo">{{$Invitation.OtherInfo}}</textarea>
+  <div class="invitationCloser">{{$Invitation.Event.InvitationClosingText}}</div>
+  </div>
+
+  <input class="emphasizedSubmit" type="submit" value="Submit">
+
+</form>
+{{end}}

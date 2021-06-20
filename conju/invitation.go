@@ -555,6 +555,18 @@ func handleViewInvitationUser(wr WrappedRequest) {
 	handleViewInvitation(wr, wr.InvitationKey)
 }
 
+var (
+	functionMap = template.FuncMap{
+		"PronounString":               GetPronouns,
+		"HasPreference":               HasPreference,
+		"DerefPeople":                 DerefPeople,
+		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"SharerName":                  MakeSharerName,
+	}
+
+	invitationTpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation2021.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
+)
+
 func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	var invitation Invitation
 	err := datastore.Get(wr.Context, invitationKey, &invitation)
@@ -596,16 +608,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		"RoomingInfo":                  getRoomingInfo(wr, invitationKey),
 	})
 
-	functionMap := template.FuncMap{
-		"PronounString":               GetPronouns,
-		"HasPreference":               HasPreference,
-		"DerefPeople":                 DerefPeople,
-		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
-		"SharerName":                  MakeSharerName,
-	}
-
-	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
+	if err := invitationTpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation2021.html", data); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }
