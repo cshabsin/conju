@@ -226,7 +226,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	message.SetText(text)
 	message.SetFrom(wr.GetSenderAddress())
 
-	log.Errorf(wr.Context, "sending mail: %v", message)
+	log.Infof(wr.Context, "sending mail: %v", message)
 	if err := wr.GetEmailClient().Send(message); err != nil {
 		log.Errorf(wr.Context, "sendgrid.Send: %v", err)
 	}
