@@ -9,7 +9,7 @@ import (
 )
 
 // SiteLink holds the current URL to base absolute links on.
-const SiteLink = "https://psr2019.shabsin.com"
+const SiteLink = "https://psr2021.shabsin.com"
 
 func init() {
 
