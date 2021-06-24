@@ -26,6 +26,7 @@ var AllDistributors = map[string]EmailDistributorEntry{
 	"AttendeesDryRun":       {false, AttendeesDryRunDistributor},
 	"Attendees*REAL*":       {true, AttendeesDistributor},
 	"QualifiedInviteesList": {false, QualifiedInviteesListDistributor},
+	"QualifiedDryRunList":   {false, QualifiedInviteesDryRunDistributor},
 }
 
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
@@ -225,6 +226,9 @@ func AttendeesDistributor(wr WrappedRequest, sender EmailSender) error {
 	return nil
 }
 
+// QualifiedInviteesListDistributor is an email distributor that lists all invitees
+// who have not RSVP'ed "no" to the event. If RsvpMap is nil, the invitee has not
+// submitted any RSVP at all, and the person is included.
 func QualifiedInviteesListDistributor(wr WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
@@ -238,26 +242,57 @@ func QualifiedInviteesListDistributor(wr WrappedRequest, sender EmailSender) err
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
 			invitations[i])
-		// roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
 			}
-			if realizedInvitation.RsvpMap[p.Key].Status == No {
+			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
+				fmt.Fprintf(wr.ResponseWriter, "Skipping recipient %s: %v<br>", p.Person.Email, realizedInvitation.RsvpMap[p.Key].Status)
 				continue
 			}
-			// emailData := map[string]interface{}{
-			// 	"Event":       wr.Event,
-			// 	"Invitation":  realizedInvitation,
-			// 	"Person":      &p.Person,
-			// 	"RoomingInfo": roomingInfo,
-			// }
-			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			// err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
-			// if err != nil {
-			// 	fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
-			// 	return err
-			// }
+			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+		}
+	}
+	return nil
+}
+
+// QualifiedInviteesListDistributor is an email distributor that lists all invitees
+// who have not RSVP'ed "no" to the event. If RsvpMap is nil, the invitee has not
+// submitted any RSVP at all, and the person is included.
+func QualifiedInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+
+	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	var invitations []*Invitation
+	invitationKeys, err := q.GetAll(wr.Context, &invitations)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(invitations); i++ {
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
+		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
+		for _, p := range realizedInvitation.Invitees {
+			if p.Person.Email == "" {
+				continue
+			}
+			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
+				fmt.Fprintf(wr.ResponseWriter, "Skipping recipient %s: %v<br>", p.Person.Email, realizedInvitation.RsvpMap[p.Key].Status)
+				continue
+			}
+			emailData := map[string]interface{}{
+				"Event":       wr.Event,
+				"Invitation":  realizedInvitation,
+				"Person":      &p.Person,
+				"RoomingInfo": roomingInfo,
+			}
+			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+			if err != nil {
+				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				return err
+			}
 		}
 	}
 	return nil
