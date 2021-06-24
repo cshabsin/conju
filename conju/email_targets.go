@@ -27,6 +27,7 @@ var AllDistributors = map[string]EmailDistributorEntry{
 	"Attendees*REAL*":       {true, AttendeesDistributor},
 	"QualifiedInviteesList": {false, QualifiedInviteesListDistributor},
 	"QualifiedDryRunList":   {false, QualifiedInviteesDryRunDistributor},
+	"Qualified*REAL*":       {true, QualifiedInviteesDistributor},
 }
 
 func SelfOnlyDistributor(wr WrappedRequest, sender EmailSender) error {
@@ -277,7 +278,6 @@ func QualifiedInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) e
 				continue
 			}
 			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
-				fmt.Fprintf(wr.ResponseWriter, "Skipping recipient %s: %v<br>", p.Person.Email, realizedInvitation.RsvpMap[p.Key].Status)
 				continue
 			}
 			emailData := map[string]interface{}{
@@ -288,6 +288,46 @@ func QualifiedInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) e
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 			err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+			if err != nil {
+				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// QualifiedInviteesDistributor is an email distributor that sends an email
+// to each person who has not RSVP'ed "no" to the event.
+func QualifiedInviteesDistributor(wr WrappedRequest, sender EmailSender) error {
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+
+	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	var invitations []*Invitation
+	invitationKeys, err := q.GetAll(wr.Context, &invitations)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(invitations); i++ {
+		realizedInvitation := makeRealizedInvitation(wr.Context, invitationKeys[i],
+			invitations[i])
+		roomingInfo := getRoomingInfoWithInvitation(wr, invitations[i], invitationKeys[i])
+		for _, p := range realizedInvitation.Invitees {
+			if p.Person.Email == "" {
+				continue
+			}
+			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
+				continue
+			}
+			emailData := map[string]interface{}{
+				"Event":       wr.Event,
+				"Invitation":  realizedInvitation,
+				"Person":      &p.Person,
+				"RoomingInfo": roomingInfo,
+			}
+			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			err := sender(wr.Context, emailData, MailHeaderInfo{To: []string{p.Person.Email}})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
