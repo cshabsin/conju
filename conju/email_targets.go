@@ -256,9 +256,8 @@ func QualifiedInviteesListDistributor(wr WrappedRequest, sender EmailSender) err
 	return nil
 }
 
-// QualifiedInviteesListDistributor is an email distributor that lists all invitees
-// who have not RSVP'ed "no" to the event. If RsvpMap is nil, the invitee has not
-// submitted any RSVP at all, and the person is included.
+// QualifiedInviteesDryRunDistributor is an email distributor that sends the currently
+// logged in user one email for each person who has not RSVP'ed "no" to the event.
 func QualifiedInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
