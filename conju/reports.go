@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -31,7 +32,7 @@ func handleRsvpReport(wr WrappedRequest) {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
 
-	allRsvpMap := make(map[RsvpStatus][][]Person)
+	allRsvpMap := make(map[invitation.RsvpStatus][][]Person)
 	var allNoRsvp [][]Person
 
 	type ExtraInvitationInfo struct {
@@ -56,17 +57,17 @@ func handleRsvpReport(wr WrappedRequest) {
 	_, _ = b.GetAll(ctx, &bookings)
 
 	personToCost := make(map[int64]float64)
-	personToRsvpStatus := make(map[int64]RsvpStatus)
+	personToRsvpStatus := make(map[int64]invitation.RsvpStatus)
 	personIdToPerson := make(map[int64]Person)
 
-	for i, invitation := range invitations {
-		rsvpMap, noRsvp := invitation.ClusterByRsvp(ctx)
+	for i, inv := range invitations {
+		rsvpMap, noRsvp := inv.ClusterByRsvp(ctx)
 
-		thursdayDinnerCount += invitation.ThursdayDinnerCount
-		fridayDinnerCount += invitation.FridayDinnerCount
-		fridayIceCreamCount += invitation.FridayIceCreamCount
-		thursdayCount := len(rsvpMap[ThuFriSat])
-		if invitation.FridayLunch {
+		thursdayDinnerCount += inv.ThursdayDinnerCount
+		fridayDinnerCount += inv.FridayDinnerCount
+		fridayIceCreamCount += inv.FridayIceCreamCount
+		thursdayCount := len(rsvpMap[invitation.ThuFriSat])
+		if inv.FridayLunch {
 			yesFridayLunch += thursdayCount
 		} else {
 			noFridayLunch += thursdayCount
@@ -74,10 +75,10 @@ func handleRsvpReport(wr WrappedRequest) {
 
 		ExtraInfo := ExtraInvitationInfo{
 			InvitationKey:       invitationKeys[i].Encode(),
-			ThursdayDinnerCount: invitation.ThursdayDinnerCount,
-			FridayLunch:         invitation.FridayLunch,
-			FridayDinnerCount:   invitation.FridayDinnerCount,
-			FridayIceCreamCount: invitation.FridayIceCreamCount,
+			ThursdayDinnerCount: inv.ThursdayDinnerCount,
+			FridayLunch:         inv.FridayLunch,
+			FridayDinnerCount:   inv.FridayDinnerCount,
+			FridayIceCreamCount: inv.FridayIceCreamCount,
 		}
 
 		for r, p := range rsvpMap {
@@ -104,7 +105,7 @@ func handleRsvpReport(wr WrappedRequest) {
 	}
 
 	sort.Slice(allNoRsvp, func(a, b int) bool { return SortByLastFirstName(allNoRsvp[a][0], allNoRsvp[b][0]) })
-	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe, No}
+	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe, invitation.No}
 
 	for _, booking := range bookings {
 
@@ -117,10 +118,10 @@ func handleRsvpReport(wr WrappedRequest) {
 			if personIdToPerson[person.IntID()].IsBabyAtTime(wr.Event.StartDate) {
 				continue
 			}
-			if rsvpStatus == FriSat {
+			if rsvpStatus == invitation.FriSat {
 				FridaySaturday++
 			}
-			if rsvpStatus == ThuFriSat {
+			if rsvpStatus == invitation.ThuFriSat {
 				FridaySaturday++
 				PlusThursday++
 				addThurs[i] = true
@@ -134,11 +135,11 @@ func handleRsvpReport(wr WrappedRequest) {
 			}
 			costForPerson := float64(0)
 			if FridaySaturday <= 5 {
-				costForPerson = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
+				costForPerson = invitation.GetAllRsvpStatuses()[invitation.FriSat].BaseCost[FridaySaturday]
 			}
 
 			if addThurs[i] && PlusThursday <= 5 {
-				costForPerson += GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
+				costForPerson += invitation.GetAllRsvpStatuses()[invitation.ThuFriSat].AddOnCost[PlusThursday]
 			}
 			costForPerson = math.Floor(costForPerson*100) / 100
 			personToCost[person.IntID()] = costForPerson
@@ -146,7 +147,7 @@ func handleRsvpReport(wr WrappedRequest) {
 	}
 
 	for status, personLists := range allRsvpMap {
-		if !GetAllRsvpStatuses()[status].Attending {
+		if !invitation.GetAllRsvpStatuses()[status].Attending {
 			continue
 		}
 		for _, personList := range personLists {
@@ -164,7 +165,7 @@ func handleRsvpReport(wr WrappedRequest) {
 		"RsvpMap":              allRsvpMap,
 		"NoRsvp":               allNoRsvp,
 		"StatusOrder":          statusOrder,
-		"AllRsvpStatuses":      GetAllRsvpStatuses(),
+		"AllRsvpStatuses":      invitation.GetAllRsvpStatuses(),
 		"ThursdayDinnerCount":  thursdayDinnerCount,
 		"FridayLunchYes":       yesFridayLunch,
 		"FridayLunchNo":        noFridayLunch,
@@ -189,7 +190,7 @@ func handleActivitiesReport(wr WrappedRequest) {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
 
-	allRsvpStatuses := GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 
 	activities, err := activity.Realize(ctx, wr.Event.Activities)
 	if err != nil {
@@ -341,7 +342,7 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	personToInvitationMap := make(map[int64]int64)
 	invitationMap := make(map[int64]Invitation)
-	personToRsvpStatus := make(map[int64]RsvpStatus)
+	personToRsvpStatus := make(map[int64]invitation.RsvpStatus)
 	for i, inv := range invitations {
 		invitationMap[invitationKeys[i].IntID()] = *inv
 		if inv.RsvpMap != nil {
@@ -384,16 +385,16 @@ func handleRoomingReport(wr WrappedRequest) {
 
 		for i, person := range booking.Roommates {
 			people[i] = personMap[person.IntID()]
-			invitation := invitationMap[personToInvitationMap[person.IntID()]]
-			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
+			inv := invitationMap[personToInvitationMap[person.IntID()]]
+			doubleBedNeeded = doubleBedNeeded || (inv.HousingPreferenceBooleans&shareBedBit == shareBedBit)
 			rsvpStatus := personToRsvpStatus[person.IntID()]
 			if people[i].IsBabyAtTime(wr.Event.StartDate) {
 				continue
 			}
-			if rsvpStatus == FriSat {
+			if rsvpStatus == invitation.FriSat {
 				FridaySaturday++
 			}
-			if rsvpStatus == ThuFriSat {
+			if rsvpStatus == invitation.ThuFriSat {
 				FridaySaturday++
 				PlusThursday++
 				addThurs[i] = true
@@ -419,13 +420,13 @@ func handleRoomingReport(wr WrappedRequest) {
 		basePPCost := float64(0)
 		basePPCostString := "???"
 		if FridaySaturday <= 5 {
-			basePPCost = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
+			basePPCost = invitation.GetAllRsvpStatuses()[invitation.FriSat].BaseCost[FridaySaturday]
 			basePPCostString = fmt.Sprintf("$%.2f", basePPCost)
 		}
 		addOnPPCost := float64(0)
 		addOnPPCostString := "???"
 		if PlusThursday <= 5 {
-			addOnPPCost = GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
+			addOnPPCost = invitation.GetAllRsvpStatuses()[invitation.ThuFriSat].AddOnCost[PlusThursday]
 			addOnPPCostString = fmt.Sprintf("$%.2f", addOnPPCost)
 		}
 
@@ -516,24 +517,11 @@ func handleSaveReservations(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }
 
-type Meal int
-
-const (
-	FriBrk = iota
-	FriLun
-	FriDin
-	SatBrk
-	SatLun
-	SatDin
-	SunBrk
-	SunLun
-)
-
 func handleFoodReport(wr WrappedRequest) {
 	ctx := wr.Context
 	currentEventKey := wr.EventKey
 
-	allRsvpStatuses := GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	totalRestrictions := len(GetAllFoodRestrictionTags())
 
 	counts := make([]int, totalRestrictions)
@@ -586,7 +574,7 @@ func handleRidesReport(wr WrappedRequest) {
 	ctx := wr.Context
 	currentEventKey := wr.EventKey
 
-	allRsvpStatuses := GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 
 	type CarRequest struct {
 		People               []*Person
@@ -623,7 +611,7 @@ func handleRidesReport(wr WrappedRequest) {
 				personKeys = append(personKeys, p)
 			}
 			// TODO: split rides by person
-			if status.Status == ThuFriSat {
+			if status.Status == invitation.ThuFriSat {
 				thursday = true
 			}
 		}

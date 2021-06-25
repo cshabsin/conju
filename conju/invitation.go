@@ -14,15 +14,16 @@ import (
 	"time"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
 type Invitation struct {
-	Event                     *datastore.Key                // Event
-	Invitees                  []*datastore.Key              // []Person
-	RsvpMap                   map[*datastore.Key]RsvpStatus // Person -> Rsvp
+	Event                     *datastore.Key                           // Event
+	Invitees                  []*datastore.Key                         // []Person
+	RsvpMap                   map[*datastore.Key]invitation.RsvpStatus // Person -> Rsvp
 	ActivityMap               map[*datastore.Key](map[*datastore.Key]ActivityRanking)
 	ActivityLeaderMap         map[*datastore.Key](map[*datastore.Key]bool)
 	Housing                   HousingPreference
@@ -49,9 +50,9 @@ type Invitation struct {
 const delimiter = "|_|"
 
 func (inv *Invitation) Load(ps []datastore.Property) error {
-	allRsvpStatuses := GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 
-	inv.RsvpMap = make(map[*datastore.Key]RsvpStatus)
+	inv.RsvpMap = make(map[*datastore.Key]invitation.RsvpStatus)
 	inv.ActivityMap = make(map[*datastore.Key](map[*datastore.Key]ActivityRanking))
 	inv.ActivityLeaderMap = make(map[*datastore.Key](map[*datastore.Key]bool))
 	for _, p := range ps {
@@ -266,7 +267,7 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 }
 
 func (inv *Invitation) AnyAttending() bool {
-	allStatuses := GetAllRsvpStatuses()
+	allStatuses := invitation.GetAllRsvpStatuses()
 	for _, v := range inv.RsvpMap {
 		attending := allStatuses[v].Attending
 		if attending {
@@ -277,7 +278,7 @@ func (inv *Invitation) AnyAttending() bool {
 }
 
 func (inv *Invitation) AttendingInvitees() []*datastore.Key {
-	allStatuses := GetAllRsvpStatuses()
+	allStatuses := invitation.GetAllRsvpStatuses()
 	var attending []*datastore.Key
 	for k, v := range inv.RsvpMap {
 		if allStatuses[v].Attending {
@@ -288,7 +289,7 @@ func (inv *Invitation) AttendingInvitees() []*datastore.Key {
 }
 
 func (inv *Invitation) AnyUndecided() bool {
-	allStatuses := GetAllRsvpStatuses()
+	allStatuses := invitation.GetAllRsvpStatuses()
 	for _, invitee := range inv.Invitees {
 		if rsvp, present := inv.RsvpMap[invitee]; present {
 			undecided := allStatuses[rsvp].Undecided
@@ -569,14 +570,14 @@ var (
 )
 
 func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
-	var invitation Invitation
-	err := datastore.Get(wr.Context, invitationKey, &invitation)
+	var inv Invitation
+	err := datastore.Get(wr.Context, invitationKey, &inv)
 	if err != nil {
 		log.Errorf(wr.Context, "error getting invitation: %v", err)
 	}
 
 	formInfoMap := make(map[*datastore.Key]PersonUpdateFormInfo)
-	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &inv)
 	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
 		formInfo := makePersonUpdateFormInfo(personKey, invitee.Person, i, true)
@@ -591,13 +592,13 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"Invitation":                   realizedInvitation,
 		"FormInfoMap":                  formInfoMap,
-		"AllRsvpStatuses":              GetAllRsvpStatuses(),
+		"AllRsvpStatuses":              invitation.GetAllRsvpStatuses(),
 		"Activities":                   realActivities,
 		"AllHousingPreferences":        GetAllHousingPreferences(),
 		"AllHousingPreferenceBooleans": GetAllHousingPreferenceBooleans(),
 		"AllDrivingPreferences":        GetAllDrivingPreferences(),
 		"AllParkingTypes":              GetAllParkingTypes(),
-		"InvitationHasChildren":        invitation.HasChildren(wr.Context),
+		"InvitationHasChildren":        inv.HasChildren(wr.Context),
 		"IsAdminUser":                  wr.IsAdminUser(),
 		"RoomingInfo":                  getRoomingInfo(wr, invitationKey),
 	})
@@ -625,13 +626,13 @@ func handleSaveInvitation(wr WrappedRequest) {
 		return
 	}
 
-	var invitation Invitation
-	datastore.Get(wr.Context, invitationKey, &invitation)
+	var inv Invitation
+	datastore.Get(wr.Context, invitationKey, &inv)
 
 	people := wr.Request.Form["person"]
 	rsvps := wr.Request.Form["rsvp"]
 	var newPeople []*datastore.Key
-	var rsvpMap = make(map[*datastore.Key]RsvpStatus)
+	var rsvpMap = make(map[*datastore.Key]invitation.RsvpStatus)
 	var activityMap = make(map[*datastore.Key](map[*datastore.Key]ActivityRanking))
 	var activityLeaderMap = make(map[*datastore.Key](map[*datastore.Key]bool))
 	for i, personKey := range people {
@@ -641,7 +642,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
 		if rsvp >= 0 {
-			fullStatus := GetAllRsvpStatuses()[rsvp]
+			fullStatus := invitation.GetAllRsvpStatuses()[rsvp]
 			rsvpMap[key] = fullStatus.Status
 		}
 
@@ -660,16 +661,16 @@ func handleSaveInvitation(wr WrappedRequest) {
 		activityLeaderMap[key] = activityLeaderMapForPerson
 	}
 
-	invitation.RsvpMap = rsvpMap
-	invitation.ActivityMap = activityMap
-	invitation.ActivityLeaderMap = activityLeaderMap
+	inv.RsvpMap = rsvpMap
+	inv.ActivityMap = activityMap
+	inv.ActivityLeaderMap = activityLeaderMap
 
-	invitation.Invitees = newPeople
+	inv.Invitees = newPeople
 
 	housingPreference, _ := strconv.Atoi(wr.Request.Form.Get("housingPreference"))
 	if housingPreference >= 0 {
 		hp := HousingPreference(housingPreference)
-		invitation.Housing = hp
+		inv.Housing = hp
 	}
 
 	var booleanInfos = GetAllHousingPreferenceBooleans()
@@ -682,58 +683,58 @@ func handleSaveInvitation(wr WrappedRequest) {
 		housingPreferenceTotal += booleanInfo.Bit
 	}
 
-	invitation.HousingPreferenceBooleans = housingPreferenceTotal
+	inv.HousingPreferenceBooleans = housingPreferenceTotal
 
-	invitation.HousingNotes = wr.Request.Form.Get("housingNotes")
+	inv.HousingNotes = wr.Request.Form.Get("housingNotes")
 
 	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
-	invitation.Driving = DrivingPreference(drivingPreference)
+	inv.Driving = DrivingPreference(drivingPreference)
 
 	parkingType, _ := strconv.Atoi(wr.Request.Form.Get("parking"))
 	if parkingType >= 0 {
 		pt := ParkingType(parkingType)
-		invitation.Parking = pt
+		inv.Parking = pt
 	}
 
-	invitation.LeaveFrom = wr.Request.Form.Get("leaveFrom")
-	invitation.LeaveTime = wr.Request.Form.Get("leaveTime")
-	invitation.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
-	invitation.TravelNotes = wr.Request.Form.Get("travelNotes")
-	invitation.OtherInfo = wr.Request.Form.Get("otherInfo")
+	inv.LeaveFrom = wr.Request.Form.Get("leaveFrom")
+	inv.LeaveTime = wr.Request.Form.Get("leaveTime")
+	inv.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
+	inv.TravelNotes = wr.Request.Form.Get("travelNotes")
+	inv.OtherInfo = wr.Request.Form.Get("otherInfo")
 
 	thursdayDinnerCount, err := strconv.Atoi(wr.Request.Form.Get("ThursdayDinnerCount"))
 	if err == nil {
-		invitation.ThursdayDinnerCount = thursdayDinnerCount
+		inv.ThursdayDinnerCount = thursdayDinnerCount
 	} else {
-		invitation.ThursdayDinnerCount = 0
+		inv.ThursdayDinnerCount = 0
 	}
 	fridayLunch := wr.Request.Form.Get("FridayLunch")
-	invitation.FridayLunch = (fridayLunch == "on")
+	inv.FridayLunch = (fridayLunch == "on")
 
 	fridayDinnerCount, err := strconv.Atoi(wr.Request.Form.Get("FridayDinnerCount"))
 	if err == nil {
-		invitation.FridayDinnerCount = fridayDinnerCount
+		inv.FridayDinnerCount = fridayDinnerCount
 	} else {
-		invitation.FridayDinnerCount = 0
+		inv.FridayDinnerCount = 0
 	}
 	fridayIceCreamCount, err := strconv.Atoi(wr.Request.Form.Get("FridayIceCreamCount"))
 	if err == nil {
-		invitation.FridayIceCreamCount = fridayIceCreamCount
+		inv.FridayIceCreamCount = fridayIceCreamCount
 	} else {
-		invitation.FridayIceCreamCount = 0
+		inv.FridayIceCreamCount = 0
 	}
 
-	invitation.LastUpdatedPerson = wr.LoginInfo.PersonKey
+	inv.LastUpdatedPerson = wr.LoginInfo.PersonKey
 
-	invitation.LastUpdatedTimestamp = time.Now()
+	inv.LastUpdatedTimestamp = time.Now()
 
-	_, err = datastore.Put(wr.Context, invitationKey, &invitation)
+	_, err = datastore.Put(wr.Context, invitationKey, &inv)
 	if err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 
 	var invitees []Person
-	for _, personKey := range invitation.Invitees {
+	for _, personKey := range inv.Invitees {
 		var person Person
 		datastore.Get(wr.Context, personKey, &person)
 		invitees = append(invitees, person)
@@ -759,9 +760,9 @@ func handleSaveInvitation(wr WrappedRequest) {
 	}
 
 	var isAttending []bool
-	for _, invitee := range invitation.Invitees {
+	for _, invitee := range inv.Invitees {
 		if rsvp, present := rsvpMap[invitee]; present {
-			attending := GetAllRsvpStatuses()[rsvp].Attending
+			attending := invitation.GetAllRsvpStatuses()[rsvp].Attending
 			isAttending = append(isAttending, attending)
 		} else {
 			isAttending = append(isAttending, false)
@@ -769,10 +770,10 @@ func handleSaveInvitation(wr WrappedRequest) {
 	}
 
 	var e Event
-	datastore.Get(wr.Context, invitation.Event, &e)
+	datastore.Get(wr.Context, inv.Event, &e)
 	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
-	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &invitation)
+	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &inv)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
@@ -790,7 +791,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		AllPronouns:                  []PronounSet{They, She, He, Zie},
 		AllFoodRestrictions:          GetAllFoodRestrictionTags(),
 		AdditionalPeople:             additionalPeople,
-		AnyAttending:                 invitation.AnyAttending(),
+		AnyAttending:                 inv.AnyAttending(),
 		IsAttending:                  isAttending,
 	}
 
@@ -804,8 +805,8 @@ func handleSaveInvitation(wr WrappedRequest) {
 	if !wr.IsAdminUser() {
 
 		data := wr.MakeTemplateData(map[string]interface{}{
-			"AnyAttending": invitation.AnyAttending(),
-			"AnyUndecided": invitation.AnyUndecided(),
+			"AnyAttending": inv.AnyAttending(),
+			"AnyUndecided": inv.AnyUndecided(),
 		})
 
 		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
@@ -819,16 +820,16 @@ func handleSaveInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
-func (invitation *Invitation) ClusterByRsvp(ctx context.Context) (map[RsvpStatus][]Person, []Person) {
-	var personKeyToRsvp = make(map[datastore.Key]RsvpStatus)
-	for p, r := range invitation.RsvpMap {
+func (inv *Invitation) ClusterByRsvp(ctx context.Context) (map[invitation.RsvpStatus][]Person, []Person) {
+	var personKeyToRsvp = make(map[datastore.Key]invitation.RsvpStatus)
+	for p, r := range inv.RsvpMap {
 		personKeyToRsvp[*p] = r
 	}
 
-	rsvpMap := make(map[RsvpStatus][]Person)
+	rsvpMap := make(map[invitation.RsvpStatus][]Person)
 	var noRsvp []Person
 
-	for _, invitee := range invitation.Invitees {
+	for _, invitee := range inv.Invitees {
 		var person Person
 		datastore.Get(ctx, invitee, &person)
 		person.DatastoreKey = invitee

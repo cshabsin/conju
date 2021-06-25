@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -133,8 +134,8 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
 	}
 
-	rsvpStatusMap := make(map[string]RsvpStatus)
-	allRsvpStatuses := GetAllRsvpStatuses()
+	rsvpStatusMap := make(map[string]invitation.RsvpStatus)
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	for _, status := range allRsvpStatuses {
 		rsvpStatusMap[status.ShortDescription] = status.Status
 	}
@@ -159,7 +160,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			eventId, _ := strconv.Atoi(fields[0])
 			venueKey := venuesMap[fields[3]]
 			rsvpStatusStrings := strings.Split(fields[7], ",")
-			var rsvpStatuses []RsvpStatus
+			var rsvpStatuses []invitation.RsvpStatus
 			for _, rsvpStatusString := range rsvpStatusStrings {
 				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
 			}
@@ -389,7 +390,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			var invitees []Person
 			var personKeys []*datastore.Key
 
-			rsvpMap := make(map[*datastore.Key]RsvpStatus)
+			rsvpMap := make(map[*datastore.Key]invitation.RsvpStatus)
 
 			for i, guestId := range guestIds {
 				guestIdInt, _ := strconv.Atoi(guestId)
@@ -444,59 +445,58 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 
 }
 
-func getRsvpStatusFromCode(eventId int, status string) RsvpStatus {
-
+func getRsvpStatusFromCode(eventId int, status string) invitation.RsvpStatus {
 	switch status {
 	case "n":
-		return No
+		return invitation.No
 	case "m":
-		return Maybe
+		return invitation.Maybe
 	}
 
 	switch eventId {
 	case 1:
 		switch status {
 		case "y":
-			return FriSat
+			return invitation.FriSat
 		case "f":
-			return Fri
+			return invitation.Fri
 		case "s":
-			return Sat
+			return invitation.Sat
 		case "w":
-			return WeddingOnly
+			return invitation.WeddingOnly
 		}
 	case 2, 3:
 		switch status {
 		case "y":
-			return FriSatSun
+			return invitation.FriSatSun
 		case "f":
-			return FriSat
+			return invitation.FriSat
 		case "s":
-			return SatSun
+			return invitation.SatSun
 		}
 	case 4:
 		switch status {
 		case "y":
-			return FriSat
+			return invitation.FriSat
 		case "f":
-			return ThuFriSat
+			return invitation.ThuFriSat
 		case "s":
-			return SatSun
+			return invitation.SatSun
 		case "e":
-			return FriSatPlusEither
+			return invitation.FriSatPlusEither
 		}
 	case 5:
 		switch status {
 		case "y":
-			return FriSat
+			return invitation.FriSat
 		case "f":
-			return ThuFriSat
+			return invitation.ThuFriSat
 		case "s":
-			return SatSun
+			return invitation.SatSun
 		}
 	}
 
-	return No
+	return invitation.No
 }
 
 func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
