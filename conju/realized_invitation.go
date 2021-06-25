@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/event"
 	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -14,7 +15,7 @@ type RealizedInvitation struct {
 	Invitation                *Invitation
 	EncodedKey                string
 	Invitees                  []PersonWithKey
-	Event                     Event
+	Event                     event.Event
 	RsvpMap                   map[string]invitation.RsvpStatusInfo
 	Housing                   HousingPreferenceInfo
 	HousingPreferenceBooleans int
@@ -80,7 +81,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		}
 	}
 
-	var event Event
+	var event event.Event
 	datastore.Get(ctx, inv.Event, &event)
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()

@@ -3,6 +3,7 @@ package conju
 import (
 	"html/template"
 
+	"github.com/cshabsin/conju/event"
 	"google.golang.org/appengine/log"
 )
 
@@ -23,7 +24,7 @@ func makeTemplateHandler(ts ...string) func(WrappedRequest) {
 	tpl := template.Must(template.ParseFiles(templatePaths(ts)...))
 	return func(wr WrappedRequest) {
 		v := struct {
-			*Event
+			*event.Event
 		}{
 			wr.Event,
 		}

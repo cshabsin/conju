@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/event"
 	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -183,7 +184,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 
 			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
-			e := Event{
+			e := event.Event{
 				EventId:               eventId,
 				Venue:                 &venueKey,
 				Name:                  fields[1],
@@ -360,10 +361,10 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	defer rsvpFile.Close()
 
 	q := datastore.NewQuery("Event")
-	var e []*Event
+	var e []*event.Event
 	eventKeys, err := q.GetAll(ctx, &e)
 	eventKeyMap := make(map[int]*datastore.Key)
-	eventMap := make(map[int]Event)
+	eventMap := make(map[int]event.Event)
 
 	for i, event := range e {
 		eventKeyMap[event.EventId] = eventKeys[i]
@@ -618,7 +619,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	}
 
 	eventsMap := make(map[string]datastore.Key)
-	var events []Event
+	var events []event.Event
 	q = datastore.NewQuery("Event")
 	keys, err = q.GetAll(ctx, &events)
 	for i, eventKey := range keys {
@@ -643,7 +644,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 			// Add rooms to events
 			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
-			var event Event
+			var event event.Event
 			eventKey := eventsMap[fields[2]]
 			datastore.Get(ctx, &eventKey, &event)
 

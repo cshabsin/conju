@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cshabsin/conju/event"
 	"github.com/gorilla/sessions"
 	"gopkg.in/sendgrid/sendgrid-go.v2"
 
@@ -28,7 +29,7 @@ type WrappedRequest struct {
 	*sessions.Session
 	hasRunEventGetter bool
 	EventKey          *datastore.Key // TODO: stick these in EventInfo
-	*Event
+	*event.Event
 	*user.User
 	*LoginInfo
 	TemplateData  map[string]interface{}

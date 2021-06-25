@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/event"
 	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
@@ -304,7 +305,7 @@ func (inv *Invitation) AnyUndecided() bool {
 }
 
 func (inv *Invitation) HasChildren(ctx context.Context) bool {
-	var event Event
+	var event event.Event
 	datastore.Get(ctx, inv.Event, &event)
 	for _, personKey := range inv.Invitees {
 		var person Person
@@ -397,12 +398,12 @@ func handleInvitations(wr WrappedRequest) {
 
 	type EventWithKey struct {
 		Key string
-		Ev  Event
+		Ev  event.Event
 	}
 
 	var eventsWithKeys []EventWithKey
 	if len(invitations) == 0 {
-		var allEvents []*Event
+		var allEvents []*event.Event
 		eventKeys, err := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
 		if err != nil {
 			log.Errorf(ctx, "Error listing events for copyInvitations: %v", err)
@@ -769,7 +770,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 		}
 	}
 
-	var e Event
+	var e event.Event
 	datastore.Get(wr.Context, inv.Event, &e)
 	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
