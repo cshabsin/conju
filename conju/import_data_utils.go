@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cshabsin/conju/activity"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -80,7 +81,7 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 			description := fields[2]
 			needsLeader := fields[1] == "TRUE"
 
-			activity := Activity{
+			activity := activity.Activity{
 				Keyword:     keyword,
 				Description: description,
 				NeedsLeader: needsLeader,
@@ -139,7 +140,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	}
 
 	activityMap := make(map[string]*datastore.Key)
-	var activities []Activity
+	var activities []activity.Activity
 	q = datastore.NewQuery("Activity")
 	keys, err = q.GetAll(ctx, &activities)
 	for i, activityKey := range keys {

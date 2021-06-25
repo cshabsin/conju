@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/cshabsin/conju/activity"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -190,16 +191,15 @@ func handleActivitiesReport(wr WrappedRequest) {
 
 	allRsvpStatuses := GetAllRsvpStatuses()
 
-	var activities = make([]*Activity, len(wr.Event.Activities))
-	err = datastore.GetMulti(ctx, wr.Event.Activities, activities)
+	activities, err := activity.Realize(ctx, wr.Event.Activities)
 	if err != nil {
 		log.Errorf(ctx, "fetching activities: %v", err)
 	}
 
-	keysToActivities := make(map[datastore.Key]Activity)
+	keysToActivities := make(map[datastore.Key]*activity.Activity)
 	activityKeys := make([]datastore.Key, len(wr.Event.Activities))
 	for i, key := range wr.Event.Activities {
-		keysToActivities[*key] = *activities[i]
+		keysToActivities[*key] = activities[i]
 		activityKeys[i] = *key
 	}
 

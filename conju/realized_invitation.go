@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cshabsin/conju/activity"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -17,7 +18,7 @@ type RealizedInvitation struct {
 	Housing                   HousingPreferenceInfo
 	HousingPreferenceBooleans int
 	HousingNotes              string
-	Activities                []ActivityWithKey
+	Activities                []activity.ActivityWithKey
 	ActivitiesMap             map[string](map[string]ActivityRanking)
 	ActivitiesLeadersMap      map[string](map[string]bool)
 	Driving                   DrivingPreferenceInfo
@@ -91,15 +92,15 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		}
 	}
 
-	var activities []ActivityWithKey
+	var activities []activity.ActivityWithKey
 	for i, activityKey := range event.Activities {
 		if activityKey == nil {
 			log.Errorf(ctx, "nil activityKey in event %v (index %d) (list %v)", event, i, event.Activities)
 		}
-		var activity Activity
-		datastore.Get(ctx, activityKey, &activity)
+		var act activity.Activity
+		datastore.Get(ctx, activityKey, &act)
 		encodedKey := activityKey.Encode()
-		activities = append(activities, ActivityWithKey{Activity: activity, EncodedKey: encodedKey})
+		activities = append(activities, activity.ActivityWithKey{Activity: act, EncodedKey: encodedKey})
 	}
 
 	realizedActivityMap := make(map[string](map[string]ActivityRanking))

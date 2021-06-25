@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cshabsin/conju/activity"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -190,14 +191,9 @@ func handleEvents(wr WrappedRequest) {
 		}
 	}
 
-	var activities []Activity
-	q = datastore.NewQuery("Activity").Order("Keyword")
-	activityKeys, _ := q.GetAll(ctx, &activities)
-
-	var activitiesWithKeys []ActivityWithKey
-	for i, activityKey := range activityKeys {
-		encodedKey := activityKey.Encode()
-		activitiesWithKeys = append(activitiesWithKeys, ActivityWithKey{Activity: activities[i], EncodedKey: encodedKey})
+	activitiesWithKeys, err := activity.QueryAll(ctx)
+	if err != nil {
+		log.Errorf(ctx, "activity.QueryAll: %v", err)
 	}
 
 	err = wr.Request.ParseForm()

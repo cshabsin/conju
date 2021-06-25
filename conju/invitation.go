@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cshabsin/conju/activity"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -582,16 +583,9 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		formInfoMap[personKey] = formInfo
 	}
 
-	activityKeys := realizedInvitation.Event.Activities
-	var activities = make([]*Activity, len(activityKeys))
-	err = datastore.GetMulti(wr.Context, activityKeys, activities)
+	realActivities, err := activity.Realize(wr.Context, realizedInvitation.Event.Activities)
 	if err != nil {
-		log.Infof(wr.Context, "%v", err)
-	}
-
-	var realActivities []Activity
-	for _, activity := range activities {
-		realActivities = append(realActivities, *activity)
+		log.Errorf(wr.Context, "activity.Realize: %v", err)
 	}
 
 	data := wr.MakeTemplateData(map[string]interface{}{
