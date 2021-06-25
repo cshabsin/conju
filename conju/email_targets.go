@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -247,7 +248,7 @@ func QualifiedInviteesListDistributor(wr WrappedRequest, sender EmailSender) err
 			if p.Person.Email == "" {
 				continue
 			}
-			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
+			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == invitation.No {
 				fmt.Fprintf(wr.ResponseWriter, "Skipping recipient %s: %v<br>", p.Person.Email, realizedInvitation.RsvpMap[p.Key].Status)
 				continue
 			}
@@ -277,7 +278,7 @@ func QualifiedInviteesDryRunDistributor(wr WrappedRequest, sender EmailSender) e
 			if p.Person.Email == "" {
 				continue
 			}
-			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
+			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == invitation.No {
 				continue
 			}
 			emailData := map[string]interface{}{
@@ -317,7 +318,7 @@ func QualifiedInviteesDistributor(wr WrappedRequest, sender EmailSender) error {
 			if p.Person.Email == "" {
 				continue
 			}
-			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == No {
+			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == invitation.No {
 				continue
 			}
 			emailData := map[string]interface{}{

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	text_template "text/template"
 
+	"github.com/cshabsin/conju/invitation"
 	"gopkg.in/sendgrid/sendgrid-go.v2"
 
 	"google.golang.org/appengine/datastore"
@@ -279,9 +280,9 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/" + emailName + ".html"))
 
 	rendered_mail := make(map[int64]RenderedMail, 0)
-	for invitation, bookings := range allInviteeBookings {
+	for inv, bookings := range allInviteeBookings {
 		// invitation is ID from key.
-		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", invitation, nil), invitationMap[invitation])
+		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", inv, nil), invitationMap[inv])
 		unreserved := make([]BuildingRoom, 0)
 		for _, booking := range bookings {
 			if !booking.ReservationMade {
@@ -292,7 +293,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		thursday := false
 		for i := range ri.InviteePeople {
 			status := ri.RsvpMap[ri.Invitees[i].Key].Status
-			if status == ThuFriSat {
+			if status == invitation.ThuFriSat {
 				thursday = true
 				break
 			}

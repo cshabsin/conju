@@ -3,6 +3,7 @@ package conju
 import (
 	"math"
 
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -62,13 +63,13 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	return getRoomingInfoWithInvitation(wr, &invitation, invitationKey)
 }
 
-func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
+func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	invitationKey *datastore.Key) *RoomingAndCostInfo {
 	bookingInfo := wr.GetBookingInfo()
 
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
-	for _, person := range invitation.Invitees {
+	for _, person := range inv.Invitees {
 		if bookingID, ok := bookingInfo.PersonToBookingMap[person.IntID()]; ok {
 			bookingSet[bookingID] = true
 		}
@@ -121,7 +122,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 		log.Errorf(wr.Context, "fetching invitations: %v", err)
 	}
 
-	personToRsvp := make(map[int64]RsvpStatus)
+	personToRsvp := make(map[int64]invitation.RsvpStatus)
 	personToInvitationMap := make(map[int64]int64)
 	invitationMap := make(map[int64]*Invitation)
 	for i, inv := range invitations {
@@ -171,10 +172,10 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 			p := personMap[person.IntID()]
 
 			if !p.IsBabyAtTime(wr.Event.StartDate) {
-				if rsvpStatus == FriSat {
+				if rsvpStatus == invitation.FriSat {
 					FridaySaturday++
 				}
-				if rsvpStatus == ThuFriSat {
+				if rsvpStatus == invitation.ThuFriSat {
 					FridaySaturday++
 					PlusThursday++
 					addThurs[i] = true
@@ -218,11 +219,11 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 			}
 			costForPerson := float64(0)
 			if FridaySaturday <= 5 {
-				costForPerson = GetAllRsvpStatuses()[FriSat].BaseCost[FridaySaturday]
+				costForPerson = invitation.GetAllRsvpStatuses()[invitation.FriSat].BaseCost[FridaySaturday]
 			}
 
 			if addThurs[i] && PlusThursday <= 5 {
-				costForPerson += GetAllRsvpStatuses()[ThuFriSat].AddOnCost[PlusThursday]
+				costForPerson += invitation.GetAllRsvpStatuses()[invitation.ThuFriSat].AddOnCost[PlusThursday]
 			}
 			costForPerson = math.Floor(costForPerson*100) / 100
 			personToCost[p] = costForPerson
@@ -233,7 +234,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 	inviteePersonToCost := make(map[*Person]float64)
 	var orderedInvitees []*Person
 	var totalCost float64
-	for _, invitee := range invitation.Invitees {
+	for _, invitee := range inv.Invitees {
 		person := personMap[invitee.IntID()]
 		if person == nil {
 			continue
@@ -244,7 +245,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 	}
 
 	return &RoomingAndCostInfo{
-		Invitation:      invitation,
+		Invitation:      inv,
 		InviteeBookings: allInviteeBookings[invitationKey.IntID()],
 		Attendees:       personMap,
 		OrderedInvitees: orderedInvitees,
