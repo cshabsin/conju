@@ -1,5 +1,7 @@
 package conju
 
+import "github.com/cshabsin/conju/invitation"
+
 // Each event should have a list of acceptable RSVP statuses
 type RsvpStatus int
 
@@ -28,7 +30,7 @@ type RsvpStatusInfo struct {
 	NoLodging        bool
 	BaseCost         [6]float64
 	AddOnCost        [6]float64
-	Meals            []Meal
+	Meals            []invitation.Meal
 }
 
 func GetAllRsvpStatuses() []RsvpStatusInfo {
@@ -54,7 +56,7 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		Attending:        true,
 		// TODO: make costs a property of the event
 		BaseCost: [6]float64{0, 272.50, 176.58, 144.61, 128.62, 119.00},
-		Meals:    []Meal{FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
+		Meals:    []invitation.Meal{invitation.FriDin, invitation.SatBrk, invitation.SatLun, invitation.SatDin, invitation.SunBrk, invitation.SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           ThuFriSat,
@@ -64,7 +66,7 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		// TODO: make costs a property of the event
 		BaseCost:  [6]float64{0, 272.50, 176.58, 144.61, 128.62, 119.00},
 		AddOnCost: [6]float64{0, 124.26, 76.30, 60.31, 52.32, 47.52},
-		Meals:     []Meal{FriBrk, FriLun, FriDin, SatBrk, SatLun, SatDin, SunBrk, SunLun},
+		Meals:     []invitation.Meal{invitation.FriBrk, invitation.FriLun, invitation.FriDin, invitation.SatBrk, invitation.SatLun, invitation.SatDin, invitation.SunBrk, invitation.SunLun},
 	})
 	toReturn = append(toReturn, RsvpStatusInfo{
 		Status:           SatSun,
@@ -214,8 +216,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 	var toReturn []HousingPreferenceBooleanInfo
 
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: MonitorRange,
-		Name:    "MonitorRange",
+		Boolean:                   MonitorRange,
+		Name:                      "MonitorRange",
 		MultiplePeopleDescription: "We would prefer to be within baby-monitor range of the main common room.",
 		ReportDescription:         "Monitor Range",
 		ForChildren:               true,
@@ -223,8 +225,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		PreferenceType:            Desired,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: CloseBuilding,
-		Name:    "CloseBuilding",
+		Boolean:                   CloseBuilding,
+		Name:                      "CloseBuilding",
 		MultiplePeopleDescription: "We can stay in a building that is not within baby-monitor range of the main common room, but is very close by.",
 		ReportDescription:         "Close Building",
 		ForChildren:               true,
@@ -232,8 +234,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: FarBuilding,
-		Name:    "FarBuilding",
+		Boolean:                   FarBuilding,
+		Name:                      "FarBuilding",
 		MultiplePeopleDescription: "We can stay in a building that is ~100 yards away from the main common room.",
 		ReportDescription:         "Far Building",
 		ForChildren:               true,
@@ -241,8 +243,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: CanCrossRoad,
-		Name:    "CanCrossRoad",
+		Boolean:                   CanCrossRoad,
+		Name:                      "CanCrossRoad",
 		MultiplePeopleDescription: "Everyone in our party can cross a (low-traffic) road, alone, safely, even at night.",
 		ReportDescription:         "Across Road",
 		ForChildren:               true,
@@ -250,8 +252,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: PreferFar,
-		Name:    "PreferFar",
+		Boolean:                   PreferFar,
+		Name:                      "PreferFar",
 		MultiplePeopleDescription: "We would prefer to be housed far from the main common room.",
 		SinglePersonDescription:   "I would prefer to be housed far from the main common room.",
 		ReportDescription:         "Prefer Farther",
@@ -259,8 +261,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		PreferenceType:            Desired,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: FartherBuilding,
-		Name:    "FartherBuilding",
+		Boolean:                   FartherBuilding,
+		Name:                      "FartherBuilding",
 		MultiplePeopleDescription: "In case of overflow, we would be willing to be housed in a building that is outside of our main cluster of buildings.",
 		SinglePersonDescription:   "In case of overflow, I would be willing to be housed in a building that is outside of our main cluster of buildings.",
 		SupplementalInfo:          "Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about half a mile).",
@@ -269,8 +271,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		PreferenceType:            Acceptable,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
-		Boolean: ShareBed,
-		Name:    "ShareBed",
+		Boolean:                   ShareBed,
+		Name:                      "ShareBed",
 		MultiplePeopleDescription: "We would prefer a room with a bed that sleeps 2.",
 		CoupleDescription:         "We would prefer to share a bed.",
 		ReportDescription:         "Share Bed",
