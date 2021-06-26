@@ -273,13 +273,15 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 		_ = datastore.Get(wr.Context, eventKey, &ev)
 	}
 
-	venue, err := datastore.DecodeKey(form["venue"][0])
-	if err != nil {
-		log.Infof(ctx, "%v", err)
-	}
 	ev.Name = form["name"][0]
 	ev.ShortName = form["shortName"][0]
-	ev.Venue = venue
+	if len(form["venue"]) > 0 {
+		venue, err := datastore.DecodeKey(form["venue"][0])
+		if err != nil {
+			log.Infof(ctx, "%v", err)
+		}
+		ev.Venue = venue
+	}
 
 	layout := "01/02/2006"
 	ev.StartDate, _ = time.Parse(layout, form["startDate"][0])
