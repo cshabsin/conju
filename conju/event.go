@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -28,7 +30,7 @@ type Event struct {
 	ShortName             string
 	StartDate             time.Time
 	EndDate               time.Time
-	RsvpStatuses          []RsvpStatus
+	RsvpStatuses          []invitation.RsvpStatus
 	Rooms                 []*datastore.Key
 	Activities            []*datastore.Key
 	InvitationClosingText string
@@ -190,14 +192,9 @@ func handleEvents(wr WrappedRequest) {
 		}
 	}
 
-	var activities []Activity
-	q = datastore.NewQuery("Activity").Order("Keyword")
-	activityKeys, _ := q.GetAll(ctx, &activities)
-
-	var activitiesWithKeys []ActivityWithKey
-	for i, activityKey := range activityKeys {
-		encodedKey := activityKey.Encode()
-		activitiesWithKeys = append(activitiesWithKeys, ActivityWithKey{Activity: activities[i], EncodedKey: encodedKey})
+	activitiesWithKeys, err := activity.QueryAll(ctx)
+	if err != nil {
+		log.Errorf(ctx, "activity.QueryAll: %v", err)
 	}
 
 	err = wr.Request.ParseForm()
@@ -247,7 +244,7 @@ func handleEvents(wr WrappedRequest) {
 		"BuildingOrder":       buildingInts,
 		"BuildingKeyMap":      buildingKeyMap,
 		"BuildingRoomMap":     buildingRoomMap,
-		"RsvpStatuses":        GetAllRsvpStatuses(),
+		"RsvpStatuses":        invitation.GetAllRsvpStatuses(),
 		"ActivitiesWithKeys":  activitiesWithKeys,
 		"EditEvent":           editEvent,
 		"EditEventKeyEncoded": editEventKeyEncoded,
@@ -302,8 +299,8 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	event.StartDate, _ = time.Parse(layout, form["startDate"][0])
 	event.EndDate, _ = time.Parse(layout, form["endDate"][0])
 
-	allRsvpStatuses := GetAllRsvpStatuses()
-	var statusesForEvent []RsvpStatus
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
+	var statusesForEvent []invitation.RsvpStatus
 	for _, statusIntStr := range form["rsvpStatus"] {
 		statusInt, _ := strconv.ParseInt(statusIntStr, 10, 64)
 		statusInfo := allRsvpStatuses[statusInt]

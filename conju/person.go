@@ -578,7 +578,9 @@ func savePeople(wr WrappedRequest) error {
 		}
 
 		p.FoodRestrictions = thisPersonRestrictions
-		p.FoodNotes = form["FoodNotes"][i]
+		if form["FoodNotes"] != nil {
+			p.FoodNotes = form["FoodNotes"][i]
+		}
 
 		if len(form["FallbackAge"]) > i {
 			p.FallbackAge, _ = strconv.ParseFloat(form["FallbackAge"][i], 64)

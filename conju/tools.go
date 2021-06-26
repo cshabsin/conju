@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -98,9 +99,9 @@ func handleRoomingTool(wr WrappedRequest) {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
 
-	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe}
+	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe}
 	adultPreferenceMask := GetAdultPreferenceMask()
-	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
+	rsvpToGroupsMap := make(map[invitation.RsvpStatus][][]Person)
 	var noRsvps [][]Person
 	peopleToProperties := make(map[*datastore.Key]int)
 
@@ -154,7 +155,7 @@ func handleRoomingTool(wr WrappedRequest) {
 		"RsvpToGroupsMap":      rsvpToGroupsMap,
 		"NoRsvps":              noRsvps,
 		"StatusOrder":          statusOrder,
-		"AllRsvpStatuses":      GetAllRsvpStatuses(),
+		"AllRsvpStatuses":      invitation.GetAllRsvpStatuses(),
 		"AvailableRooms":       availableRooms,
 		"BuildingsToRooms":     buildingsToRooms,
 		"BuildingsInOrder":     buildingsInOrder,
