@@ -24,7 +24,7 @@ var rick = Person{
 	LastName:  "Shabsin",
 }
 
-func ExampleFirstName() {
+func ExamplePerson_FirstName() {
 	fmt.Printf("Informal: %s\n", chris.GetFirstName(Informal))
 	fmt.Printf("Formal: %s\n", chris.GetFirstName(Formal))
 	// Output:

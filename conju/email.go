@@ -67,6 +67,9 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 
 	// Hard-code that we want the roomingInfo template available for now.
 	textTpl, err = textTpl.ParseFiles("templates/roomingInfo.html")
+	if err != nil {
+		return "", "", "", err
+	}
 
 	var text bytes.Buffer
 	if err := textTpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
@@ -156,8 +159,7 @@ func handleDoSendMail(wr WrappedRequest) {
 			http.StatusBadRequest)
 		return
 	}
-	var senderFunc EmailSender
-	senderFunc = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
+	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		if _, ok := emailData["LoginLink"]; !ok {
 			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
 		}

@@ -1,8 +1,6 @@
 package conju
 
 import (
-	"context"
-
 	"google.golang.org/appengine/datastore"
 )
 
@@ -51,17 +49,6 @@ type RealRoom struct {
 	Room       Room
 	Building   Building
 	BedsString string
-}
-
-func (room Room) makeRealRoom(ctx context.Context) RealRoom {
-	var building Building
-	datastore.Get(ctx, room.Building, building)
-
-	var realRoom RealRoom
-	realRoom.Building = building
-	realRoom.Room = room
-
-	return realRoom
 }
 
 func (room RealRoom) AllProperties() int {

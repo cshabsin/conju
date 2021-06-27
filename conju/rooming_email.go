@@ -278,7 +278,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	}
 	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/" + emailName + ".html"))
 
-	rendered_mail := make(map[int64]RenderedMail, 0)
+	rendered_mail := make(map[int64]RenderedMail)
 	for invitation, bookings := range allInviteeBookings {
 		// invitation is ID from key.
 		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", invitation, nil), invitationMap[invitation])
