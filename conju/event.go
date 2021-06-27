@@ -38,10 +38,14 @@ type Event struct {
 func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, error) {
 	host := wr.GetHost()
 	// TODO: generalize this for multiple hostnames/events.
-	if host != "psr2019.shabsin.com" {
+	var shortname string
+	if host == "psr2019.shabsin.com" {
+		shortname = "PSR2019"
+	} else if host == "psr2021.shabsin.com" {
+		shortname = "PSR2021"
+	} else {
 		return false, nil
 	}
-	shortname := "PSR2019"
 
 	var keys []*datastore.Key
 	var events []*Event
@@ -219,6 +223,9 @@ func handleEvents(wr WrappedRequest) {
 	}
 	var editEvent Event
 	err = datastore.Get(wr.Context, editEventKey, &editEvent)
+	if err != nil {
+		log.Errorf(ctx, "Get event: %v", err)
+	}
 
 	eventRoomMap := make(map[string]bool)
 	rsvpStatusMap := make(map[int]bool)
