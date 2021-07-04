@@ -40,10 +40,14 @@ type Event struct {
 func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, error) {
 	host := wr.GetHost()
 	// TODO: generalize this for multiple hostnames/events.
-	if host != "psr2019.shabsin.com" {
+	var shortname string
+	if host == "psr2019.shabsin.com" {
+		shortname = "PSR2019"
+	} else if host == "psr2021.shabsin.com" {
+		shortname = "PSR2021"
+	} else {
 		return false, nil
 	}
-	shortname := "PSR2019"
 
 	var keys []*datastore.Key
 	var events []*Event
@@ -157,38 +161,28 @@ func handleEvents(wr WrappedRequest) {
 	}
 
 	// fetch this with an ajax call eventually
-	var buildings []Building
-	var buildingPtrs []*Building
-	var buildingInts []int64
+	var buildings []*Building
+	var buildingOrder []int64
 	var rooms []*Room
-	roomMap := make(map[int64]Room)
-	buildingRoomMap := make(map[int64][]Room)
-	buildingKeyMap := make(map[int64]Building)
+	roomMap := make(map[int64]*Room)
+	buildingRoomMap := make(map[int64][]*Room)
+	buildingKeyMap := make(map[int64]*Building)
 	if len(allVenues) == 1 {
 		q := datastore.NewQuery("Building").Ancestor(venueKeys[0]).Order("Name")
-		buildingKeys, _ := q.GetAll(ctx, &buildingPtrs)
+		buildingKeys, _ := q.GetAll(ctx, &buildings)
 
-		for i := 0; i < len(buildingPtrs); i++ {
-			buildings = append(buildings, *(buildingPtrs[i]))
-			buildingInts = append(buildingInts, buildingKeys[i].IntID())
-			var roomList []Room
-			buildingRoomMap[(buildingInts[i])] = roomList
-			buildingKeyMap[buildingKeys[i].IntID()] = buildings[i]
-
+		for i, building := range buildings {
+			buildingOrder = append(buildingOrder, buildingKeys[i].IntID())
+			buildingKeyMap[buildingKeys[i].IntID()] = building
 		}
 
 		// whoops this query doesn't use venue
 		q = datastore.NewQuery("Room").Order("RoomNumber").Order("Partition")
 		roomKeys, _ := q.GetAll(ctx, &rooms)
 
-		for j := 0; j < len(rooms); j++ {
-			//building := buildingKeyMap[rooms[j].Building.IntID()]
-			//log.Infof(ctx, "Found room %d for building %s", rooms[j].RoomNumber, building.Name)
-			roomList := buildingRoomMap[rooms[j].Building.IntID()]
-			roomList = append(roomList, *(rooms[j]))
-			buildingRoomMap[rooms[j].Building.IntID()] = roomList
-			//log.Infof(ctx, "room list size: %d", len(roomList))
-			roomMap[(*roomKeys[j]).IntID()] = *rooms[j]
+		for j, room := range rooms {
+			buildingRoomMap[room.Building.IntID()] = append(buildingRoomMap[room.Building.IntID()], room)
+			roomMap[roomKeys[j].IntID()] = room
 		}
 	}
 
@@ -215,16 +209,19 @@ func handleEvents(wr WrappedRequest) {
 		}
 	}
 	var editEvent Event
-	err = datastore.Get(wr.Context, editEventKey, &editEvent)
 
 	eventRoomMap := make(map[string]bool)
 	rsvpStatusMap := make(map[int]bool)
 	activityMap := make(map[string]bool)
 	if editEventKey != nil {
+		err = datastore.Get(wr.Context, editEventKey, &editEvent)
+		if err != nil {
+			log.Errorf(ctx, "Get event: %v", err)
+		}
 		for _, roomKey := range editEvent.Rooms {
 			room := roomMap[roomKey.IntID()]
 			building := buildingKeyMap[room.Building.IntID()]
-			eventRoomMap[building.Code+"_"+strconv.Itoa(room.RoomNumber)] = true
+			eventRoomMap[building.Code+"_"+strconv.Itoa(room.RoomNumber)+"_"+room.Partition] = true
 		}
 		for _, status := range editEvent.RsvpStatuses {
 			rsvpStatusMap[int(status)] = true
@@ -241,7 +238,7 @@ func handleEvents(wr WrappedRequest) {
 		"EventKeys":           allEventsEncodedKeys,
 		"VenueMap":            venueMap,
 		"VenueEncodedKeyMap":  venueEncodedKeyMap,
-		"BuildingOrder":       buildingInts,
+		"BuildingOrder":       buildingOrder,
 		"BuildingKeyMap":      buildingKeyMap,
 		"BuildingRoomMap":     buildingRoomMap,
 		"RsvpStatuses":        invitation.GetAllRsvpStatuses(),
@@ -314,12 +311,21 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 		components := strings.Split(room, "_")
 		//log.Infof(ctx, "found room in building "+components[0]+" with number "+components[1])
 		q := datastore.NewQuery("Building").Filter("Code =", components[0]).KeysOnly()
-		buildingKeys, _ := q.GetAll(ctx, nil)
+		buildingKeys, err := q.GetAll(ctx, nil)
+		if err != nil {
+			log.Errorf(ctx, "Getting buildings by code %q: %v", components[0], err)
+		}
 		//log.Infof(ctx, "Found building keys: %v", buildingKeys)
-		roomNumber, _ := strconv.ParseInt(components[1], 10, 64)
+		roomNumber, err := strconv.ParseInt(components[1], 10, 64)
+		if err != nil {
+			log.Errorf(ctx, "Parsing value %q: %v", components[1], err)
+		}
 		//log.Infof(ctx, "Room number: %v", roomNumber)
-		q = datastore.NewQuery("Room").Filter("Building =", buildingKeys[0]).Filter("RoomNumber =", roomNumber).KeysOnly()
-		roomKeys, _ := q.GetAll(ctx, nil)
+		q = datastore.NewQuery("Room").Filter("Building =", buildingKeys[0]).Filter("RoomNumber =", roomNumber).Filter("Partition =", components[2]).KeysOnly()
+		roomKeys, err := q.GetAll(ctx, nil)
+		if err != nil {
+			log.Errorf(ctx, "Reading room: %v", err)
+		}
 		//log.Infof(ctx, "room keys: %v", roomKeys)
 
 		rooms = append(rooms, roomKeys[0])

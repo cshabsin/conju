@@ -14,7 +14,7 @@ import (
 )
 
 func handleRoomingTool(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+	ctx := wr.Context
 
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
@@ -33,15 +33,26 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	var buildingsInOrder []Building
-	var availableRooms []RealRoom
-	var buildingsToRooms = make(map[Building][]RealRoom)
+	var availableRooms []*RealRoom
+	var buildingsToRooms = make(map[Building][]*RealRoom)
 
-	for i, room := range wr.Event.Rooms {
+	for _, room := range wr.Event.Rooms {
 		var rm Room
-		datastore.Get(ctx, room, &rm)
+		if err := datastore.Get(wr.Context, room, &rm); err != nil {
+			log.Errorf(wr.Context, "Reading room (id %s): %v", room.Encode(), err)
+			continue
+		}
 		buildingKey := room.Parent()
-		building := buildingsMap[buildingKey.IntID()]
-		if i == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
+		building, ok := buildingsMap[buildingKey.IntID()]
+		if !ok {
+			log.Errorf(wr.Context, "building not found in buildingsMap for building %v", buildingKey)
+			continue
+		}
+		if building == nil {
+			log.Errorf(wr.Context, "nil building in buildingsMap for building %v", buildingKey)
+			continue
+		}
+		if len(buildingsInOrder) == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
 			buildingsInOrder = append(buildingsInOrder, *building)
 		}
 
@@ -61,20 +72,13 @@ func handleRoomingTool(wr WrappedRequest) {
 
 			}
 		}
-		realRoom := RealRoom{
+		realRoom := &RealRoom{
 			Room:       rm,
 			Building:   *buildingsMap[buildingKey.IntID()],
 			BedsString: bedstring,
 		}
 
-		roomsForBuilding := buildingsToRooms[*building]
-
-		if roomsForBuilding == nil {
-			roomsForBuilding = make([]RealRoom, 0)
-
-		}
-		roomsForBuilding = append(roomsForBuilding, realRoom)
-		buildingsToRooms[*building] = roomsForBuilding
+		buildingsToRooms[*building] = append(buildingsToRooms[*building], realRoom)
 
 		availableRooms = append(availableRooms, realRoom)
 

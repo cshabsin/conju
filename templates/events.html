@@ -79,7 +79,7 @@
 	        {{range $room := $roomList}}
 	          <tr style="display:none" class="{{$building.Code}}_room">
 		    <td style="padding-left: 50px">
-		      <input type="checkbox" class="room" name="rooms" value="{{$building.Code}}_{{$room.RoomNumber}}"{{if (index $roomMap (print $building.Code (print "_" $room.RoomNumber)))}} checked{{end}}>
+		      <input type="checkbox" class="room" name="rooms" value="{{$building.Code}}_{{$room.RoomNumber}}_{{$room.Partition}}"{{if (index $roomMap (print $building.Code (print "_" $room.RoomNumber "_" $room.Partition)))}} checked{{end}}>
 		      {{$room.RoomNumber}} {{$room.Partition}}
 		    </td></tr>
 	        {{end}}

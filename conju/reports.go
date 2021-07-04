@@ -14,12 +14,12 @@ import (
 	"google.golang.org/appengine/log"
 )
 
-func handleReports(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
-	}
-}
+// func handleReports(wr WrappedRequest) {
+// 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
+// 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
+// 		log.Errorf(wr.Context, "%v", err)
+// 	}
+// }
 
 func handleRsvpReport(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)

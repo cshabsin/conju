@@ -126,6 +126,9 @@ func PersonGetter(wr *WrappedRequest) error {
 	} else {
 		var err error
 		personKey, err = datastore.DecodeKey(personKeyEncoded)
+		if err != nil {
+			log.Errorf(wr.Context, "decoding key: %v", err)
+		}
 		err = datastore.Get(wr.Context, personKey, &person)
 		if err != nil || person.LoginCode != code {
 			return RedirectError{loginErrorPage +
@@ -151,6 +154,7 @@ func InvitationGetter(wr *WrappedRequest) error {
 		}
 	}
 	if wr.Event == nil {
+		log.Errorf(wr.Context, "nil event")
 		// Do something.
 	}
 	if wr.LoginInfo.Person == nil {
@@ -177,7 +181,7 @@ func InvitationGetter(wr *WrappedRequest) error {
 
 // Simple URL handler that prints out the invitation retrieved by
 // LoginGetter, for testing.
-func checkLogin(wr WrappedRequest) {
+func CheckLogin(wr WrappedRequest) {
 	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(wr.Context, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation))))
 }
 

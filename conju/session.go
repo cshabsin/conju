@@ -59,7 +59,7 @@ type DoneProcessingError struct {
 }
 
 func (dpe DoneProcessingError) Error() string {
-	return fmt.Sprintf("Done processing, do not continue.")
+	return "Done processing, do not continue."
 }
 
 func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {

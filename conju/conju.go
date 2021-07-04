@@ -91,13 +91,6 @@ func handleIndex(wr WrappedRequest) {
 	}
 }
 
-func handleLoadMap(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/map.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "map.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
-	}
-}
-
 func handleAdmin(wr WrappedRequest) {
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/admin.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "admin.html", wr.TemplateData); err != nil {
