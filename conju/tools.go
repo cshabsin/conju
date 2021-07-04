@@ -35,15 +35,23 @@ func handleRoomingTool(wr WrappedRequest) {
 	var availableRooms []*RealRoom
 	var buildingsToRooms = make(map[Building][]*RealRoom)
 
-	for i, room := range wr.Event.Rooms {
+	for _, room := range wr.Event.Rooms {
 		var rm Room
 		if err := datastore.Get(wr.Context, room, &rm); err != nil {
 			log.Errorf(wr.Context, "Reading room (id %s): %v", room.Encode(), err)
 			continue
 		}
 		buildingKey := room.Parent()
-		building := buildingsMap[buildingKey.IntID()]
-		if i == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
+		building, ok := buildingsMap[buildingKey.IntID()]
+		if !ok {
+			log.Errorf(wr.Context, "building not found in buildingsMap for building %v", buildingKey)
+			continue
+		}
+		if building == nil {
+			log.Errorf(wr.Context, "nil building in buildingsMap for building %v", buildingKey)
+			continue
+		}
+		if len(buildingsInOrder) == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
 			buildingsInOrder = append(buildingsInOrder, *building)
 		}
 
