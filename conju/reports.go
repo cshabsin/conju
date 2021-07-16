@@ -368,6 +368,7 @@ func handleRoomingReport(wr WrappedRequest) {
 		Cost                float64
 		CostString          string
 		Reserved            bool
+		DayStr              string
 	}
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
@@ -443,6 +444,10 @@ func handleRoomingReport(wr WrappedRequest) {
 
 		costEquationString := fmt.Sprintf("%d * %s %s = %s", FridaySaturday, basePPCostString, addOnTotalString, totalCostString)
 
+		dayStr := "Fri/Sat"
+		if PlusThursday != 0 {
+			dayStr = "Thu/Fri/Sat"
+		}
 		realBooking := RealBooking{
 			KeyString:           bookingKeys[i].Encode(),
 			Room:                roomsMap[booking.Room.IntID()],
@@ -455,6 +460,7 @@ func handleRoomingReport(wr WrappedRequest) {
 			Cost:                totalCost,
 			CostString:          costEquationString,
 			Reserved:            booking.Reserved,
+			DayStr:              dayStr,
 		}
 		buildingIndex := buildingOrderMap[buildingId]
 		bookingsForBuilding := realBookingsByBuilding[buildingIndex]
