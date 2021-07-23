@@ -1,31 +1,24 @@
-{{define "rooming_and_costs_subject"}}
-  Housing/Cost information for Purity Spring Resort weekend
+{{define "rooming_subject"}}
+  {{if gt (len .Unreserved) 0}}
+    Please reserve your room at Purity Spring Resort!
+  {{else}}
+    Your room assignment for Purity Spring Resort
+  {{end}}
 {{end}}
 
-{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
+{{define "rooming_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
 
 
-Our Purity Spring weekend is almost here! 
-
-This year we're doing things a little bit differently.  Purity Spring gave us
-the option of saving all of our guests some money if we made the reservations
-ourselves.  So we have!  You don't need to call the resort to reserve your
-room.
-
-However, this means we are on the hook for about $12,000, so if you could pay us
-promptly, before that comes due, we'd appreciate it. :)
-
-There are several ways you can pay us. In approximate order of preference:
-  Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
-  Venmo: {{.Env.VENMO_ADDRESS}}
-  PayPal: {{if .Env.PAYPAL_URL}}{{.Env.PAYPAL_URL}}{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
-  Check (giving it to us at the weekend is fine)
-  Pile of Cash (please don't do this)
+Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end}}
 
 {{template "roomingAndCosts_text" .RoomingInfo}}
 
 If you foresee any problem with your rooms, let us know.  We're happy to answer
-any questions.
+any questions.  Rooming has been particularly excruciating this year, so thank 
+you all for your patience, flexibility and squishiness.
+
+Because rooming was so difficult this year, we are right up against our deposit
+deadline, so we'd appreciate it if you could book your rooms as soon as possible.
 
 As always, you can update your rsvp or profile on our event website: 
 
@@ -34,37 +27,26 @@ As always, you can update your rsvp or profile on our event website:
 We can't wait to see you in New Hampshire!
 
 
-Chris, Dana & Lydia
+Chris, Dana, Lydia & Max
 {{end}}
 
-{{define "rooming_and_costs_html"}}
+{{define "rooming_html"}}
 <p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
 
 
-<p>Our Purity Spring weekend is almost here!</p>
-
-<p>This year we're doing things a little bit differently.  Purity Spring gave us the option of saving all of our guests some money if we made the reservations ourselves.  So we have!  You don't need to call the resort to reserve your room.</p>
-
-<p>However, this means we are on the hook for about $12,000, so if you could pay us promptly, before that comes due, we'd appreciate it. :)</p>
-
-<p>There are several ways you can pay us. In approximate order of preference:</p>
-<ul>
-  <li>Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
-  <li>Venmo: {{.Env.VENMO_ADDRESS}}
-  <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_URL}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
-  <li>Check (giving it to us at the weekend is fine)
-  <li>Pile of Cash (please don't do this)
-</ul>
+<p>Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end}}</p>
 
  {{template "roomingAndCosts_html" .RoomingInfo}}
 
-If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.
+<p>If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.  Rooming has been particularly excruciating this year, so thank you all for you patience, flexibility and squishiness.</p>
+
+<p>Because rooming was so difficult this year, we are right up against our deposit deadline, so <em>we'd appreciate it if you could book your rooms as soon as possible.</em></p>
 
 <p>As always, you can <a href="{{.LoginLink}}">update your rsvp or profile</a> on our event website.
 
 <p>We can't wait to see you in New Hampshire!</p>
 
-  Chris, Dana & Lydia
+  Chris, Dana, Lydia & Max
 
   </div>
 </div>

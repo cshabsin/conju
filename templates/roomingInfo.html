@@ -1,6 +1,6 @@
 {{define "roomingAndCosts_html"}}
 {{template "roomingInfo_html" .}}
-{{template "costs_html" .}}
+{{- /* {template "costs_html" .}} */ -}}
 {{end}}
 
 {{define "roomingInfo_html"}}
@@ -34,6 +34,14 @@
   {{end}}
 </div>
 </div>
+
+{{- if gt (len .Unreserved) 1}}
+<p>Please have one person from each room call Purity Spring at 603-367-8896, tell them you are with the Scott/Shabsin party of August 26-29, and ask to reserve:<p>
+<div style="margin-left:20px">{{range .Unreserved}}
+    {{.Building.Name}}, Room {{.Room.RoomNumber}}{{end}}
+</div>
+  {{- else if gt (len .Unreserved) 0}}
+<p>Please have one person call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of August 26-29, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.{{end}}{{- if gt (len .Unreserved) 1}}<p>{{else}} {{end}}They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.</p>
 {{end}}
 
 {{define "costs_html"}}
@@ -55,7 +63,7 @@
 
 {{define "roomingAndCosts_text"}}
 {{template "roomingInfo_text" .}}
-{{template "costs_text" .}}
+{{- /* {{template "costs_text" .}} */ -}}
 {{end}}
 
 
@@ -72,6 +80,18 @@
       {{SharerName . -}}
   {{end}}{{end}}{{end}}
 {{end}}
+
+{{- if gt (len .Unreserved) 1}}
+Please have one person from each room call Purity Spring at 603-367-8896, tell them you are with the Scott/Shabsin party of August 26-29, and ask to reserve:
+{{range .Unreserved}}
+    {{.Building.Name}}, Room {{.Room.RoomNumber}}{{end}}
+  {{- else if gt (len .Unreserved) 0}}
+Please have one person call Purity Spring at 1-800-373-3754, tell them you are with the Scott/Shabsin party of August 26-29, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}.{{end}}{{- if gt (len .Unreserved) 1}}
+
+{{else}} {{end}}They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.
+{{end}}
+
+
 
 {{define "costs_text"}}
 Cost:
