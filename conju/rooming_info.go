@@ -27,6 +27,8 @@ type InviteeRoomBookings struct {
 	ReservationMade     bool
 }
 
+type InviteeBookings map[BuildingRoom]InviteeRoomBookings
+
 // BuildingRoom holds a room of a building, for use as a key in a amp.
 type BuildingRoom struct {
 	Room     *Room
@@ -45,11 +47,33 @@ type RoomingAndCostInfo struct {
 	OrderedInvitees []*Person
 	PersonToCost    map[*Person]float64
 	TotalCost       float64
+	IsThuFriSat     bool
 }
 
 // IsPaid returns true if the invitation's "received pay" is enough to consider the total cost paid off.
 func (r RoomingAndCostInfo) IsPaid() bool {
 	return r.TotalCost-r.Invitation.ReceivedPay < 0.05
+}
+
+func (r RoomingAndCostInfo) Unreserved() []BuildingRoom {
+	var unreserved []BuildingRoom
+	for _, booking := range r.InviteeBookings {
+		if !booking.ReservationMade {
+			unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+		}
+	}
+	return unreserved
+}
+
+// for now we're lazy and just return ThuFriSat if any status in the room is ThuFriSat; otherwise we assume FriSat in the template.
+func (r RoomingAndCostInfo) ThuFriSat() bool {
+	return r.IsThuFriSat
+	// for _, status := range r.Invitation.RsvpMap {
+	// 	if status == ThuFriSat {
+	// 		return true
+	// 	}
+	// }
+	// return false
 }
 
 func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
@@ -136,6 +160,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	allInviteeBookings := make(map[int64]InviteeBookingsMap)
 	personToCost := make(map[*Person]float64)
+	isThuFriSat := false
 	for _, booking := range bookingsForInvitation {
 		room := roomsMap[booking.Room.IntID()]
 		buildingID := booking.Room.Parent().IntID()
@@ -178,6 +203,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 					FridaySaturday++
 					PlusThursday++
 					addThurs[i] = true
+					isThuFriSat = true
 				}
 			}
 
@@ -250,5 +276,6 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, invitation *Invitation,
 		OrderedInvitees: orderedInvitees,
 		PersonToCost:    inviteePersonToCost,
 		TotalCost:       totalCost,
+		IsThuFriSat:     isThuFriSat,
 	}
 }

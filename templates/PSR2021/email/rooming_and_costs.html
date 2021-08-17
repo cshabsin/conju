@@ -1,4 +1,4 @@
-{{define "rooming_subject"}}
+{{define "rooming_and_costs_subject"}}
   {{if gt (len .Unreserved) 0}}
     Please reserve your room at Purity Spring Resort!
   {{else}}
@@ -6,19 +6,19 @@
   {{end}}
 {{end}}
 
-{{define "rooming_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
+{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
 
 
-Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end}}
+Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end -}}
 
-{{template "roomingAndCosts_text" .RoomingInfo}}
-
+{{- template "roomingAndCosts_text" .RoomingInfo}}
 If you foresee any problem with your rooms, let us know.  We're happy to answer
 any questions.  Rooming has been particularly excruciating this year, so thank 
 you all for your patience, flexibility and squishiness.
 
-Because rooming was so difficult this year, we are right up against our deposit
-deadline, so we'd appreciate it if you could book your rooms as soon as possible.
+Because assigning rooms was so difficult this year, we are right up against our
+deposit deadline, so we'd appreciate it if you could book your rooms as soon as
+possible.
 
 As always, you can update your rsvp or profile on our event website: 
 
@@ -30,7 +30,7 @@ We can't wait to see you in New Hampshire!
 Chris, Dana, Lydia & Max
 {{end}}
 
-{{define "rooming_html"}}
+{{define "rooming_and_costs_html"}}
 <p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
 
 
@@ -40,13 +40,13 @@ Chris, Dana, Lydia & Max
 
 <p>If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.  Rooming has been particularly excruciating this year, so thank you all for you patience, flexibility and squishiness.</p>
 
-<p>Because rooming was so difficult this year, we are right up against our deposit deadline, so <em>we'd appreciate it if you could book your rooms as soon as possible.</em></p>
+<p>Because assigning rooms was so difficult this year, we are right up against our deposit deadline, so <strong>we'd appreciate it if you could book your rooms as soon as possible.</strong></p>
 
 <p>As always, you can <a href="{{.LoginLink}}">update your rsvp or profile</a> on our event website.
 
 <p>We can't wait to see you in New Hampshire!</p>
 
-  Chris, Dana, Lydia & Max
+<div style="margin-left:30px;margin-top:20px">Chris, Dana, Lydia & Max</div>
 
   </div>
 </div>

@@ -104,6 +104,13 @@ func handleSendMail(wr WrappedRequest) {
 	realizedInvitation := makeRealizedInvitation(wr.Context, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
 	roomingInfo := getRoomingInfoWithInvitation(wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	unreserved := make([]BuildingRoom, 0)
+	for _, booking := range roomingInfo.InviteeBookings {
+		if !booking.ReservationMade {
+			unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+		}
+	}
+
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
@@ -111,6 +118,7 @@ func handleSendMail(wr WrappedRequest) {
 		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person),
 		"RoomingInfo": roomingInfo,
 		"Env":         wr.GetEnvForTemplates(),
+		"Unreserved":  unreserved,
 	}
 	text, html, subject, err := renderMail(wr, emailTemplate, emailData, true)
 	if err != nil {
@@ -166,6 +174,14 @@ func handleDoSendMail(wr WrappedRequest) {
 		if _, ok := emailData["Env"]; !ok {
 			emailData["Env"] = wr.GetEnvForTemplates()
 		}
+		unreserved := make([]BuildingRoom, 0)
+		for _, booking := range emailData["RoomingInfo"].(*RoomingAndCostInfo).InviteeBookings {
+			if !booking.ReservationMade {
+				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+			}
+		}
+		emailData["Unreserved"] = unreserved
+
 		return sendMail(wr, emailTemplate, emailData, headerData)
 	}
 	if err := distributor.Distribute(wr, senderFunc); err != nil {

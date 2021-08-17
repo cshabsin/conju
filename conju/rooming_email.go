@@ -186,20 +186,6 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
-	type BuildingRoom struct {
-		Room     *Room
-		Building *Building
-	}
-	type InviteeRoomBookings struct {
-		Building            *Building
-		Room                *Room
-		Roommates           []*Person // People from this invitation.
-		RoomSharers         []*Person // People from outside the invitation.
-		ShowConvertToDouble bool
-		ReservationMade     bool
-	}
-	type InviteeBookings map[BuildingRoom]InviteeRoomBookings
-
 	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
 	allInviteeBookings := make(map[int64]InviteeBookings)
 	for _, booking := range bookings {
