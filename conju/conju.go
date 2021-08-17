@@ -73,7 +73,7 @@ func init() {
 
 	AddSessionHandler("/testFinalEmail", handleTestSendFinalEmail).Needs(AdminGetter)
 
-	AddSessionHandler("/faq", handleFaq)
+	AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
