@@ -8,6 +8,11 @@ h3 {
 }
 </style>
 
+{{if not .LoginInfo.Person}}
+<p>For more information, click on the link in your invitation to log in. Can't find the email? 
+<a href="login">Fetch your login information.</a></p>
+{{else}}
+
 <h1>Special Information for 2021</h1>
 
 <h2>2021-08-16</h2>
@@ -16,7 +21,7 @@ Less than two weeks to the event! Here's some info you'll need.
 
 <h3 style="margin-top: 30px">To Do Right Now</h3>
 
-<p><strong>TL;DR: We need you to do a few things right now</strong> :</p>
+<p><strong>TL;DR: We need you to do a few things right now</strong>:</p>
 
 <ul>
   <li>
@@ -52,6 +57,8 @@ Less than two weeks to the event! Here's some info you'll need.
 </p>
 <p>
   For each meal we will organize a large group order from a local restaurant.
+  (We haven't yet picked restaurants for a couple of lunches - watch the
+  spreadsheet for developments, and let us know if you have recommendations.)
   This should make it easy to keep people's food individually packaged. For
   any meal where you're not interested in the restaurant we chose for the group
   order, there are
@@ -75,11 +82,12 @@ Less than two weeks to the event! Here's some info you'll need.
   </li>
 </ul>
 
-<p>One of the options for Thursday dinner is a Lobster Bake that Purity
-Spring runs.  They have other options besides lobster.  The Lobster Bake
-requires advance reservations. To reserve a spot at the Lobster Bake, you
-need to make a reservation no later than Tuesday, 8/24 -- call 603-367-8896
-and dial 0 for the front desk.</p>
+<p>One of the options for Thursday dinner is a 
+<a href="https://www.purityspring.com/dining/summer-lobster-bakes/">Lobster Bake</a>
+that Purity Spring runs.  They have other options besides lobster.  The
+Lobster Bake requires advance reservations. To reserve a spot at the Lobster
+Bake, you need to make a reservation no later than Tuesday, 8/24 -- call
+603-367-8896 and dial 0 for the front desk.</p>
 
 <p>To help reduce confusion during the weekend, consider bringing a glass
 or mug that is distinctive-looking and clearly labeled with your name. If
@@ -168,9 +176,11 @@ Christmas tree to decorate, not necessarily with Christmas decorations.</p>
 <p>If you have something you'd like to bring, you should feel free to share
 it with us, but you should also feel free to surprise us.</p>
 
-<h3>Closing</h3>
+<h3>Congratulations</h3>
 
-Congrats, you made it through the whole document! See you in ten days.
+You made it through this whole document! See you in ten days.
+
+{{end}}
 
 </div>
 {{end}}
