@@ -9,78 +9,64 @@ Spring.
 
 Some last nuts and bolts:
 
-{{if .RoomingInfo.IsPaid}}
-Payment: Thank you for paying us promptly!  We appreciate it.
-{{else}}
-Friendly reminder: we're missing a payment from you.
-{{template "costs_text" .RoomingInfo}}
-There are several ways you can pay us. In approximate order of preference:
-  Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
-  Venmo: {{.Env.VENMO_ADDRESS}}
-  PayPal: {{if .Env.PAYPAL_URL}}{{.Env.PAYPAL_URL}}{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
-  Check (giving it to us at the weekend is fine)
-  Pile of Cash (please don't do this)
-{{end}}
-
-Rides: If you need a ride to or from the weekend and don't have one yet, let us know ASAP (hit 
-reply right now). If you are driving by yourself and you would prefer to have some company for the
-drive, let us know right now and we'll see what we can do.
+Rides: If you need a ride to the weekend and don't have one yet, let us know ASAP (hit reply right
+now).
 
   -- Passengers: You should have already received another email from us with your ride assignment.
   -- Drivers: if you have not already heard from us, we are not expecting you to take other
               passengers.
 
-Special notes for this year: 
+We have one person who needs a ride home on Sunday.  If you have room for a passenger and wouldn't
+mind stopping in Wellesley on your way home, let us know.
 
-  -- Marleigh is a weekend puppy raiser for America's VetDogs and will be bringing Ryan, her service
-     dog in training, to our weekend.  It will be a great opportunity to expose him to lots of novel
-     stimuli!  Like all of you!  He is extremely well-behaved and well-groomed, but if you are
-     allergic to dogs, you may wish to bring medication.  If you have any concerns, please let us
-     know.
+{{if .Invitation.Thursday -}}
+Thursday Dinner: One option for Thursday dinner is Purity Spring Resort's lobster bake 
+(https://www.purityspring.com/dining/summer-lobster-bakes/). If you want dinner at the lobster bake
+(even if you don't want lobster), you need to reserve a spot in advance.  If you haven't yet done
+so, call Purity Spring NOW (by 5pm 8/24) at 603-367-8896, press 0 for the front desk, and
+tell them what you'd like at the lobster bake Thursday night.
 
-  -- As of right now, there is no baby yet and Dana is not in labor.  Please keep your fingers
-     crossed for us.  Yes, there is a plan for what will happen if the baby comes while we're all
-     up there, and you will be briefed on it. :)
+{{end -}}
+Late Check-In: If you will be arriving after 8pm, the check in desk will be closed. Call Purity
+Spring (603-367-8896) before they close and let them know that you will be arriving late. You can
+either have the desk hold your key and leave it in the mailbox to the right of the door of The
+Mill, or we can pick it up for you and hold it in the common room. Please let us know if you're
+going to be arriving late (so we don't panic), and tell us if you need us to pick up your key.
 
-{{if .Invitation.Thursday}}
-Thursday Dinner: Thursday dinner will be at Traditions Restaurant in the Main Inn building
-(map: https://goo.gl/uhYkjK ) at 6:30.  If you know you'll be joining us, please let us know on your
-RSVP form (at the very bottom): {{.LoginLink}}
-Even if you didn't tell us to expect you, or you can't make it exactly at 6:30, there should still
-be plenty of room, so feel free to join us.
-{{end}}
-Friday Dinner: Friday dinner will be sandwiches and ice cream (with a non-dairy option; don't worry,
-we haven't forsaken you, dairy-free people) and is intended to accommodate people arriving at
-different times. We will put out dinner around 6. If you have not already done so, please help us
-get an accurate count for dinner by adding this information at the bottom of your RSVP form ASAP:
-( {{.LoginLink}} )  We will have access to a refrigerator
-and a microwave, so feel free to sign up for dinner even if you will be arriving later.
+COVID-19: Please get a recent clean test result before coming to the event.
 
+Masks will be required in the main common space. There will be a secondary common space where
+masks will be optional. In this space, we still recommend maintaining social distance between
+activities.
 
-Important Food Restrictions: Please be aware that no outside alcohol is permitted at this weekend. If you
-would like a drink sometime, alcohol is available in Traditions Restaurant in the Main Inn 
-(map: https://goo.gl/uhYkjK ).
+There are picnic tables behind King Pine. Please eat outdoors when possible.
 
-This section of the resort is a nut-free facility, so please don't bring any snacks with nuts.
+Food: Due to a) large cost increases over previous years and b) the pandemic making shared food a
+little more dodgy, food will work differently this year.
 
+For Saturday lunch we'll have a barbecue catered by Purity Spring.  All other meals will be opt-in
+orders from local restaurants. You can already sign up: https://tinyurl.com/psr2021-food
 
-Late Check-In: If you will be arriving after 11pm, the check in desk will be closed. Call Purity
-Spring (1-800-373-3754) before they close and let them know that you will be arriving late. You can
-either have the desk hold your key and leave it on the doorstep, or we can pick it up for you and
-leave it outside your door. Please let us know if you're going to be arriving late (so we don't
-panic), and tell us if you need us to pick up your key.
+If a particular meal doesn't look appetizing, there is a limited takeout menu from the on-site
+restaurant. In a pinch, there are plenty of other restaurants nearby.
 
+You are also welcome to bring your own food.  Every room has a minifridge, microwave, and
+coffeemaker.  People also often bring snacks to share.
 
-Food: Purity Spring will provide breakfast (8-9:30), lunch (12:30) and dinner (6:00) on Saturday,
-and breakfast and lunch on Sunday, all in/next to Tecumseh Lodge. There will be vegetarian,
-dairy-free and gluten-free options at all meals. A microwave, fridge/freezer and electric kettle will
-be available in the common room in Osceola Lodge.
+If it is easy for you, consider bringing a reusable set of dishes for every member of your
+family, clearly labeled with their name. If this is not completely trivial, don't worry, we'll
+still bring disposables and sharpies.  But this seems like a good year to not accidentally drink
+out of someone else's cup.
 
-If it is easy for you, consider bringing a non-disposable plastic cup for every member of your family,
-clearly labeled with their name. If this is not completely trivial, don't worry, we'll still bring
-the red solo cups and the sharpies. It would just be nice to not have to check the name on 30 red
-solo cups before finding your own every time you want something to drink.
+Please be aware that no outside alcohol is permitted at this weekend. If you would like a drink
+sometime, alcohol is available in Traditions Restaurant in the Main Inn
+(map: https://tinyurl.com/psr2021-map).
 
+Help: Since each meal requires a lot more coordination than we're used to, we need help!  If you
+have some extra time and energy (possibly a tall order almost 18 months into the global pandemic)
+consider coordinating/ordering a meal, picking up a meal or signing up for another task to keep
+everything running smoothly.  We already have a lot of great volunteers, but more are needed.
+Sign up here: https://tinyurl.com/psr2021-help
 
 Communication with the Outside World: Cell signal is (at most) pretty flaky at PSR. Expect your phone
 to suck up a lot of battery if you leave it on. If you want to make sure that someone can reach you
@@ -100,28 +86,36 @@ http://www.purityspring.com/
 Because cell signal is so poor in the mountains, make sure you know where you are going before you
 leave home -- or at least before you leave more populated areas on your way up.
 
-At least one person from each room will need to check in in the Millbrook building.  Coming from the
-south, it is one of the first buildings you will pass and it will be on your left. It is a large
-white house with red doors and there is a Purity Spring sign out front. If you pass Purity Lake on
-the right, you have gone too far. Park in the lot at Millbrook and check in.  If you are not
+At least one person from each room will need to check in in The Mill.  Coming from the south, it
+is one of the first buildings you will pass and it will be on your right. It is a gray building
+with lots of windows and there is a sign that says "The Mill" out front. If you pass Purity Lake on
+the right, you have gone too far. Park in the lot at The Mill and check in.  If you are not
 traveling with your roommates, the first person to arrive can pick up all the keys if you like.
 
-{{template "roomingInfo_text" .RoomingInfo}}
+{{with .RoomingInfo}}{{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+{{- if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
+{{range .InviteeBookings}}
+  {{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+{{end}}
+{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}
+{{end}}
+{{- if gt (len .RoomSharers) 0}}  with:
+  {{- range .RoomSharers}}
+    {{SharerName .}}
+{{end}}
+{{end}}{{end}}{{end}}
 
-To get to our buildings, take the next left (past the lake on the right and immediately before the
-big open field on the left) onto East Madison Road. Tecumseh is on the right, the red building
-closest to the road after the field. All of our meals for will be served on the first floor of
-Tecumseh or just outside of it. Osceola is behind Tecumseh. Our main common room will be on the
-first floor of Osceola and our fire pit is behind it. Starr King is the long, low building across
-the road from Tecumseh/Osceola, on the left side of East Madison Road. Carrigain is about 100 yards
-up the road from Tecumseh/Osceola, on the right.
+Once you have checked in, get back in your car and continue north on Eaton Road.
 
-There is an EV charging outlet on the back side of Tecumseh (between Tecumseh and Osceola). We will
-clearly mark it. After 6pm on Friday, please do not park in this spot unless you have a
-fully-electric vehicle or have talked to the families that do (we can help you find them). If you
-have a plug-in hybrid there should be other outlets available.
+Our building, King Pine, is about half a mile north of the Mill.  It is a long, low building on
+the right and there is a sign out front that reads "Purity Spring Resort / King Pine / Guest
+Rooms / Trailsend Tavern / Evergreen Room."  All of our rooms are in this building.  Rooms
+151-160 are in the north half of the building (farther from The Mill); rooms 161-170 are in the
+south half (closer to The Mill).  Our common room, the Fireplace Room, is on the lower level at
+the north end of the building. We also have access to the reception hall in the south end of the
+building, starting at 3pm on Friday.
 
-All of the places you need to know about are marked on our map: https://goo.gl/uhYkjK
+All of the places you need to know about are marked on our map: https://tinyurl.com/psr2021-map
 
 
 Other Resort-Related Miscellanea: Check in time is 3pm. Some rooms may be ready earlier. If you
@@ -129,22 +123,27 @@ arrive before your room is ready, feel free to hang out in the common rooms or e
 amenities. We plan to arrive around 1 or 2 on Thursday.
 
 Admission to the indoor pool, hot tub and fitness center are included in the cost for the weekend.
-These are located in The Mill (map: https://goo.gl/uhYkjK ), approximately across the road from
-where you checked in.
+These are located in The Mill (map: https://tinyurl.com/psr2021-map ), the building where you
+checked in.
 
 
-What to Pack: Forecast is around 75F and with occasional clouds all weekend. Yay!
+What to Pack: Forecast is between 70-90F with not much chance of rain all weekend. Yay! That's good,
+because we want to encourage people to spend more time outside this year than usual.
 
 Please be aware that it is tick season. Be prepared! We will bring some bug spray and a tick remover
 and rubbing alcohol. Remember to check yourself and your children when you come in from outside.
 
-We will have plenty of sunscreen and some insect repellant available for communal use. If you are
+We will have plenty of sunscreen and some insect repellent available for communal use. If you are
 traveling a long distance or don't intend to spend a lot of time outside you should be fine with our
 supply, but if you have a large family and/or intend to spend the weekend mostly outdoors you may
 wish to bring your own.
 
-Annual plea: jigsaw puzzles have traditionally been very popular at this weekend!  But we don't own
-any.  So, if you feel like doing puzzles, please bring some!
+Annual plea: jigsaw puzzles have traditionally been very popular at this weekend!  But we only own
+a few.  So, if you feel like doing puzzles, please bring some!
+
+In order to give us a little more space to spread out due to Covid, PSR has comped us the use of
+their ballroom from Friday afternoon through Sunday.  If you want to dance (whatever that means to
+you), we’ll have space for it.  Bring what you need.
 
 Please please please label anything that you intend for communal use with your name so that we can
 be sure it gets back to you.
@@ -157,26 +156,14 @@ sunscreen and bug spray unless you intend to use the communal supply
 outdoor toys
 games you want to play 
 boots and appropriate clothes if you intend to hike
-snacks if you would like food outside of set meal times
+snacks
 a flashlight if you expect to be outside after dark
 chargers for any electronics you bring
-a blanket for sitting outside
-non-disposable cups
+a blanket/beach chair for sitting outside
+non-disposable cups & dishes
 jigsaw puzzles
 activities you think are fun!
 
-
-Rough Schedule:
-
-Thursday night: dinner at Traditions Restaurant
-Friday morning/afternoon: relaxing at the resort, exploring offsite
-Friday night: sandwiches, ice cream, welcome!
-Saturday morning: archery range open
-Saturday evening: puzzle hunt
-Sunday on the way home: Fun Spot Arcade
-Whenever: Socializing, hiking, swimming, lounging, playing games, reading books, doing puzzles,
-          juggling, knitting or other crafts, dancing, playing, making music -- whatever you
-          think is a fun way to spend a weekend!
 
 As always, you can find more information about our event, or change your profile information or
 rsvp, on our event website: {{.LoginLink}}
@@ -196,57 +183,50 @@ Dana & Chris
 
 <p>Some last nuts and bolts:</p>
 
-<h3>Payment</h3>
-{{if (le .RoomingInfo.TotalCost .RoomingInfo.Invitation.ReceivedPay)}}
-<p>Thank you for paying us promptly!  We appreciate it.</p>
-{{else}}
-<p>Friendly reminder: we're missing a payment from you.</p>
-{{template "costs_html" .RoomingInfo}}
-<p>There are several ways you can pay us. In approximate order of preference:</p>
-<ul>
-  <li>Google Pay: {{.Env.GOOGLE_WALLET_ADDRESS}}
-  <li>Venmo: {{.Env.VENMO_ADDRESS}}
-  <li>PayPal: {{if .Env.PAYPAL_URL}}<a href="{{.Env.PAYPAL_URL}}">{{.Env.PAYPAL_URL}}</a>{{else}}{{.Env.PAYPAL_ADDRESS}}{{end}}
-  <li>Check (giving it to us at the weekend is fine)
-  <li>Pile of Cash (please don't do this)
-</ul>
-{{end}}
 <h3>Rides</h3>
-<p>If you need a ride to or from the weekend and don't have one yet, let us know ASAP (hit reply right now).  If you are driving by yourself and you would prefer to have some company for the drive, let us know right now and we'll see what we can do.</p>
+<p>If you need a ride to the weekend and don't have one yet, let us know ASAP (hit reply <b>right now</b>).</p>
 
 <p>
 Passengers: You should have already received another email from us with your ride assignment.<br>
 Drivers: if you have not already heard from us, we are not expecting you to take other passengers.
 </p>
 
-<h3>Special notes for this year</h3>
-  <ul>
-    <li>Marleigh is a weekend puppy raiser for America's VetDogs and will be bringing Ryan, her service dog in training, to our weekend.  It will be a great opportunity to expose him to lots of novel stimuli!  Like all of you!  He is extremely well-behaved and well-groomed, but if you are allergic to dogs, you may wish to bring medication.  If you have any concerns, please let us know.
-
-    <li> As of right now, there is no baby yet and Dana is not in labor.  Please keep your fingers crossed for us.  Yes, there is a plan for what will happen if the baby comes while we're all up there, and you will be briefed on it. :)
-  </ul>
+<p>We have one person who needs a ride home on Sunday.  If you have room for a passenger and wouldn't mind stopping in Wellesley on your way home, let us know.</p>
 
 {{if .Invitation.Thursday}}
 <h3>Thursday Dinner</h3>
-<p>Thursday dinner will be at Traditions Restaurant in the Main Inn building (<a href="https://goo.gl/uhYkjK">map</a>) at 6:30.  If you know you'll be joining us, please let us know on your <a href="{{.LoginLink}}">RSVP form</a> (at the very bottom).  Even if you didn't tell us to expect you, or you can't make it exactly at 6:30, there should still be plenty of room, so feel free to join us.</p>
+<p>One option for Thursday dinner is PSR's <a href="https://www.purityspring.com/dining/summer-lobster-bakes/">lobster bake</a>.  If you want dinner at the lobster bake (even if you don't want lobster), you need to reserve a spot in advance.  If you haven't yet done so, call Purity Spring <b>NOW</b> (by 5pm 8/24) at 603-367-8896, press 0 for the front desk, and tell them what you'd like at the lobster bake Thursday night.</p>
 {{end}}
 
-<h3>Friday Dinner</h3>
-<p>Friday dinner will be sandwiches and ice cream (with a non-dairy option; don't worry, we haven't forsaken you, dairy-free people) and is intended to accommodate people arriving at different times.  We will put out dinner around 6.  If you have not already done so, please <a href="{{.LoginLink}}">help us get an accurate count for dinner</a> by adding this information at the bottom of your RSVP form ASAP.  We will have access to a refrigerator and a microwave, so feel free to sign up for dinner even if you will be arriving later.</p>
-
-<h3>Important Food Restrictions</h3>
-
-<p>Please be aware that <b>no outside alcohol is permitted at this weekend.</b>  If you would like a drink sometime, alcohol is available in Traditions Restaurant in the Main Inn (<a href="https://goo.gl/uhYkjK">map</a>).</p>
-
-<p>This section of the resort is a nut-free facility, so please <b>don't bring any snacks with nuts.</b></p>
-
 <h3>Late Check-In</h3>
-<p>If you will be arriving after 11pm, the check in desk will be closed. Call Purity Spring (1-800-373-3754) before they close and let them know that you will be arriving late. You can either have the desk hold your key and leave it on the doorstep, or we can pick it up for you and leave it outside your door. Please let us know if you're going to be arriving late (so we don't panic), and tell us if you need us to pick up your key.</p>
+
+<p>If you will be arriving after 8pm, the check in desk will be closed. Call Purity Spring (603-367-8896) before they close and let them know that you will be arriving late. You can either have the desk hold your key and leave it in the mailbox to the right of the door of The Mill, or we can pick it up for you and hold it in the common room. Please let us know if you're going to be arriving late (so we don't panic), and tell us if you need us to pick up your key.</p>
+
+<h3>COVID-19</h3>
+
+<p>Please get a recent clean test result before coming to the event.</p>
+
+<p>Masks will be required in the main common space. There will be a secondary common space where masks will be optional. In this space, we still recommend maintaining social distance between activities.</p>
+
+<p>There are picnic tables behind King Pine. Please eat outdoors when possible.</p>
 
 <h3>Food</h3>
-<p>Purity Spring will provide breakfast (8-9:30), lunch (12:30) and dinner (6:00) on Saturday, and breakfast and lunch on Sunday, all in/next to Tecumseh Lodge.  There will be vegetarian, dairy-free and gluten-free options at all meals.  A microwave, fridge/freezer and electric kettle will be available in the common room in Osceola Lodge.</p>
 
-<p>If it is easy for you, consider bringing a non-disposable plastic cup for every member of your family, clearly labeled with their name.  If this is not completely trivial, don't worry, we'll still bring the red solo cups and the sharpies.  It would just be nice to not have to check the name on 30 red solo cups before finding your own every time you want something to drink.</p>
+<p>Due to a) large cost increases over previous years and b) the pandemic making shared food a little more dodgy, food will work differently this year.</p>
+
+<p>For Saturday lunch we'll have a barbecue catered by Purity Spring.  All other meals will be opt-in orders from local restaurants. You can already sign up: <a href="https://tinyurl.com/psr2021-food">signups</a></p>
+
+<p>If a particular meal doesn't look appetizing, there is a limited takeout menu from the on-site restaurant. In a pinch, there are plenty of other restaurants nearby.</p>
+
+<p>You are also welcome to bring your own food.  Every room has a minifridge, microwave, and coffeemaker.  People also often bring snacks to share.</p>
+
+<p>If it is easy for you, consider bringing a resuable set of dishes for every member of your family, clearly labeled with their name.  If this is not completely trivial, don't worry, we'll still bring the red solo cups and the sharpies.  But this seems like a good year to not accidentally drink out of someone else's cup.</p>
+
+<p>Please be aware that no outside alcohol is permitted at this weekend.  If you would like a drink sometime, alcohol is available in Traditions Restaurant in the Main Inn (<a href="https://tinyurl.com/psr2021-map">map</a>).</p>
+
+<h3>Help!</h3>
+
+<p>Since each meal requires a lot more coordination than we're used to, we need help!  If you have some extra time and energy (possibly a tall order almost 18 months into the global pandemic) consider coordinating/ordering a meal, picking up a meal or signing up for another task to keep everything running smoothly.  Sign up here: <a href="https://tinyurl.com/psr2021-help">signups</a>.</p>
 
 <h3>Communication with the Outside World</h3>
 <p>Cell signal is (at most) pretty flaky at PSR.  Expect your phone to suck up a lot of battery if you leave it on.  If you want to make sure that someone can reach you by phone in an emergency, give them Purity Spring's main number, 1-800-373-3754, and tell them that you are with the Scott/Shabsin party at the Lodges.  All of the buildings have reasonably reliable wifi.  If you really need to call out, find someone with a laptop and Google Voice (like Dana or Chris).<p>
@@ -262,32 +242,62 @@ East Madison, NH   02849<br>
 
 <p>Because cell signal is so poor in the mountains, make sure you know where you are going before you leave home -- or at least before you leave more populated areas on your way up.</p>
 
-<p>At least one person from each room will need to check in in the Millbrook building.  Coming from the south, it is one of the first buildings you will pass and it will be on your left. It is a large white house with red doors and there is a Purity Spring sign out front. If you pass Purity Lake on the right, you have gone too far. Park in the lot at Millbrook and check in.  If you are not traveling with your roommates, the first person to arrive can pick up all the keys if you like.</p>
+<p>At least one person from each room will need to check in in The Mill.  Coming from the south, it is one of the first buildings you will pass and it will be on your right.  It is a gray building with lots of windows and there is a sign that says "The Mill" out front. If you pass Purity Lake on the right, you have gone too far. Park in the lot at The Mill and check in.  If you are not traveling with your roommates, the first person to arrive can pick up all the keys if you like.</p>
 
-{{template "roomingInfo_html" .RoomingInfo}}
+{{with .RoomingInfo}}
+<div style="margin:20px">
+  {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
+  {{if $MultiRoom}}
+    <strong>Your rooms:</strong><br>
+  {{else}}
+    <strong>Your room:</strong><br>
+  {{end}}
+  <div style="display:inline-block;margin-bottom:0px">
 
+  {{range .InviteeBookings}}
+  <div style="margin:10px 0px 15px 20px">
+    {{if $MultiRoom}}
+      {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+    {{end}}
+    {{if .Building}}
+      <b>{{.Building.Name}}, room {{.Room.RoomNumber}}</b>
+    {{end}}
+    {{if gt (len .RoomSharers) 0}}
+      with:<br>
+      <div style="margin-left:20px">
+      {{range .RoomSharers}}
+        {{SharerName .}}<br>
+      {{end}}
+      </div>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+</div>
+{{end}}
 
 <p>Once you have checked in, get back in your car and continue north on Eaton Road.</p>
 
-<p>To get to our buildings, take the next left (past the lake on the right and immediately before the big open field on the left) onto East Madison Road.  Tecumseh is on the right, the red building closest to the road after the field.  All of our meals for will be served on the first floor of Tecumseh or just outside of it.  Osceola is behind Tecumseh.  Our main common room will be on the first floor of Osceola and our fire pit is behind it. Starr King is the long, low building across the road from Tecumseh/Osceola, on the left side of East Madison Road.  Carrigain is about 100 yards up the road from Tecumseh/Osceola, on the right.</p>
+<p>Our building, King Pine, is about half a mile north of the Mill.  It is a long, low building on the right and there is a sign out front that reads "Purity Spring Resort / King Pine / Guest Rooms / Trailsend Tavern / Evergreen Room."  All of our rooms are in this building.  Rooms 151-160 are in the north half of the building (farther from The Mill); rooms 161-170 are in the south half (closer to The Mill).  Our common room, the Fireplace Room, is on the lower level at the north end of the building. We also have access to the reception hall in the south end of the building, starting at 3pm on Friday.
+</p>
 
-<p>There is an EV charging outlet on the back side of Tecumseh (between Tecumseh and Osceola).  We will clearly mark it.  After 6pm on Friday, please do not park in this spot unless you have a fully-electric vehicle or have talked to the families that do (we can help you find them).  If you have a plug-in hybrid there should be other outlets available.</p>
-
-<p>All of the places you need to know about are marked on our <a href="https://goo.gl/uhYkjK">map</a>.</p>
+<p>All of the places you need to know about are marked on our <a href="https://tinyurl.com/psr2021-map">map</a>.</p>
 
 <h3>Other Resort-Related Miscellanea</h3>
 <p>Check in time is 3pm.  Some rooms may be ready earlier.  If you arrive before your room is ready, feel free to hang out in the common rooms or enjoy the resort amenities.  We plan to arrive around 1 or 2 on Thursday.</p>
 
-<p>Admission to the indoor pool, hot tub and fitness center are included in the cost for the weekend.  These are located in The Mill (<a href="https://goo.gl/uhYkjK">map</a>), approximately across the road from where you checked in. </p>
+<p>Admission to the indoor pool, hot tub and fitness center are included in the cost for the weekend.  These are located in The Mill (<a href="https://tinyurl.com/psr2021-map">map</a>), the building where you checked in. </p>
 
 <h3>What to Pack</h3>
-<p>Forecast is around 75F with occasional clouds all weekend.  Yay!</p>
+<p>Forecast is between 70-90F with not much chance of rain all weekend.  Yay! That’s good, because we want to encourage people to spend more time outside this year.</p>
 
 <p>Please be aware that it is tick season.  Be prepared!  We will bring some bug spray and a tick remover and rubbing alcohol.  Remember to check yourself and your children when you come in from outside.</p>
 
 <p>We will have plenty of sunscreen and some insect repellant available for communal use.  If you are traveling a long distance or don't intend to spend a lot of time outside you should be fine with our supply, but if you have a large family and/or intend to spend the weekend mostly outdoors you may wish to bring your own.</p>
 
 <p>Annual plea: jigsaw puzzles have traditionally been very popular at this weekend!  But we don't own any.  So, if you feel like doing puzzles, please bring some!</p>
+
+<p>In order to give us a little more space to spread out due to Covid, PSR has comped us the use of their ballroom from Friday afternoon through Sunday.  If you want to dance (whatever that means to you), we’ll have space for it.  Bring what you need.</p>
 
 <p>Please please please label anything that you intend for communal use with your name so that we can be sure it gets back to you.</p>
 
@@ -298,27 +308,15 @@ sunscreen and bug spray unless you intend to use the communal supply<br>
 outdoor toys<br>
 games you want to play <br>
 boots and appropriate clothes if you intend to hike<br>
-snacks if you would like food outside of set meal times<br>
+snacks<br>
 a flashlight if you expect to be outside after dark<br>
 chargers for any electronics you bring<br>
-a blanket for sitting outside<br>
-non-disposable cups<br>
+a blanket/beach chair for sitting outside<br>
+non-disposable cups &amp; dishes<br>
 jigsaw puzzles<br>
 activities you think are fun!<br>
 </p>
 
-
-<h3>Rough Schedule</h3>
-
-<p>
-Thursday night: dinner at Traditions Restaurant<br>
-Friday morning/afternoon: relaxing at the resort, exploring offsite<br>
-Friday night: sandwiches, ice cream, welcome!<br> 
-Saturday morning: archery range open<br>
-Saturday evening: puzzle hunt<br>
-Sunday on the way home: Fun Spot Arcade<br>
-
-Whenever: Socializing, hiking, swimming, lounging, playing games, reading books, doing puzzles, juggling, knitting or other crafts, dancing, playing, making music -- whatever you think is a fun way to spend a weekend! </p>
 
 
 <p style="margin-top:20px;">As always, you can find more information about our event, or change your profile information or rsvp, on our <a href="{{.LoginLink}}">event website</a>.</p>
