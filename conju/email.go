@@ -223,10 +223,6 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	bccSettings.SetEmail(wr.GetBccAddress())
 	mailSettings.SetBCC(bccSettings)
 
-	mailPersonalizations := mail.NewPersonalization()
-	for _, to := range headerData.To {
-		mailPersonalizations.AddTos(mail.NewEmail("", to))
-	}
 	// TODO(cshabsin): get string name from somewhere environmental?
 	message := &mail.SGMailV3{
 		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
@@ -236,7 +232,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 			mail.NewContent("text/html", html),
 		},
 		MailSettings:     mailSettings,
-		Personalizations: []*mail.Personalization{mailPersonalizations},
+		Personalizations: []*mail.Personalization{ToListPersonalization(headerData.To)},
 	}
 
 	log.Infof(wr.Context, "sending mail: %v", message)
@@ -244,6 +240,20 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		log.Errorf(wr.Context, "sendgrid.Send: %v", err)
 	}
 	return nil
+}
+
+func ToListPersonalization(to []string) *mail.Personalization {
+	mailPersonalizations := mail.NewPersonalization()
+	for _, to := range to {
+		mailPersonalizations.AddTos(mail.NewEmail("", to))
+	}
+	return mailPersonalizations
+}
+
+func ToPersonalization(name, addr string) *mail.Personalization {
+	mailPersonalizations := mail.NewPersonalization()
+	mailPersonalizations.AddTos(mail.NewEmail(name, addr))
+	return mailPersonalizations
 }
 
 func sendErrorMail(wr WrappedRequest, message string) {
