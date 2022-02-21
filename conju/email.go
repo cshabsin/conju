@@ -10,9 +10,8 @@ import (
 	"strings"
 	text_template "text/template"
 
-	mail_v3 "github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/mail"
 )
 
 // MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
@@ -218,31 +217,47 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		log.Errorf(wr.Context, "Error rendering mail: %v", err)
 		return err
 	}
-	message := mail_v3.NewEmail()
+	mailSettings := mail.NewMailSettings()
+	bccSettings := mail.NewBCCSetting()
+	bccSettings.SetEnable(true)
+	bccSettings.SetEmail(wr.GetBccAddress())
+	mailSettings.SetBCC(bccSettings)
+
+	mailPersonalizations := mail.NewPersonalization()
 	for _, to := range headerData.To {
-		message.AddTo(to)
+		mailPersonalizations.AddTos(mail.NewEmail("", to))
 	}
-	message.AddBcc(wr.GetBccAddress())
-	message.SetSubject(subject)
-	message.SetHTML(html)
-	message.SetText(text)
-	message.SetFrom(wr.GetSenderAddress())
+	// TODO(cshabsin): get string name from somewhere environmental?
+	message := &mail.SGMailV3{
+		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+		Subject: subject,
+		Content: []*mail.Content{
+			mail.NewContent("text/plain", text),
+			mail.NewContent("text/html", html),
+		},
+		MailSettings:     mailSettings,
+		Personalizations: []*mail.Personalization{mailPersonalizations},
+	}
 
 	log.Infof(wr.Context, "sending mail: %v", message)
-	if err := wr.GetEmailClient().Send(message); err != nil {
+	if _, err := wr.GetEmailClient().Send(message); err != nil {
 		log.Errorf(wr.Context, "sendgrid.Send: %v", err)
 	}
 	return nil
 }
 
 func sendErrorMail(wr WrappedRequest, message string) {
-	msg := mail.Message{
-		Sender:  wr.GetSenderAddress(),
-		To:      []string{wr.GetErrorAddress()},
+	mailPersonalizations := mail.NewPersonalization()
+	mailPersonalizations.AddTos(mail.NewEmail("Errors", wr.GetErrorAddress()))
+	msg := &mail.SGMailV3{
+		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
 		Subject: "[conju] Runtime error report",
-		Body:    message,
+		Content: []*mail.Content{
+			mail.NewContent("text/plain", message),
+		},
+		Personalizations: []*mail.Personalization{mailPersonalizations},
 	}
-	if err := mail.Send(wr.Context, &msg); err != nil {
+	if _, err := wr.GetEmailClient().Send(msg); err != nil {
 		log.Errorf(wr.Context, "Error sending error mail: %v", err)
 	}
 }
