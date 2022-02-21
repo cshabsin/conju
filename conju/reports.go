@@ -517,6 +517,19 @@ func handleSaveReservations(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }
 
+type Meal int
+
+const (
+	FriBrk Meal = iota
+	FriLun
+	FriDin
+	SatBrk
+	SatLun
+	SatDin
+	SunBrk
+	SunLun
+)
+
 func handleFoodReport(wr WrappedRequest) {
 	ctx := wr.Context
 	currentEventKey := wr.EventKey
