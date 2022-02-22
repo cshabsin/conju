@@ -122,6 +122,9 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	var venues []Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = *venueKey
 	}
@@ -130,6 +133,9 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	var buildings []Building
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
 	}
@@ -277,13 +283,13 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 			Guest.LastName = fields[2]
 			Guest.Nickname = fields[3]
 			Guest.Email = fields[4]
-			Guest.InviteeId, err = strconv.Atoi(fields[5])
+			Guest.InviteeId, _ = strconv.Atoi(fields[5])
 			Guest.HomePhone = fields[6]
 			Guest.CellPhone = fields[7]
-			Guest.AgeOverride, err = strconv.ParseFloat(fields[8], 64)
+			Guest.AgeOverride, _ = strconv.ParseFloat(fields[8], 64)
 
 			layout := "2006-01-02 15:04:05"
-			Guest.Birthdate, err = time.Parse(layout, fields[9])
+			Guest.Birthdate, _ = time.Parse(layout, fields[9])
 			Guest.NeedBirthdate = fields[10] == "1"
 			Guest.InviteCode = fields[11]
 			Guest.Address = strings.Replace(fields[12], "|", "\n", -1)
@@ -322,7 +328,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 		phone = guest.HomePhone
 	}
 	//clean phone number
-	reg, _ := regexp.Compile("[^\\d]+")
+	reg, _ := regexp.Compile(`[^\d]+`)
 
 	phone = reg.ReplaceAllString(phone, "")
 
@@ -362,6 +368,9 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	q := datastore.NewQuery("Event")
 	var e []*Event
 	eventKeys, err := q.GetAll(ctx, &e)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	eventKeyMap := make(map[int]*datastore.Key)
 	eventMap := make(map[int]Event)
 
@@ -387,7 +396,6 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			invitationCount[eventId]++
 			eventKey := eventKeyMap[eventId]
 
-			var invitees []Person
 			var personKeys []*datastore.Key
 
 			rsvpMap := make(map[*datastore.Key]invitation.RsvpStatus)
@@ -401,7 +409,6 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 				}
 				var p Person
 				datastore.Get(ctx, personKey, &p)
-				invitees = append(invitees, p)
 				personKeys = append(personKeys, personKey)
 
 				rsvpChar := rsvps[i]
@@ -437,6 +444,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	}
 
 	if err := scanner.Err(); err != nil {
+		log.Errorf(ctx, "%v", err)
 		//log.Fatal(err)
 	}
 
@@ -605,6 +613,9 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	var venues []Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = *venueKey
 	}
@@ -613,6 +624,9 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	var buildings []Building
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
 	}
@@ -621,6 +635,9 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	var events []Event
 	q = datastore.NewQuery("Event")
 	keys, err = q.GetAll(ctx, &events)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, eventKey := range keys {
 		eventsMap[(events[i]).ShortName] = *eventKey
 	}

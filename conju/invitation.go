@@ -387,7 +387,7 @@ func handleInvitations(wr WrappedRequest) {
 			return SortByLastFirstName(realizedInvitations[a].Invitees[0].Person, realizedInvitations[b].Invitees[0].Person)
 		})
 
-	notInvitedList := make([]PersonWithKey, len(notInvitedSet), len(notInvitedSet))
+	notInvitedList := make([]PersonWithKey, len(notInvitedSet))
 	i := 0
 	for k := range notInvitedSet {
 		notInvitedList[i] = notInvitedSet[k]
