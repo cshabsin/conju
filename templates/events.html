@@ -27,7 +27,7 @@
 
 <table class="listTable">
   <tr><th>Short Name</th><th>Name</th><th>Dates</th><th>Venue</th><th>Edit</th><th>Set Current</th></tr>
-  {{$VenueMap := .VenueMap}}
+  {{$AllVenues := .AllVenues}}
   {{$EventKeys := .EventKeys}}
   {{range $i, $event := .Events}}
     <tr{{if $event.Current}} class="currentEvent"{{end}}>

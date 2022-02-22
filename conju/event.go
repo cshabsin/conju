@@ -25,8 +25,8 @@ type CurrentEvent struct {
 
 // TODO: add object that's a map of string names to values and attach one to every event
 type Event struct {
-	EventId               int // this can get deleted after all the data is imported
-	Venue                 *datastore.Key
+	EventId               int            // this can get deleted after all the data is imported
+	Venue                 *datastore.Key // TODO(cshabsin): split eventDB from Event and make this an actual object
 	Name                  string
 	ShortName             string
 	StartDate             time.Time
@@ -150,15 +150,11 @@ func handleEvents(wr WrappedRequest) {
 	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
 	log.Infof(ctx, "Rendering %d events", len(allEvents))
 
-	q = datastore.NewQuery("Venue")
-	var allVenues []*housing.Venue
-	venueKeys, _ := q.GetAll(ctx, &allVenues)
-
-	venueMap := make(map[datastore.Key]housing.Venue)
-	venueEncodedKeyMap := make(map[datastore.Key]string)
-	for i := 0; i < len(allVenues); i++ {
-		venueMap[*venueKeys[i]] = *allVenues[i]
-		venueEncodedKeyMap[*venueKeys[i]] = (*venueKeys[i]).Encode()
+	allVenues, err := housing.AllVenues(ctx)
+	if err != nil {
+		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		log.Errorf(ctx, "AllVenues: %v", err)
+		return
 	}
 
 	// fetch this with an ajax call eventually
@@ -169,7 +165,7 @@ func handleEvents(wr WrappedRequest) {
 	buildingRoomMap := make(map[int64][]*housing.Room)
 	buildingKeyMap := make(map[int64]*housing.Building)
 	if len(allVenues) == 1 {
-		q := datastore.NewQuery("Building").Ancestor(venueKeys[0]).Order("Name")
+		q := datastore.NewQuery("Building").Ancestor(allVenues[0].Key).Order("Name")
 		buildingKeys, _ := q.GetAll(ctx, &buildings)
 
 		for i, building := range buildings {
@@ -185,6 +181,10 @@ func handleEvents(wr WrappedRequest) {
 			buildingRoomMap[room.Building.IntID()] = append(buildingRoomMap[room.Building.IntID()], room)
 			roomMap[roomKeys[j].IntID()] = room
 		}
+	} else {
+		http.Error(wr.ResponseWriter, ">1 venue not yet implemented", http.StatusInternalServerError)
+		log.Errorf(ctx, ">1 venue not yet implemented")
+		return
 	}
 
 	activitiesWithKeys, err := activity.QueryAll(ctx)
@@ -237,8 +237,7 @@ func handleEvents(wr WrappedRequest) {
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"Events":              allEvents,
 		"EventKeys":           allEventsEncodedKeys,
-		"VenueMap":            venueMap,
-		"VenueEncodedKeyMap":  venueEncodedKeyMap,
+		"AllVenues":           allVenues,
 		"BuildingOrder":       buildingOrder,
 		"BuildingKeyMap":      buildingKeyMap,
 		"BuildingRoomMap":     buildingRoomMap,

@@ -196,8 +196,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		Building *housing.Building
 	}
 	type InviteeRoomBookings struct {
-		Building            *housing.Building
-		Room                *housing.Room
+		Room                *housing.RealRoom
 		Roommates           []*Person // People from this invitation.
 		RoomSharers         []*Person // People from outside the invitation.
 		ShowConvertToDouble bool
