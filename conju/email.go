@@ -10,9 +10,8 @@ import (
 	"strings"
 	text_template "text/template"
 
-	mail_v3 "github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/mail"
 )
 
 // MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
@@ -67,6 +66,9 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 
 	// Hard-code that we want the roomingInfo template available for now.
 	textTpl, err = textTpl.ParseFiles("templates/roomingInfo.html")
+	if err != nil {
+		return "", "", "", err
+	}
 
 	var text bytes.Buffer
 	if err := textTpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
@@ -156,8 +158,7 @@ func handleDoSendMail(wr WrappedRequest) {
 			http.StatusBadRequest)
 		return
 	}
-	var senderFunc EmailSender
-	senderFunc = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
+	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		if _, ok := emailData["LoginLink"]; !ok {
 			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
 		}
@@ -216,27 +217,57 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		log.Errorf(wr.Context, "Error rendering mail: %v", err)
 		return err
 	}
-	message := mail_v3.NewEmail()
-	for _, to := range headerData.To {
-		message.AddTo(to)
+	mailSettings := mail.NewMailSettings()
+	bccSettings := mail.NewBCCSetting()
+	bccSettings.SetEnable(true)
+	bccSettings.SetEmail(wr.GetBccAddress())
+	mailSettings.SetBCC(bccSettings)
+
+	// TODO(cshabsin): get string name from somewhere environmental?
+	message := &mail.SGMailV3{
+		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+		Subject: subject,
+		Content: []*mail.Content{
+			mail.NewContent("text/plain", text),
+			mail.NewContent("text/html", html),
+		},
+		MailSettings:     mailSettings,
+		Personalizations: []*mail.Personalization{ToListPersonalization(headerData.To)},
 	}
-	message.AddBcc(wr.GetBccAddress())
-	message.SetSubject(subject)
-	message.SetHTML(html)
-	message.SetText(text)
-	message.SetFrom(wr.GetSenderAddress())
-	wr.GetEmailClient().Send(message)
+
+	log.Infof(wr.Context, "sending mail: %v", message)
+	if _, err := wr.GetEmailClient().Send(message); err != nil {
+		log.Errorf(wr.Context, "sendgrid.Send: %v", err)
+	}
 	return nil
 }
 
-func sendErrorMail(wr WrappedRequest, message string) {
-	msg := mail.Message{
-		Sender:  wr.GetSenderAddress(),
-		To:      []string{wr.GetErrorAddress()},
-		Subject: "[conju] Runtime error report",
-		Body:    message,
+func ToListPersonalization(to []string) *mail.Personalization {
+	mailPersonalizations := mail.NewPersonalization()
+	for _, to := range to {
+		mailPersonalizations.AddTos(mail.NewEmail("", to))
 	}
-	if err := mail.Send(wr.Context, &msg); err != nil {
+	return mailPersonalizations
+}
+
+func ToPersonalization(name, addr string) *mail.Personalization {
+	mailPersonalizations := mail.NewPersonalization()
+	mailPersonalizations.AddTos(mail.NewEmail(name, addr))
+	return mailPersonalizations
+}
+
+func sendErrorMail(wr WrappedRequest, message string) {
+	mailPersonalizations := mail.NewPersonalization()
+	mailPersonalizations.AddTos(mail.NewEmail("Errors", wr.GetErrorAddress()))
+	msg := &mail.SGMailV3{
+		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+		Subject: "[conju] Runtime error report",
+		Content: []*mail.Content{
+			mail.NewContent("text/plain", message),
+		},
+		Personalizations: []*mail.Personalization{mailPersonalizations},
+	}
+	if _, err := wr.GetEmailClient().Send(msg); err != nil {
 		log.Errorf(wr.Context, "Error sending error mail: %v", err)
 	}
 }

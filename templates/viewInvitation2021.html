@@ -224,79 +224,48 @@ function validate(form) {
     {{$IsAdminUser := .IsAdminUser}}
     {{range  $i, $invitee := .Invitation.Invitees}}
        <tr>
-           {{if $IsAdminUser}}
-               <td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
-               <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
-           {{end}}
-           <td>
-	     <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
-	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
-             <span class="invitationPersonHeading">{{.Person.FullName}}</span>
-	     <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}})">
-               <option value="-1"{{if not $RsvpStatus}} selected{{end}}>-- Will you be joining us? --</option>
-	       {{range $Invitation.Event.RsvpStatuses}}
-	         <option value="{{.}}"
-                   {{if and $RsvpStatus.ShortDescription (eq $RsvpStatus.Status .)}}selected{{end}}
-                 >{{(index $AllRsvpStatuses .).LongDescription}}</option>
-	       {{end}}
-	     </select>
+          {{if $IsAdminUser}}
+              <td class="listUpArrow"><img class="hidden" src="../media/arrow.png"></td>
+              <td class="listDownArrow"><img class="hidden" src="../media/arrow.png"></td>
+          {{end}}
+          <td>
+	          <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
+	            {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
+              <span class="invitationPersonHeading">{{.Person.FullName}}</span>
+	            <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}})">
+                <option value="-1"{{if not $RsvpStatus}} selected{{end}}>-- Will you be joining us? --</option>
+	              {{range $Invitation.Event.RsvpStatuses}}
+	                <option value="{{.}}"
+                  {{if and $RsvpStatus.ShortDescription (eq $RsvpStatus.Status .)}}selected{{end}}
+                  >{{(index $AllRsvpStatuses .).LongDescription}}</option>
+	              {{end}}
+	            </select>
 
-             <input type="hidden" name="person" value="{{.Key}}">
-	     <div class="personSupplementaryInfo hidden" id="{{.Key}}">
-	       <div class="food hidden">
+              <input type="hidden" name="person" value="{{.Key}}">
+	              <div class="personSupplementaryInfo hidden" id="{{.Key}}">
+	              <div class="food hidden">
 
- 		 Hooray!  We're so glad you can join us.<br>
-		 <br>
-		 We need to make sure we'll have food for you.
-		 Please check off any food restrictions you have.
-		 <table class="formtable">
-		   {{template "foodInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
-		 </table>
-	       </div>
-
-    {{if $Activities}}
-	  <div class="activities hidden">
- 		  <div class="activityHeader">We will have some organized (perhaps "organized") activities at the weekend.  Attendance at some of the organized activities has been low in the past couple of years, so we want to make sure there there's interest before we schedule something.  If you are waffling between choices pick the less committal option.  Also, if you are willing to organize one of the activities (selecting a hike, DMing a role-playing game, etc) please check the corresponding box. </div>
-
-		  <table class="activityTable">
-		   <tr><td><b>Would you attend this activity?</b></td><td class="ranking"><b>No</b></td><td class="ranking"><b>Maybe</b></td><td class="ranking"><b>Definitely</b></td><td class="leader"><b>Willing to Organize?</b></td></t>
-  		   {{range $a, $activity := $Activities}}
-                     {{$activityRanking := (index (index $Invitation.ActivitiesMap $invitee.Key) $activity.EncodedKey)}}
-		     <tr>
-		       <td>{{$activity.Activity.Keyword}}: {{$activity.Activity.Description}}</td>
-		       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="1"{{if eq $activityRanking 1}} checked {{end}}></td>
-                       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="2"{{if eq $activityRanking 2}} checked {{end}}></td>
-                       <td class="ranking"><input type="radio" name="activity_{{$i}}_{{$a}}" value="3"{{if eq $activityRanking 3}} checked {{end}}></td>
-                       {{if $activity.Activity.NeedsLeader}}
-                         {{$activityLeader := (index (index $Invitation.ActivitiesLeadersMap $invitee.Key) $activity.EncodedKey)}}
-		         <td class="leader"><input type="checkbox" name="activity_{{$i}}_{{$a}}_leader" {{if $activityLeader}} checked{{end}}></td>
-		       {{end}}
-		     </tr>
-
-		   {{end}}
-		 </table>
-	  </div>
-    {{end}}
-
-               <div class="personal hidden">
-                 <div class="personal-intro-positive-rsvp hidden ">
-                   Please double-check the information we have for you.  The only thing we REALLY need is your email address.  A phone number can also be helpful.<br>
-                   <br>
-                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
-		 </div>
-                 <div class="personal-intro-negative-rsvp hidden">
-                   We'll miss you!  But as long as you're here...<br>
-                   <br>
-                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
-                 </div>
-		 <div class="personal-intro-maybe-rsvp hidden">
-                   Please let us know if you'll be joining us as soon as you know!  But as long as you're here...<br>
-                   <br>
-                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
-                 </div>
-                 <table class="formTable">
-                   {{template "personInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
-                 </table>
+ 		            Hooray!  We're so glad you can join us.<br>
+               
+                <div class="personal hidden">
+                  <div class="personal-intro-positive-rsvp hidden ">
+                    Please double-check the information we have for you.  The only thing we REALLY need is your email address.  A phone number can also be helpful.<br>
+                    <br>
+                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+		              </div>
+                  <div class="personal-intro-negative-rsvp hidden">
+                    We'll miss you!  But as long as you're here...<br>
+                    <br>
+                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                  </div>
+		              <div class="personal-intro-maybe-rsvp hidden">
+                    Please let us know if you'll be joining us as soon as you know!  But as long as you're here...<br>
+                    <br>
+                    The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                  </div>
+                  <table class="formTable">
+                    {{template "personInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
+                  </table>
                </div>
              </div>
            </div>
@@ -377,17 +346,7 @@ function validate(form) {
     </div>
     <textarea class="freeformtextfield" id="id_travel_info" name="travelNotes">{{$Invitation.TravelNotes}}</textarea>
     
-  <!-- 2021  
-    <h4>Other meals</h4>
     
-    If you don't know this information yet you can add it later.<br><br>
-
-    <div class="extraInfoThursday" style="display:none;">
-      Thursday night we'll have dinner in the restaurant in PSR's on-site restaurant, around 7pm.  How many people in your party will join us? <input style="margin-left:20px;" type="text" name="ThursdayDinnerCount" size="1" value="{{if gt $Invitation.ThursdayDinnerCount 0}}{{$Invitation.ThursdayDinnerCount}}{{end}}"/><br>
-    </div>
-    Friday night we'll have a sandwich bar available for a light dinner.  How many people in your party want Friday dinner? <input style="margin-left:20px;" type="text" name="FridayDinnerCount" size="1"/ value="{{if gt $Invitation.FridayDinnerCount 0}}{{$Invitation.FridayDinnerCount}}{{end}}"><br>
-    Then we'll have ice cream for dessert (plus some limited other options).  How many people in your party want dessert?  <input style="margin-left:20px;" type="text" name="FridayIceCreamCount" size="1" value="{{if gt $Invitation.FridayIceCreamCount 0}}{{$Invitation.FridayIceCreamCount}}{{end}}"/><br>
--->
     <h4>Anything else?</h4>
     Anything else you'd like us to know in advance of the weekend?<br>
     <textarea class="freeformtextfield" name="otherInfo">{{$Invitation.OtherInfo}}</textarea>

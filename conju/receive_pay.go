@@ -52,7 +52,7 @@ func handleDoReceivePay(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	payStr := wr.Request.Form.Get("pay")
-	pay, err := strconv.ParseFloat(payStr, 75)
+	pay, err := strconv.ParseFloat(payStr, 64)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Error retrieving pay from form: %v", err), http.StatusBadRequest)
 		return

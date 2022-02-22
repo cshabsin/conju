@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -80,7 +82,7 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 			description := fields[2]
 			needsLeader := fields[1] == "TRUE"
 
-			activity := Activity{
+			activity := activity.Activity{
 				Keyword:     keyword,
 				Description: description,
 				NeedsLeader: needsLeader,
@@ -120,6 +122,9 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	var venues []Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = *venueKey
 	}
@@ -128,18 +133,21 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	var buildings []Building
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
 	}
 
-	rsvpStatusMap := make(map[string]RsvpStatus)
-	allRsvpStatuses := GetAllRsvpStatuses()
+	rsvpStatusMap := make(map[string]invitation.RsvpStatus)
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	for _, status := range allRsvpStatuses {
 		rsvpStatusMap[status.ShortDescription] = status.Status
 	}
 
 	activityMap := make(map[string]*datastore.Key)
-	var activities []Activity
+	var activities []activity.Activity
 	q = datastore.NewQuery("Activity")
 	keys, err = q.GetAll(ctx, &activities)
 	for i, activityKey := range keys {
@@ -158,7 +166,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			eventId, _ := strconv.Atoi(fields[0])
 			venueKey := venuesMap[fields[3]]
 			rsvpStatusStrings := strings.Split(fields[7], ",")
-			var rsvpStatuses []RsvpStatus
+			var rsvpStatuses []invitation.RsvpStatus
 			for _, rsvpStatusString := range rsvpStatusStrings {
 				rsvpStatuses = append(rsvpStatuses, rsvpStatusMap[rsvpStatusString])
 			}
@@ -275,13 +283,13 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 			Guest.LastName = fields[2]
 			Guest.Nickname = fields[3]
 			Guest.Email = fields[4]
-			Guest.InviteeId, err = strconv.Atoi(fields[5])
+			Guest.InviteeId, _ = strconv.Atoi(fields[5])
 			Guest.HomePhone = fields[6]
 			Guest.CellPhone = fields[7]
-			Guest.AgeOverride, err = strconv.ParseFloat(fields[8], 64)
+			Guest.AgeOverride, _ = strconv.ParseFloat(fields[8], 64)
 
 			layout := "2006-01-02 15:04:05"
-			Guest.Birthdate, err = time.Parse(layout, fields[9])
+			Guest.Birthdate, _ = time.Parse(layout, fields[9])
 			Guest.NeedBirthdate = fields[10] == "1"
 			Guest.InviteCode = fields[11]
 			Guest.Address = strings.Replace(fields[12], "|", "\n", -1)
@@ -320,7 +328,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 		phone = guest.HomePhone
 	}
 	//clean phone number
-	reg, _ := regexp.Compile("[^\\d]+")
+	reg, _ := regexp.Compile(`[^\d]+`)
 
 	phone = reg.ReplaceAllString(phone, "")
 
@@ -360,6 +368,9 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	q := datastore.NewQuery("Event")
 	var e []*Event
 	eventKeys, err := q.GetAll(ctx, &e)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	eventKeyMap := make(map[int]*datastore.Key)
 	eventMap := make(map[int]Event)
 
@@ -385,10 +396,9 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			invitationCount[eventId]++
 			eventKey := eventKeyMap[eventId]
 
-			var invitees []Person
 			var personKeys []*datastore.Key
 
-			rsvpMap := make(map[*datastore.Key]RsvpStatus)
+			rsvpMap := make(map[*datastore.Key]invitation.RsvpStatus)
 
 			for i, guestId := range guestIds {
 				guestIdInt, _ := strconv.Atoi(guestId)
@@ -399,7 +409,6 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 				}
 				var p Person
 				datastore.Get(ctx, personKey, &p)
-				invitees = append(invitees, p)
 				personKeys = append(personKeys, personKey)
 
 				rsvpChar := rsvps[i]
@@ -435,6 +444,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	}
 
 	if err := scanner.Err(); err != nil {
+		log.Errorf(ctx, "%v", err)
 		//log.Fatal(err)
 	}
 
@@ -443,59 +453,58 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 
 }
 
-func getRsvpStatusFromCode(eventId int, status string) RsvpStatus {
-
+func getRsvpStatusFromCode(eventId int, status string) invitation.RsvpStatus {
 	switch status {
 	case "n":
-		return No
+		return invitation.No
 	case "m":
-		return Maybe
+		return invitation.Maybe
 	}
 
 	switch eventId {
 	case 1:
 		switch status {
 		case "y":
-			return FriSat
+			return invitation.FriSat
 		case "f":
-			return Fri
+			return invitation.Fri
 		case "s":
-			return Sat
+			return invitation.Sat
 		case "w":
-			return WeddingOnly
+			return invitation.WeddingOnly
 		}
 	case 2, 3:
 		switch status {
 		case "y":
-			return FriSatSun
+			return invitation.FriSatSun
 		case "f":
-			return FriSat
+			return invitation.FriSat
 		case "s":
-			return SatSun
+			return invitation.SatSun
 		}
 	case 4:
 		switch status {
 		case "y":
-			return FriSat
+			return invitation.FriSat
 		case "f":
-			return ThuFriSat
+			return invitation.ThuFriSat
 		case "s":
-			return SatSun
+			return invitation.SatSun
 		case "e":
-			return FriSatPlusEither
+			return invitation.FriSatPlusEither
 		}
 	case 5:
 		switch status {
 		case "y":
-			return FriSat
+			return invitation.FriSat
 		case "f":
-			return ThuFriSat
+			return invitation.ThuFriSat
 		case "s":
-			return SatSun
+			return invitation.SatSun
 		}
 	}
 
-	return No
+	return invitation.No
 }
 
 func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
@@ -604,6 +613,9 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	var venues []Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = *venueKey
 	}
@@ -612,6 +624,9 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	var buildings []Building
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
 	}
@@ -620,6 +635,9 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	var events []Event
 	q = datastore.NewQuery("Event")
 	keys, err = q.GetAll(ctx, &events)
+	if err != nil {
+		log.Errorf(ctx, "GetAll: %v", err)
+	}
 	for i, eventKey := range keys {
 		eventsMap[(events[i]).ShortName] = *eventKey
 	}

@@ -9,7 +9,7 @@ import (
 )
 
 // SiteLink holds the current URL to base absolute links on.
-const SiteLink = "https://psr2019.shabsin.com"
+const SiteLink = "https://psr2021.shabsin.com"
 
 func init() {
 
@@ -81,15 +81,12 @@ func init() {
 }
 
 func handleIndex(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+wr.Event.ShortName+"/index.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+	eventName := "PSR2021"
+	if wr.Event != nil {
+		eventName = wr.Event.ShortName
 	}
-}
-
-func handleLoadMap(wr WrappedRequest) {
-	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/map.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "map.html", wr.TemplateData); err != nil {
+	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+eventName+"/index.html"))
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
 		log.Errorf(wr.Context, "%v", err)
 	}
 }

@@ -7,13 +7,14 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/cshabsin/conju/invitation"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
 func handleRoomingTool(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+	ctx := wr.Context
 
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
@@ -32,15 +33,26 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
 	var buildingsInOrder []Building
-	var availableRooms []RealRoom
-	var buildingsToRooms = make(map[Building][]RealRoom)
+	var availableRooms []*RealRoom
+	var buildingsToRooms = make(map[Building][]*RealRoom)
 
-	for i, room := range wr.Event.Rooms {
+	for _, room := range wr.Event.Rooms {
 		var rm Room
-		datastore.Get(ctx, room, &rm)
+		if err := datastore.Get(wr.Context, room, &rm); err != nil {
+			log.Errorf(wr.Context, "Reading room (id %s): %v", room.Encode(), err)
+			continue
+		}
 		buildingKey := room.Parent()
-		building := buildingsMap[buildingKey.IntID()]
-		if i == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
+		building, ok := buildingsMap[buildingKey.IntID()]
+		if !ok {
+			log.Errorf(wr.Context, "building not found in buildingsMap for building %v", buildingKey)
+			continue
+		}
+		if building == nil {
+			log.Errorf(wr.Context, "nil building in buildingsMap for building %v", buildingKey)
+			continue
+		}
+		if len(buildingsInOrder) == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
 			buildingsInOrder = append(buildingsInOrder, *building)
 		}
 
@@ -60,20 +72,13 @@ func handleRoomingTool(wr WrappedRequest) {
 
 			}
 		}
-		realRoom := RealRoom{
+		realRoom := &RealRoom{
 			Room:       rm,
 			Building:   *buildingsMap[buildingKey.IntID()],
 			BedsString: bedstring,
 		}
 
-		roomsForBuilding := buildingsToRooms[*building]
-
-		if roomsForBuilding == nil {
-			roomsForBuilding = make([]RealRoom, 0)
-
-		}
-		roomsForBuilding = append(roomsForBuilding, realRoom)
-		buildingsToRooms[*building] = roomsForBuilding
+		buildingsToRooms[*building] = append(buildingsToRooms[*building], realRoom)
 
 		availableRooms = append(availableRooms, realRoom)
 
@@ -98,9 +103,9 @@ func handleRoomingTool(wr WrappedRequest) {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
 
-	statusOrder := []RsvpStatus{ThuFriSat, FriSat, Maybe}
+	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe}
 	adultPreferenceMask := GetAdultPreferenceMask()
-	rsvpToGroupsMap := make(map[RsvpStatus][][]Person)
+	rsvpToGroupsMap := make(map[invitation.RsvpStatus][][]Person)
 	var noRsvps [][]Person
 	peopleToProperties := make(map[*datastore.Key]int)
 
@@ -154,7 +159,7 @@ func handleRoomingTool(wr WrappedRequest) {
 		"RsvpToGroupsMap":      rsvpToGroupsMap,
 		"NoRsvps":              noRsvps,
 		"StatusOrder":          statusOrder,
-		"AllRsvpStatuses":      GetAllRsvpStatuses(),
+		"AllRsvpStatuses":      invitation.GetAllRsvpStatuses(),
 		"AvailableRooms":       availableRooms,
 		"BuildingsToRooms":     buildingsToRooms,
 		"BuildingsInOrder":     buildingsInOrder,

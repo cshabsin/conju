@@ -7,7 +7,8 @@ import (
 	"net/http"
 	text_template "text/template"
 
-	"gopkg.in/sendgrid/sendgrid-go.v2"
+	"github.com/cshabsin/conju/invitation"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -110,20 +111,23 @@ func handleSendRoomingEmail(wr WrappedRequest, emailName string, isTest bool) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	for _, to_render := range rendered_mail {
 		p := to_render.Person
-		message := sendgrid.NewMail()
-		if isTest {
-			message.AddTo(fmt.Sprintf("%s test <%s>", p.FullName(),
-				wr.GetBccAddress()))
-		} else {
-			message.AddTo(fmt.Sprintf("%s <%s>", p.FullName(), p.Email))
-			message.AddBcc(wr.GetBccAddress())
+		message := &mail.SGMailV3{
+			From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+			Subject: to_render.Subject,
+			Content: []*mail.Content{
+				mail.NewContent("text/plain", to_render.Text),
+				mail.NewContent("text/html", to_render.HTML),
+			},
 		}
-		message.SetSubject(to_render.Subject)
-		message.SetHTML(to_render.HTML)
-		message.SetText(to_render.Text)
-		message.SetFrom(wr.GetSenderAddress())
+		if isTest {
+			message.AddPersonalizations(ToPersonalization(fmt.Sprintf("%s test", p.FullName()), wr.GetBccAddress()))
+		} else {
+			p := ToPersonalization(p.FullName(), p.Email)
+			p.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
+			message.AddPersonalizations(p)
+		}
 		fmt.Fprintf(wr.ResponseWriter, "Sending to %s (isTest = %v)<p>", p.FullName(), isTest)
-		err = wr.GetEmailClient().Send(message)
+		_, err = wr.GetEmailClient().Send(message)
 		if err != nil {
 			log.Errorf(wr.Context, "Error sending mail: %v", err)
 		}
@@ -279,9 +283,9 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/" + emailName + ".html"))
 
 	rendered_mail := make(map[int64]RenderedMail, 0)
-	for invitation, bookings := range allInviteeBookings {
+	for inv, bookings := range allInviteeBookings {
 		// invitation is ID from key.
-		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", invitation, nil), invitationMap[invitation])
+		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", inv, nil), invitationMap[inv])
 		unreserved := make([]BuildingRoom, 0)
 		for _, booking := range bookings {
 			if !booking.ReservationMade {
@@ -292,7 +296,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		thursday := false
 		for i := range ri.InviteePeople {
 			status := ri.RsvpMap[ri.Invitees[i].Key].Status
-			if status == ThuFriSat {
+			if status == invitation.ThuFriSat {
 				thursday = true
 				break
 			}

@@ -538,6 +538,9 @@ func savePeople(wr WrappedRequest) error {
 				log.Errorf(ctx, "%v", err)
 			}
 			key, err = datastore.DecodeKey(encodedKey)
+			if err != nil {
+				log.Errorf(ctx, "%v", err)
+			}
 		} else {
 			key = PersonKey(ctx)
 			p = &Person{
@@ -578,7 +581,9 @@ func savePeople(wr WrappedRequest) error {
 		}
 
 		p.FoodRestrictions = thisPersonRestrictions
-		p.FoodNotes = form["FoodNotes"][i]
+		if form["FoodNotes"] != nil {
+			p.FoodNotes = form["FoodNotes"][i]
+		}
 
 		if len(form["FallbackAge"]) > i {
 			p.FallbackAge, _ = strconv.ParseFloat(form["FallbackAge"][i], 64)
