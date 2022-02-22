@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/housing"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -32,12 +33,12 @@ func handleRoomingTool(wr WrappedRequest) {
 	var invitationsToExplode []string
 
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
-	var buildingsInOrder []Building
-	var availableRooms []*RealRoom
-	var buildingsToRooms = make(map[Building][]*RealRoom)
+	var buildingsInOrder []housing.Building
+	var availableRooms []*housing.RealRoom
+	var buildingsToRooms = make(map[housing.Building][]*housing.RealRoom)
 
 	for _, room := range wr.Event.Rooms {
-		var rm Room
+		var rm housing.Room
 		if err := datastore.Get(wr.Context, room, &rm); err != nil {
 			log.Errorf(wr.Context, "Reading room (id %s): %v", room.Encode(), err)
 			continue
@@ -59,20 +60,20 @@ func handleRoomingTool(wr WrappedRequest) {
 		bedstring := ""
 		for _, bed := range rm.Beds {
 			switch bed {
-			case King:
+			case housing.King:
 				bedstring += "K"
-			case Queen:
+			case housing.Queen:
 				bedstring += "Q"
-			case Double:
+			case housing.Double:
 				bedstring += "D"
-			case Twin:
+			case housing.Twin:
 				bedstring += "T"
-			case Cot:
+			case housing.Cot:
 				bedstring += "C"
 
 			}
 		}
-		realRoom := &RealRoom{
+		realRoom := &housing.RealRoom{
 			Room:       rm,
 			Building:   *buildingsMap[buildingKey.IntID()],
 			BedsString: bedstring,
@@ -189,7 +190,7 @@ func handleSaveRooming(wr WrappedRequest) {
 
 	roomMap := make(map[string]*datastore.Key)
 	roomingMap := make(map[string][]*datastore.Key)
-	var rooms = make([]*Room, len(wr.Event.Rooms))
+	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
 	datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
 
 	for i, room := range rooms {
@@ -273,9 +274,9 @@ func handleSaveRooming(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "rooming", http.StatusSeeOther)
 }
 
-func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[int64]*Building {
-	buildingsMap := make(map[int64]*Building)
-	var buildings []*Building
+func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[int64]*housing.Building {
+	buildingsMap := make(map[int64]*housing.Building)
+	var buildings []*housing.Building
 	q := datastore.NewQuery("Building").Ancestor(venueKey)
 	keys, err := q.GetAll(ctx, &buildings)
 

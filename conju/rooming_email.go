@@ -8,6 +8,7 @@ import (
 	text_template "text/template"
 
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/housing"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"google.golang.org/appengine/datastore"
@@ -145,14 +146,14 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		log.Errorf(ctx, "fetching bookings: %v", err)
 	}
 
-	var rooms = make([]*Room, len(wr.Event.Rooms))
+	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
 	err = datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
 	if err != nil {
 		log.Errorf(ctx, "fetching rooms: %v", err)
 	}
 
 	// Map room ID -> Room
-	roomsMap := make(map[int64]*Room)
+	roomsMap := make(map[int64]*housing.Room)
 	for i, room := range rooms {
 		roomsMap[wr.Event.Rooms[i].IntID()] = room
 	}
@@ -191,12 +192,12 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
 	type BuildingRoom struct {
-		Room     *Room
-		Building *Building
+		Room     *housing.Room
+		Building *housing.Building
 	}
 	type InviteeRoomBookings struct {
-		Building            *Building
-		Room                *Room
+		Building            *housing.Building
+		Room                *housing.Room
 		Roommates           []*Person // People from this invitation.
 		RoomSharers         []*Person // People from outside the invitation.
 		ShowConvertToDouble bool
@@ -224,7 +225,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 
 		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
 			for _, bed := range room.Beds {
-				if bed == Double || bed == Queen || bed == King {
+				if bed == housing.Double || bed == housing.Queen || bed == housing.King {
 					showConvertToDouble = false
 					break
 				}

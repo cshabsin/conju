@@ -17,6 +17,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/housing"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -119,7 +120,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	layout := "1/2/2006"
 
 	venuesMap := make(map[string]datastore.Key)
-	var venues []Venue
+	var venues []housing.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	if err != nil {
@@ -130,7 +131,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	}
 
 	buildingsMap := make(map[string]datastore.Key)
-	var buildings []Building
+	var buildings []housing.Building
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
 	if err != nil {
@@ -610,7 +611,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	ctx := wr.Context
 
 	venuesMap := make(map[string]datastore.Key)
-	var venues []Venue
+	var venues []housing.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	if err != nil {
@@ -621,7 +622,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	}
 
 	buildingsMap := make(map[string]datastore.Key)
-	var buildings []Building
+	var buildings []housing.Building
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
 	if err != nil {
@@ -698,7 +699,7 @@ func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 			contactPhone := fields[4]
 			website := fields[5]
 
-			venue := Venue{
+			venue := housing.Venue{
 				Name:          name,
 				ShortName:     shortName,
 				ContactPerson: contactPerson,
@@ -726,7 +727,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	defer buildingsFile.Close()
 
 	venuesMap := make(map[string]*datastore.Key)
-	var venues []Venue
+	var venues []housing.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	for i, venueKey := range keys {
@@ -758,7 +759,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 			}
 			log.Infof(ctx, "%s total properties: %d", name, properties)
 
-			building := Building{
+			building := housing.Building{
 				Venue:             venue,
 				Name:              name,
 				Code:              code,
@@ -785,7 +786,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 	defer roomsFile.Close()
 
 	buildingsMap := make(map[string]*datastore.Key)
-	var buildings []Building
+	var buildings []housing.Building
 	q := datastore.NewQuery("Building")
 	keys, err := q.GetAll(ctx, &buildings)
 	for i, buildingKey := range keys {
@@ -812,19 +813,19 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 			for _, b := range propertyStrings {
 				properties += propertiesMap[b]
 			}
-			var bedSizes []BedSize
+			var bedSizes []housing.BedSize
 			for _, c := range fields[4] {
 				switch c {
 				case 'K':
-					bedSizes = append(bedSizes, King)
+					bedSizes = append(bedSizes, housing.King)
 				case 'Q':
-					bedSizes = append(bedSizes, Queen)
+					bedSizes = append(bedSizes, housing.Queen)
 				case 'D':
-					bedSizes = append(bedSizes, Double)
+					bedSizes = append(bedSizes, housing.Double)
 				case 'T':
-					bedSizes = append(bedSizes, Twin)
+					bedSizes = append(bedSizes, housing.Twin)
 				case 'C':
-					bedSizes = append(bedSizes, Cot)
+					bedSizes = append(bedSizes, housing.Cot)
 				}
 			}
 
@@ -833,7 +834,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 			width, _ := strconv.Atoi(fields[7])
 			height, _ := strconv.Atoi(fields[8])
 
-			room := Room{
+			room := housing.Room{
 				Building:    building,
 				RoomNumber:  number,
 				Partition:   partition,

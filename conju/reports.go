@@ -9,6 +9,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/housing"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -298,8 +299,8 @@ func handleRoomingReport(wr WrappedRequest) {
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := q.GetAll(ctx, &bookings)
 
-	roomsMap := make(map[int64]Room)
-	var rooms = make([]*Room, len(wr.Event.Rooms))
+	roomsMap := make(map[int64]housing.Room)
+	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
 	err := datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
 	if err != nil {
 		log.Infof(ctx, "%v", err)
@@ -359,8 +360,8 @@ func handleRoomingReport(wr WrappedRequest) {
 
 	type RealBooking struct {
 		KeyString           string
-		Room                Room
-		Building            *Building
+		Room                housing.Room
+		Building            *housing.Building
 		Roommates           []Person
 		ShowConvertToDouble bool
 		FriSat              int
@@ -410,7 +411,7 @@ func handleRoomingReport(wr WrappedRequest) {
 
 		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
 			for _, bed := range room.Beds {
-				if bed == Double || bed == Queen || bed == King {
+				if bed == housing.Double || bed == housing.Queen || bed == housing.King {
 					showConvertToDouble = false
 					break
 				}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/housing"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -150,10 +151,10 @@ func handleEvents(wr WrappedRequest) {
 	log.Infof(ctx, "Rendering %d events", len(allEvents))
 
 	q = datastore.NewQuery("Venue")
-	var allVenues []*Venue
+	var allVenues []*housing.Venue
 	venueKeys, _ := q.GetAll(ctx, &allVenues)
 
-	venueMap := make(map[datastore.Key]Venue)
+	venueMap := make(map[datastore.Key]housing.Venue)
 	venueEncodedKeyMap := make(map[datastore.Key]string)
 	for i := 0; i < len(allVenues); i++ {
 		venueMap[*venueKeys[i]] = *allVenues[i]
@@ -161,12 +162,12 @@ func handleEvents(wr WrappedRequest) {
 	}
 
 	// fetch this with an ajax call eventually
-	var buildings []*Building
+	var buildings []*housing.Building
 	var buildingOrder []int64
-	var rooms []*Room
-	roomMap := make(map[int64]*Room)
-	buildingRoomMap := make(map[int64][]*Room)
-	buildingKeyMap := make(map[int64]*Building)
+	var rooms []*housing.Room
+	roomMap := make(map[int64]*housing.Room)
+	buildingRoomMap := make(map[int64][]*housing.Room)
+	buildingKeyMap := make(map[int64]*housing.Building)
 	if len(allVenues) == 1 {
 		q := datastore.NewQuery("Building").Ancestor(venueKeys[0]).Order("Name")
 		buildingKeys, _ := q.GetAll(ctx, &buildings)

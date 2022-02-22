@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/housing"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -20,8 +21,8 @@ type Booking struct {
 // InviteeRoomBookings holds the info for a given room's people.
 // TODO: should this be renamed? Why is "Invitee" in the name?
 type InviteeRoomBookings struct {
-	Building            *Building
-	Room                *Room
+	Building            *housing.Building
+	Room                *housing.Room
 	Roommates           []*Person // People from this invitation.
 	RoomSharers         []*Person // People from outside the invitation.
 	ShowConvertToDouble bool
@@ -30,8 +31,8 @@ type InviteeRoomBookings struct {
 
 // BuildingRoom holds a room of a building, for use as a key in a amp.
 type BuildingRoom struct {
-	Room     *Room
-	Building *Building
+	Room     *housing.Room
+	Building *housing.Building
 }
 
 // InviteeBookingsMap maps rooms to the InviteeRoomBookings that holds info
@@ -87,14 +88,14 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 		roomKeys = append(roomKeys, booking.Room)
 	}
 
-	var rooms = make([]*Room, len(roomKeys))
+	var rooms []*housing.Room
 	err := datastore.GetMulti(wr.Context, roomKeys, rooms)
 	if err != nil {
 		log.Errorf(wr.Context, "fetching rooms: %v", err)
 	}
 
 	// Map room ID -> Room
-	roomsMap := make(map[int64]*Room)
+	roomsMap := make(map[int64]*housing.Room)
 	for i, room := range rooms {
 		roomsMap[roomKeys[i].IntID()] = room
 	}
@@ -105,7 +106,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	}
 
 	personMap := make(map[int64]*Person)
-	var people = make([]*Person, len(peopleToLookUp))
+	var people []*Person
 	err = datastore.GetMulti(wr.Context, peopleToLookUp, people)
 	if err != nil {
 		log.Errorf(wr.Context, "fetching people: %v", err)
@@ -154,7 +155,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 		showConvertToDouble := doubleBedNeeded
 		if doubleBedNeeded && (((building.Properties | room.Properties) & shareBedBit) == shareBedBit) {
 			for _, bed := range room.Beds {
-				if bed == Double || bed == Queen || bed == King {
+				if bed == housing.Double || bed == housing.Queen || bed == housing.King {
 					showConvertToDouble = false
 					break
 				}

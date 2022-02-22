@@ -1,4 +1,4 @@
-package conju
+package housing
 
 import (
 	"google.golang.org/appengine/datastore"
