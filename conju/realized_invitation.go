@@ -14,7 +14,7 @@ type RealizedInvitation struct {
 	Invitation                *Invitation
 	EncodedKey                string
 	Invitees                  []PersonWithKey
-	Event                     Event
+	Event                     eventDB
 	RsvpMap                   map[string]invitation.RsvpStatusInfo
 	Housing                   HousingPreferenceInfo
 	HousingPreferenceBooleans int
@@ -80,7 +80,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		}
 	}
 
-	var event Event
+	var event eventDB
 	datastore.Get(ctx, inv.Event, &event)
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()

@@ -205,7 +205,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	}
 	type InviteeBookings map[BuildingRoom]InviteeRoomBookings
 
-	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
+	wr.Event.LoadVenue(ctx)
+	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
 	allInviteeBookings := make(map[int64]InviteeBookings)
 	for _, booking := range bookings {
 		room := roomsMap[booking.Room.IntID()]

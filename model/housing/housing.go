@@ -4,15 +4,6 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-type Venue struct {
-	Name          string
-	ShortName     string
-	ContactPerson string
-	ContactPhone  string
-	ContactEmail  string
-	Website       string
-}
-
 type Building struct {
 	Venue             *datastore.Key
 	Name              string

@@ -135,7 +135,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
+	wr.Event.LoadVenue(wr.Context)
+	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
 	allInviteeBookings := make(map[int64]InviteeBookingsMap)
 	personToCost := make(map[*Person]float64)
 	for _, booking := range bookingsForInvitation {

@@ -27,20 +27,17 @@
 
 <table class="listTable">
   <tr><th>Short Name</th><th>Name</th><th>Dates</th><th>Venue</th><th>Edit</th><th>Set Current</th></tr>
-  {{$VenueMap := .VenueMap}}
-  {{$EventKeys := .EventKeys}}
   {{range $i, $event := .Events}}
     <tr{{if $event.Current}} class="currentEvent"{{end}}>
       <td>{{$event.ShortName}}</td>
       <td>{{$event.Name}}</td>
       <td>{{$event.StartDate.Format "01/02/2006"}} - {{.EndDate.Format "01/02/2006"}}</td>
-      <td>{{(index $VenueMap (dereferenceKey .Venue)).Name}}</td>
-      <td><a href="events?editEvent={{(index $EventKeys $i)}}">Edit</a></td>
-      <td><a href="events?setCurrent={{(index $EventKeys $i)}}">Set Current</a></td>
+      <td>{{$event.Venue.Name}}</td>
+      <td><a href="events?editEvent={{$event.EncodedKey}}">Edit</a></td>
+      <td><a href="events?setCurrent={{$event.EncodedKey}}">Set Current</a></td>
     </tr>
 {{end}}
 </table>
-{{$VenueKeyMap := .VenueEncodedKeyMap}}
 {{$EditEvent := .EditEvent}}
 <form action="createUpdateEvent" method="GET">
   <input type="hidden" name="editEventKeyEncoded" value="{{.EditEventKeyEncoded}}"/>
@@ -56,11 +53,11 @@
         <td>Venue:</td>
         <td>
 	  <select id="venueSelect" name="venue">
-	    {{range $key, $value := .VenueMap}}
-	        {{$optionValue := (index $VenueKeyMap $key)}} 
+	    {{range $venue := .Venues}}
+	        {{$optionValue := (encodeKey $venue.Key)}} 
   	        <option value="{{$optionValue}}"
 			{{if (eq (encodeKey $EditEvent.Venue) $optionValue)}} checked{{end}}
-                >{{$value.Name}}</option>
+                >{{$venue.Name}}</option>
             {{end}}
 	  </select>
         </td>

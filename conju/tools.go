@@ -32,7 +32,8 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	var invitationsToExplode []string
 
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
+	wr.Event.LoadVenue(ctx)
+	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
 	var buildingsInOrder []housing.Building
 	var availableRooms []*housing.RealRoom
 	var buildingsToRooms = make(map[housing.Building][]*housing.RealRoom)
@@ -186,7 +187,8 @@ func handleSaveRooming(wr WrappedRequest) {
 	// (Will matter when saving booked state.)
 	datastore.DeleteMulti(ctx, bookingKeys)
 
-	buildingMap := getBuildingMapForVenue(ctx, wr.Event.Venue)
+	wr.Event.LoadVenue(ctx)
+	buildingMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
 
 	roomMap := make(map[string]*datastore.Key)
 	roomingMap := make(map[string][]*datastore.Key)

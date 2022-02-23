@@ -3,8 +3,11 @@ package conju
 import (
 	"html/template"
 	"math/rand"
+	"net/http"
 	"time"
 
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
@@ -12,6 +15,9 @@ import (
 const SiteLink = "https://psr2021.shabsin.com"
 
 func init() {
+	http.HandleFunc("/_ah/start", func(w http.ResponseWriter, r *http.Request) {
+		datastore.EnableKeyConversion(appengine.NewContext(r))
+	})
 
 	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
 	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)

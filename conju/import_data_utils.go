@@ -18,6 +18,7 @@ import (
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
+	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -120,7 +121,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	layout := "1/2/2006"
 
 	venuesMap := make(map[string]datastore.Key)
-	var venues []housing.Venue
+	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	if err != nil {
@@ -190,7 +191,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 
 			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
-			e := Event{
+			e := eventDB{
 				EventId:               eventId,
 				Venue:                 &venueKey,
 				Name:                  fields[1],
@@ -367,13 +368,13 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	defer rsvpFile.Close()
 
 	q := datastore.NewQuery("Event")
-	var e []*Event
+	var e []*eventDB
 	eventKeys, err := q.GetAll(ctx, &e)
 	if err != nil {
 		log.Errorf(ctx, "GetAll: %v", err)
 	}
 	eventKeyMap := make(map[int]*datastore.Key)
-	eventMap := make(map[int]Event)
+	eventMap := make(map[int]eventDB)
 
 	for i, event := range e {
 		eventKeyMap[event.EventId] = eventKeys[i]
@@ -611,7 +612,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	ctx := wr.Context
 
 	venuesMap := make(map[string]datastore.Key)
-	var venues []housing.Venue
+	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	if err != nil {
@@ -633,7 +634,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	}
 
 	eventsMap := make(map[string]datastore.Key)
-	var events []Event
+	var events []eventDB
 	q = datastore.NewQuery("Event")
 	keys, err = q.GetAll(ctx, &events)
 	if err != nil {
@@ -661,7 +662,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 			// Add rooms to events
 			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
-			var event Event
+			var event eventDB
 			eventKey := eventsMap[fields[2]]
 			datastore.Get(ctx, &eventKey, &event)
 
@@ -699,7 +700,7 @@ func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 			contactPhone := fields[4]
 			website := fields[5]
 
-			venue := housing.Venue{
+			venue := venue.Venue{
 				Name:          name,
 				ShortName:     shortName,
 				ContactPerson: contactPerson,
@@ -727,7 +728,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	defer buildingsFile.Close()
 
 	venuesMap := make(map[string]*datastore.Key)
-	var venues []housing.Venue
+	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	for i, venueKey := range keys {

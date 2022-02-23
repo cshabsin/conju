@@ -372,7 +372,7 @@ func handleRoomingReport(wr WrappedRequest) {
 		Reserved            bool
 	}
 
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue)
+	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
 	// doesn't deal with consolidating partitioned rooms
 	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
 	var totalCostForEveryone float64
