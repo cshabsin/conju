@@ -88,8 +88,7 @@ func eventFromDB(ctx context.Context, key *datastore.Key, ev *eventDB) (*Event, 
 	}, nil
 }
 
-func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, error) {
-	host := wr.GetHost()
+func getEventForHost(ctx context.Context, host string, e **Event, key **datastore.Key) (bool, error) {
 	// TODO: generalize this for multiple hostnames/events.
 	var shortname string
 	if host == "psr2019.shabsin.com" {
@@ -103,20 +102,20 @@ func getEventForHost(wr *WrappedRequest, e **Event, key **datastore.Key) (bool, 
 	var keys []*datastore.Key
 	var eventDBs []*eventDB
 	q := datastore.NewQuery("Event").Filter("ShortName =", shortname)
-	keys, err := q.GetAll(wr.Context, &eventDBs)
+	keys, err := q.GetAll(ctx, &eventDBs)
 	if err != nil {
-		log.Errorf(wr.Context, "Error querying for %s(url) event: %v", shortname, err)
+		log.Errorf(ctx, "Error querying for %s(url) event: %v", shortname, err)
 		return false, nil
 	}
 	if len(keys) == 0 {
-		log.Errorf(wr.Context, "Found no %s(url) event", shortname)
+		log.Errorf(ctx, "Found no %s(url) event", shortname)
 		return false, nil
 	}
 	if len(keys) > 1 {
-		log.Errorf(wr.Context, "Found more than one %s(url) event (%d)", shortname, len(keys))
+		log.Errorf(ctx, "Found more than one %s(url) event (%d)", shortname, len(keys))
 		return false, nil
 	}
-	ev, err := eventFromDB(wr.Context, keys[0], eventDBs[0])
+	ev, err := eventFromDB(ctx, keys[0], eventDBs[0])
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +131,7 @@ func EventGetter(wr *WrappedRequest) error {
 	}
 	wr.hasRunEventGetter = true
 	var key *datastore.Key
-	found, err := getEventForHost(wr, &wr.Event, &key)
+	found, err := getEventForHost(wr.Context, wr.Host, &wr.Event, &key)
 	if err != nil {
 		return err
 	}
