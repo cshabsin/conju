@@ -4,7 +4,6 @@ package conju
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine"
@@ -25,113 +25,15 @@ type CurrentEvent struct {
 	Key *datastore.Key
 }
 
-// TODO: add object that's a map of string names to values and attach one to every event
-type eventDB struct {
-	EventId               int // this can get deleted after all the data is imported
-	Venue                 *datastore.Key
-	Name                  string
-	ShortName             string
-	StartDate             time.Time
-	EndDate               time.Time
-	RsvpStatuses          []invitation.RsvpStatus
-	Rooms                 []*datastore.Key
-	Activities            []*datastore.Key
-	InvitationClosingText string
-	Current               bool
-}
-
-type Event struct {
-	Key                   *datastore.Key
-	venueKey              *datastore.Key
-	Venue                 *venue.Venue
-	Name                  string
-	ShortName             string
-	StartDate             time.Time
-	EndDate               time.Time
-	RsvpStatuses          []invitation.RsvpStatus
-	Rooms                 []*datastore.Key // TODO: replace with room
-	Activities            []*datastore.Key // TODO: replace with activity
-	InvitationClosingText string
-	Current               bool
-}
-
-func (e *Event) LoadVenue(ctx context.Context) (*venue.Venue, error) {
-	if e.Venue != nil {
-		return e.Venue, nil
-	}
-	venue, err := venue.FromKey(ctx, e.venueKey)
-	if err != nil {
-		return nil, err
-	}
-	e.Venue = venue
-	return e.Venue, nil
-}
-
-func (e *Event) EncodedKey() string {
-	return e.Key.Encode()
-}
-
-func eventFromDB(ctx context.Context, key *datastore.Key, ev *eventDB) (*Event, error) {
-	// TODO: get eventdb if called only with key
-	return &Event{
-		Key:                   key,
-		venueKey:              ev.Venue,
-		Name:                  ev.Name,
-		ShortName:             ev.ShortName,
-		StartDate:             ev.StartDate,
-		EndDate:               ev.EndDate,
-		RsvpStatuses:          ev.RsvpStatuses,
-		Rooms:                 ev.Rooms,      // TODO: replace with keys
-		Activities:            ev.Activities, // TODO: replace with keys
-		InvitationClosingText: ev.InvitationClosingText,
-		Current:               ev.Current,
-	}, nil
-}
-
-func getEventForHost(ctx context.Context, host string, e **Event, key **datastore.Key) (bool, error) {
-	// TODO: generalize this for multiple hostnames/events.
-	var shortname string
-	if host == "psr2019.shabsin.com" {
-		shortname = "PSR2019"
-	} else if host == "psr2021.shabsin.com" {
-		shortname = "PSR2021"
-	} else {
-		return false, nil
-	}
-
-	var keys []*datastore.Key
-	var eventDBs []*eventDB
-	q := datastore.NewQuery("Event").Filter("ShortName =", shortname)
-	keys, err := q.GetAll(ctx, &eventDBs)
-	if err != nil {
-		log.Errorf(ctx, "Error querying for %s(url) event: %v", shortname, err)
-		return false, nil
-	}
-	if len(keys) == 0 {
-		log.Errorf(ctx, "Found no %s(url) event", shortname)
-		return false, nil
-	}
-	if len(keys) > 1 {
-		log.Errorf(ctx, "Found more than one %s(url) event (%d)", shortname, len(keys))
-		return false, nil
-	}
-	ev, err := eventFromDB(ctx, keys[0], eventDBs[0])
-	if err != nil {
-		return false, err
-	}
-	*e = ev
-	*key = keys[0]
-	return true, nil
-}
-
 // Sets up Event in the WrappedRequest.
 func EventGetter(wr *WrappedRequest) error {
+	ctx := wr.Context
 	if wr.hasRunEventGetter {
 		return nil // Only retrieve once.
 	}
 	wr.hasRunEventGetter = true
 	var key *datastore.Key
-	found, err := getEventForHost(wr.Context, wr.Host, &wr.Event, &key)
+	found, err := event.GetEventForHost(ctx, wr.Host, &wr.Event, &key)
 	if err != nil {
 		return err
 	}
@@ -145,46 +47,27 @@ func EventGetter(wr *WrappedRequest) error {
 	if err != nil {
 		return err
 	}
-	var e *eventDB
 
-	err = datastore.Get(wr.Context, key, &e)
-	if err == nil {
-		// We have retrieved the event successfully.
-		ev, err := eventFromDB(wr.Context, key, e)
-		if err != nil {
-			return err
+	if key != nil {
+		ev, err := event.GetEvent(ctx, key)
+		if err == nil {
+			// We have retrieved the event successfully.
+			wr.Event = ev
+			wr.EventKey = key
+			wr.TemplateData["CurrentEvent"] = ev
+			return nil
 		}
-		wr.Event = ev
-		wr.EventKey = key
-		wr.TemplateData["CurrentEvent"] = e
-		return nil
+		// eat the error and fall back to the db current event
 	}
 
-	var keys []*datastore.Key
-	var events []*eventDB
-	q := datastore.NewQuery("Event").Filter("Current =", true)
-	keys, err = q.GetAll(wr.Context, &events)
-	if err != nil {
-		log.Errorf(wr.Context, "Error querying for current event: %v", err)
-		return nil
-	}
-	if len(keys) == 0 {
-		log.Errorf(wr.Context, "Found no current event")
-		return nil
-	}
-	if len(keys) > 1 {
-		log.Errorf(wr.Context, "Found more than one current event (%d)", len(keys))
-		return nil
-	}
-	ev, err := eventFromDB(wr.Context, keys[0], events[0])
+	ev, err := event.GetCurrentEvent(ctx)
 	if err != nil {
 		return err
 	}
 	wr.Event = ev
-	key = keys[0]
 
 	wr.TemplateData["CurrentEvent"] = wr.Event
-	wr.EventKey = key
+	wr.EventKey = ev.Key
 	wr.SetSessionValue("EventKey", key.Encode())
 	wr.SaveSession()
 
@@ -192,34 +75,14 @@ func EventGetter(wr *WrappedRequest) error {
 }
 
 func handleEvents(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+	ctx := appengine.NewContext(wr.Request) // TODO: why isn't this just wr.Context?
 	tic := time.Now()
-	q := datastore.NewQuery("Event").Order("-StartDate")
 
-	var allEventDBs []*eventDB
-	eventKeys, err := q.GetAll(ctx, &allEventDBs)
+	allEvents, err := event.GetAllEvents(ctx)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Errorf(ctx, "GetAllEvents: %v", err)
 		return
-	}
-	for _, e := range allEventDBs {
-		fmt.Println(e)
-	}
-	var allEvents []*Event
-	for i := range allEventDBs {
-		ev, err := eventFromDB(ctx, eventKeys[i], allEventDBs[i])
-		if err != nil {
-			http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-			log.Errorf(ctx, "eventFromDB(%v): %v", eventKeys[i].Encode(), err)
-			return
-		}
-		if _, err := ev.LoadVenue(ctx); err != nil {
-			http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-			log.Errorf(ctx, "LoadVenue(%v) - %q: %v", eventKeys[i].Encode(), ev.venueKey.Encode(), err)
-			return
-		}
-		allEvents = append(allEvents, ev)
 	}
 
 	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
@@ -280,13 +143,13 @@ func handleEvents(wr WrappedRequest) {
 			log.Errorf(wr.Context, "Error decoding key from editEvent: %v", err)
 		}
 	}
-	var editEvent eventDB
-
+	var editEvent *event.Event
 	eventRoomMap := make(map[string]bool)
-	rsvpStatusMap := make(map[int]bool)
+	rsvpStatusMap := make(map[invitation.RsvpStatus]bool)
 	activityMap := make(map[string]bool)
 	if editEventKey != nil {
-		err = datastore.Get(wr.Context, editEventKey, &editEvent)
+		var err error
+		editEvent, err = event.GetEvent(wr.Context, editEventKey)
 		if err != nil {
 			log.Errorf(ctx, "Get event: %v", err)
 		}
@@ -296,7 +159,7 @@ func handleEvents(wr WrappedRequest) {
 			eventRoomMap[building.Code+"_"+strconv.Itoa(room.RoomNumber)+"_"+room.Partition] = true
 		}
 		for _, status := range editEvent.RsvpStatuses {
-			rsvpStatusMap[int(status)] = true
+			rsvpStatusMap[status] = true
 		}
 		for _, activityKey := range editEvent.Activities {
 			activityMap[activityKey.Encode()] = true
@@ -343,28 +206,41 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 
 	for key, value := range form {
 		b := new(bytes.Buffer)
-		_, _ = fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
+		fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
 		log.Infof(ctx, b.String())
 	}
 
-	event := eventDB{}
+	ev := &event.Event{}
 	eventKey := datastore.NewIncompleteKey(ctx, "Event", nil)
 	if form["editEventKeyEncoded"] != nil && form["editEventKeyEncoded"][0] != "" {
-		eventKey, _ = datastore.DecodeKey(form["editEventKeyEncoded"][0])
-		_ = datastore.Get(wr.Context, eventKey, &event)
+		var err error
+		eventKey, err = datastore.DecodeKey(form["editEventKeyEncoded"][0])
+		if err != nil {
+			log.Errorf(ctx, "decoding event key from form: %v", err)
+		}
+		ev, err = event.GetEvent(wr.Context, eventKey)
+		if err != nil {
+			log.Errorf(ctx, "decoding event key from form: %v", err)
+		}
 	}
 
-	venue, err := datastore.DecodeKey(form["venue"][0])
+	venueKey, err := datastore.DecodeKey(form["venue"][0])
 	if err != nil {
-		log.Infof(ctx, "%v", err)
+		log.Infof(ctx, "decoding venue key from form: %v", err)
 	}
-	event.Name = form["name"][0]
-	event.ShortName = form["shortName"][0]
-	event.Venue = venue
+	ev.Name = form["name"][0]
+	ev.ShortName = form["shortName"][0]
+	ev.SetVenueKey(venueKey)
 
 	layout := "01/02/2006"
-	event.StartDate, _ = time.Parse(layout, form["startDate"][0])
-	event.EndDate, _ = time.Parse(layout, form["endDate"][0])
+	ev.StartDate, err = time.Parse(layout, form["startDate"][0])
+	if err != nil {
+		log.Infof(ctx, "decoding start date from form: %v", err)
+	}
+	ev.EndDate, err = time.Parse(layout, form["endDate"][0])
+	if err != nil {
+		log.Infof(ctx, "decoding end date from form: %v", err)
+	}
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	var statusesForEvent []invitation.RsvpStatus
@@ -373,7 +249,7 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 		statusInfo := allRsvpStatuses[statusInt]
 		statusesForEvent = append(statusesForEvent, statusInfo.Status)
 	}
-	event.RsvpStatuses = statusesForEvent
+	ev.RsvpStatuses = statusesForEvent
 
 	var rooms []*datastore.Key
 	for _, room := range form["rooms"] {
@@ -400,30 +276,38 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 
 		rooms = append(rooms, roomKeys[0])
 	}
-	event.Rooms = rooms
+	ev.Rooms = rooms
 
 	var activityKeys []*datastore.Key
 	for _, encodedActivityKey := range form["activity"] {
 		activityKey, _ := datastore.DecodeKey(encodedActivityKey)
 		activityKeys = append(activityKeys, activityKey)
 	}
-	event.Activities = activityKeys
+	ev.Activities = activityKeys
 
-	var current = (form["current"] != nil && len(form["current"]) > 0 && form["current"][0] == "on")
-	if current {
-		var allEvents []*eventDB
-		q := datastore.NewQuery("Event")
-		eventKeys, _ := q.GetAll(ctx, &allEvents)
+	makeCurrent := (form["current"] != nil && len(form["current"]) > 0 && form["current"][0] == "on")
+	if makeCurrent {
+		// make all events not current
+		allEvents, err := event.GetAllEvents(ctx)
+		if err != nil {
+			log.Errorf(ctx, "GetAllEvents: %v", err)
+		}
 
-		for i, event := range allEvents {
+		for _, event := range allEvents {
 			event.Current = false
-			_, _ = datastore.Put(ctx, eventKeys[i], event)
+			_, err := datastore.Put(ctx, event.Key, event)
+			if err != nil {
+				log.Errorf(ctx, "Updating event: %v", err)
+			}
 		}
 	}
 
-	event.Current = current
-	datastore.Put(ctx, eventKey, &event)
+	ev.Current = makeCurrent
+	if err := event.PutEvent(ctx, ev); err != nil {
+		log.Errorf(ctx, "PutEvent: %v", err)
+		http.Error(wr.ResponseWriter, fmt.Sprintf("PutEvent: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	log.Infof(ctx, "event: %v", event)
 	http.Redirect(wr.ResponseWriter, wr.Request, "events", http.StatusSeeOther)
 }

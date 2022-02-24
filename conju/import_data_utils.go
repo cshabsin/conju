@@ -17,6 +17,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine/datastore"
@@ -191,9 +192,8 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 
 			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
-			e := eventDB{
+			e := &event.Event{
 				EventId:               eventId,
-				Venue:                 &venueKey,
 				Name:                  fields[1],
 				ShortName:             fields[2],
 				StartDate:             startDate,
@@ -204,10 +204,12 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 				Current:               fields[6] == "1",
 				Rooms:                 rooms,
 			}
+			e.SetVenueKey(&venueKey)
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Event", nil), &e)
+			err := event.PutEvent(ctx, e)
 			if err != nil {
-				log.Infof(ctx, "%v", err)
+				log.Infof(ctx, "PutEvent: %v", err)
+				w.Write([]byte(fmt.Sprintf("Error calling PutEvent: %v\n", err)))
 			}
 
 			w.Write([]byte(fmt.Sprintf("Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))))
@@ -367,18 +369,15 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	}
 	defer rsvpFile.Close()
 
-	q := datastore.NewQuery("Event")
-	var e []*eventDB
-	eventKeys, err := q.GetAll(ctx, &e)
+	e, err := event.GetAllEvents(ctx)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Errorf(ctx, "%v", err)
 	}
-	eventKeyMap := make(map[int]*datastore.Key)
-	eventMap := make(map[int]eventDB)
+	// map from eventID to event
+	eventMap := make(map[int]*event.Event)
 
 	for i, event := range e {
-		eventKeyMap[event.EventId] = eventKeys[i]
-		eventMap[event.EventId] = *e[i]
+		eventMap[event.EventId] = e[i]
 	}
 
 	var invitationCount [7]int
@@ -396,7 +395,6 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			rsvps := strings.Split(fields[3], ",")
 
 			invitationCount[eventId]++
-			eventKey := eventKeyMap[eventId]
 
 			var personKeys []*datastore.Key
 
@@ -421,7 +419,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			}
 
 			var invitation Invitation
-			invitation.Event = eventKey
+			invitation.Event = eventMap[eventId].Key
 			invitation.Invitees = personKeys
 			invitation.RsvpMap = rsvpMap
 
@@ -611,7 +609,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 
 	ctx := wr.Context
 
-	venuesMap := make(map[string]datastore.Key)
+	venuesMap := make(map[string]*datastore.Key)
 	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
@@ -619,7 +617,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 		log.Errorf(ctx, "GetAll: %v", err)
 	}
 	for i, venueKey := range keys {
-		venuesMap[(venues[i]).ShortName] = *venueKey
+		venuesMap[(venues[i]).ShortName] = venueKey
 	}
 
 	buildingsMap := make(map[string]datastore.Key)
@@ -633,15 +631,13 @@ func ReloadHousingSetup(wr WrappedRequest) {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
 	}
 
-	eventsMap := make(map[string]datastore.Key)
-	var events []eventDB
-	q = datastore.NewQuery("Event")
-	keys, err = q.GetAll(ctx, &events)
+	eventsMap := make(map[string]*event.Event)
+	events, err := event.GetAllEvents(ctx)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Infof(ctx, "GetAllEvents: %v", err)
 	}
-	for i, eventKey := range keys {
-		eventsMap[(events[i]).ShortName] = *eventKey
+	for _, ev := range events {
+		eventsMap[ev.ShortName] = ev
 	}
 
 	eventsFile, err := os.Open(Import_Data_Directory + "/" + Events_Data_File_Name)
@@ -662,22 +658,18 @@ func ReloadHousingSetup(wr WrappedRequest) {
 			// Add rooms to events
 			rooms := getRoomsFromString(fields[8], ctx, buildingsMap)
 
-			var event eventDB
-			eventKey := eventsMap[fields[2]]
-			datastore.Get(ctx, &eventKey, &event)
+			ev := eventsMap[fields[2]]
 
-			event.Venue = &venueKey
-			event.Rooms = rooms
-			_, err := datastore.Put(ctx, &eventKey, &event)
+			ev.SetVenueKey(venueKey)
+			ev.Rooms = rooms
+
+			err := event.PutEvent(ctx, ev)
 			if err != nil {
-				log.Infof(ctx, "%v", err)
+				log.Infof(ctx, "PutEvent: %v", err)
 			}
-
 		}
 		processedHeader = true
-
 	}
-
 }
 
 func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
