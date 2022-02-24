@@ -23,8 +23,8 @@
 <form action="copyInvitations" method="POST">
 {{if not .RealizedInvitations}}Copy invitations from: 
   <select name="baseEvent">
-    {{range .EventsWithKeys}}
-      <option value="{{.Key}}">{{.Ev.ShortName}}</option>
+    {{range .AllEvents}}
+      <option value="{{.Key}}">{{.ShortName}}</option>
     {{end}}
   </select>
   <input type="submit" value="Create"/>

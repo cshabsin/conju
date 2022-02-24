@@ -15,6 +15,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/event"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -304,8 +305,11 @@ func (inv *Invitation) AnyUndecided() bool {
 }
 
 func (inv *Invitation) HasChildren(ctx context.Context) bool {
-	var event eventDB
-	datastore.Get(ctx, inv.Event, &event)
+	event, err := event.GetEvent(ctx, inv.Event)
+	if err != nil {
+		log.Errorf(ctx, "GetEvent: %v", err)
+	}
+
 	for _, personKey := range inv.Invitees {
 		var person Person
 		datastore.Get(ctx, personKey, &person)
@@ -395,24 +399,12 @@ func handleInvitations(wr WrappedRequest) {
 	}
 	sort.Slice(notInvitedList, func(a, b int) bool { return SortByLastFirstName(notInvitedList[a].Person, notInvitedList[b].Person) })
 
-	type EventWithKey struct {
-		Key string
-		Ev  eventDB
-	}
-
-	var eventsWithKeys []EventWithKey
+	var allEvents []*event.Event
 	if len(invitations) == 0 {
-		var allEvents []*eventDB
-		eventKeys, err := datastore.NewQuery("Event").Filter("Current =", false).Order("-StartDate").GetAll(ctx, &allEvents)
+		var err error
+		allEvents, err = event.GetAllEvents(ctx)
 		if err != nil {
-			log.Errorf(ctx, "Error listing events for copyInvitations: %v", err)
-		}
-		for i := 0; i < len(eventKeys); i++ {
-			ewk := EventWithKey{
-				Key: eventKeys[i].Encode(),
-				Ev:  *allEvents[i],
-			}
-			eventsWithKeys = append(eventsWithKeys, ewk)
+			log.Errorf(ctx, "GetAllEvents: %v", err)
 		}
 	}
 
@@ -420,7 +412,7 @@ func handleInvitations(wr WrappedRequest) {
 		"Invitations":         invitations,
 		"RealizedInvitations": realizedInvitations,
 		"NotInvitedList":      notInvitedList,
-		"EventsWithKeys":      eventsWithKeys,
+		"AllEvents":           allEvents,
 		"Stats":               statistics,
 	})
 
@@ -769,9 +761,11 @@ func handleSaveInvitation(wr WrappedRequest) {
 		}
 	}
 
-	var e eventDB
-	datastore.Get(wr.Context, inv.Event, &e)
-	subject := fmt.Sprintf("%s:%s RSVP from %s", e.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
+	ev, err := event.GetEvent(wr.Context, inv.Event)
+	if err != nil {
+		log.Errorf(wr.Context, "GetEvent: %v", err)
+	}
+	subject := fmt.Sprintf("%s:%s RSVP from %s", ev.ShortName, newPeopleSubjectFragment, CollectiveAddress(invitees, Informal))
 
 	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &inv)
 	// TODO: escape this.
