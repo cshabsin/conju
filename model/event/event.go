@@ -106,20 +106,12 @@ func eventFromDB(ctx context.Context, key *datastore.Key, ev *eventDB) (*Event, 
 }
 
 func GetEvent(ctx context.Context, key *datastore.Key) (*Event, error) {
-<<<<<<< HEAD
 	var ev eventDB
-=======
-	var ev *eventDB
->>>>>>> 34a25351df3cb2a0c1c7ce9c244c0bd617c1cdd7
 	err := datastore.Get(ctx, key, &ev)
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD
 	return eventFromDB(ctx, key, &ev)
-=======
-	return eventFromDB(ctx, key, ev)
->>>>>>> 34a25351df3cb2a0c1c7ce9c244c0bd617c1cdd7
 }
 
 func PutEvent(ctx context.Context, ev *Event) error {
