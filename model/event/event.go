@@ -31,7 +31,7 @@ type Event struct {
 	Key                   *datastore.Key
 	EventId               int // this can get deleted after all the data is imported
 	venueKey              *datastore.Key
-	Venue                 *venue.Venue
+	Venue                 *venue.Venue // only set after LoadVenue called.
 	Name                  string
 	ShortName             string
 	StartDate             time.Time
