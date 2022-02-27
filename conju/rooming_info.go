@@ -5,6 +5,7 @@ import (
 
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -23,8 +24,8 @@ type Booking struct {
 type InviteeRoomBookings struct {
 	Building            *housing.Building
 	Room                *housing.Room
-	Roommates           []*Person // People from this invitation.
-	RoomSharers         []*Person // People from outside the invitation.
+	Roommates           []*person.Person // People from this invitation.
+	RoomSharers         []*person.Person // People from outside the invitation.
 	ShowConvertToDouble bool
 	ReservationMade     bool
 }
@@ -43,9 +44,9 @@ type InviteeBookingsMap map[BuildingRoom]InviteeRoomBookings
 type RoomingAndCostInfo struct {
 	Invitation      *Invitation
 	InviteeBookings InviteeBookingsMap
-	Attendees       map[int64]*Person
-	OrderedInvitees []*Person
-	PersonToCost    map[*Person]float64
+	Attendees       map[int64]*person.Person
+	OrderedInvitees []*person.Person
+	PersonToCost    map[*person.Person]float64
 	TotalCost       float64
 }
 
@@ -105,8 +106,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 		peopleToLookUp = append(peopleToLookUp, booking.Roommates...)
 	}
 
-	personMap := make(map[int64]*Person)
-	var people []*Person
+	personMap := make(map[int64]*person.Person)
+	var people []*person.Person
 	err = datastore.GetMulti(wr.Context, peopleToLookUp, people)
 	if err != nil {
 		log.Errorf(wr.Context, "fetching people: %v", err)
@@ -138,7 +139,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	wr.Event.LoadVenue(wr.Context)
 	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
 	allInviteeBookings := make(map[int64]InviteeBookingsMap)
-	personToCost := make(map[*Person]float64)
+	personToCost := make(map[*person.Person]float64)
 	for _, booking := range bookingsForInvitation {
 		room := roomsMap[booking.Room.IntID()]
 		buildingID := booking.Room.Parent().IntID()
@@ -167,11 +168,11 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 		PlusThursday := 0
 		addThurs := make([]bool, len(booking.Roommates))
 
-		for i, person := range booking.Roommates {
+		for i, per := range booking.Roommates {
 
-			roommateInvitation := personToInvitationMap[person.IntID()]
-			rsvpStatus := personToRsvp[person.IntID()]
-			p := personMap[person.IntID()]
+			roommateInvitation := personToInvitationMap[per.IntID()]
+			rsvpStatus := personToRsvp[per.IntID()]
+			p := personMap[per.IntID()]
 
 			if !p.IsBabyAtTime(wr.Event.StartDate) {
 				if rsvpStatus == invitation.FriSat {
@@ -191,8 +192,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 			}
 			_, found := inviteeBookings[buildingRoom]
 			if !found {
-				roommates := make([]*Person, 0)
-				roomSharers := make([]*Person, 0)
+				roommates := make([]*person.Person, 0)
+				roomSharers := make([]*person.Person, 0)
 				for _, maybeRoommate := range booking.Roommates {
 					maybeRoommatePerson := personMap[maybeRoommate.IntID()]
 					if personToInvitationMap[maybeRoommate.IntID()] == roommateInvitation {
@@ -233,8 +234,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 
 	}
 
-	inviteePersonToCost := make(map[*Person]float64)
-	var orderedInvitees []*Person
+	inviteePersonToCost := make(map[*person.Person]float64)
+	var orderedInvitees []*person.Person
 	var totalCost float64
 	for _, invitee := range inv.Invitees {
 		person := personMap[invitee.IntID()]

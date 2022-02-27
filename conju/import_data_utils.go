@@ -16,9 +16,11 @@ import (
 	"time"
 
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/conju/login"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
+	"github.com/cshabsin/conju/model/person"
 	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -261,7 +263,7 @@ type ImportedGuest struct {
 	NeedBirthdate bool
 	InviteCode    string
 	Address       string
-	Pronouns      PronounSet
+	Pronouns      person.PronounSet
 }
 
 func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore.Key {
@@ -300,13 +302,13 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 			pronoun := fields[13]
 			switch pronoun {
 			case "she":
-				Guest.Pronouns = She
+				Guest.Pronouns = person.She
 			case "he":
-				Guest.Pronouns = He
+				Guest.Pronouns = person.He
 			case "zie":
-				Guest.Pronouns = Zie
+				Guest.Pronouns = person.Zie
 			default:
-				Guest.Pronouns = They
+				Guest.Pronouns = person.They
 			}
 
 			personKey, _ := CreatePersonFromImportedGuest(ctx, w, Guest)
@@ -336,7 +338,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 
 	phone = reg.ReplaceAllString(phone, "")
 
-	p := Person{
+	p := person.Person{
 		OldGuestId:    guest.GuestId,
 		OldInviteeId:  guest.InviteeId,
 		OldInviteCode: guest.InviteCode,
@@ -350,11 +352,11 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 		Birthdate:     guest.Birthdate,
 		NeedBirthdate: guest.NeedBirthdate,
 		Address:       guest.Address,
-		LoginCode:     randomLoginCodeString(),
+		LoginCode:     login.RandomLoginCodeString(),
 	}
 
 	w.Write([]byte(fmt.Sprintf("Adding person: %s\n", p.FullName())))
-	key, err2 := datastore.Put(ctx, PersonKey(ctx), &p)
+	key, err2 := datastore.Put(ctx, person.PersonKey(ctx), &p)
 	if err2 != nil {
 		log.Errorf(ctx, "%v", err2)
 	}
@@ -407,7 +409,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 					log.Infof(ctx, "Missing person in %s", fields[2])
 					continue
 				}
-				var p Person
+				var p person.Person
 				datastore.Get(ctx, personKey, &p)
 				personKeys = append(personKeys, personKey)
 
@@ -510,7 +512,7 @@ func getRsvpStatusFromCode(eventId int, status string) invitation.RsvpStatus {
 func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
 	b := new(bytes.Buffer)
 
-	allRestrictions := GetAllFoodRestrictionTags()
+	allRestrictions := person.GetAllFoodRestrictionTags()
 
 	foodFile, err := os.Open(Import_Data_Directory + "/" + Food_File_Name)
 	if err != nil {
@@ -522,7 +524,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 	processedHeader := false
 	for scanner.Scan() {
 		if processedHeader {
-			var restrictions []FoodRestriction
+			var restrictions []person.FoodRestriction
 			foodRow := scanner.Text()
 			fields := strings.Split(foodRow, "\t")
 			guestIdInt, _ := strconv.Atoi(fields[0])
@@ -530,36 +532,36 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 			dietCode := fields[3]
 			switch dietCode {
 			case "v":
-				restrictions = append(restrictions, Vegetarian)
+				restrictions = append(restrictions, person.Vegetarian)
 			case "n":
-				restrictions = append(restrictions, Vegan)
+				restrictions = append(restrictions, person.Vegan)
 			case "f":
-				restrictions = append(restrictions, VegetarianPlusFish)
+				restrictions = append(restrictions, person.VegetarianPlusFish)
 			case "r":
-				restrictions = append(restrictions, NoRedMeat)
+				restrictions = append(restrictions, person.NoRedMeat)
 			}
 
 			if fields[4] == "1" {
-				restrictions = append(restrictions, Kosher)
+				restrictions = append(restrictions, person.Kosher)
 			}
 			if fields[5] == "1" {
-				restrictions = append(restrictions, NoDairy)
+				restrictions = append(restrictions, person.NoDairy)
 			}
 			if fields[6] == "1" {
-				restrictions = append(restrictions, NoGluten)
+				restrictions = append(restrictions, person.NoGluten)
 			}
 			if fields[7] == "1" {
-				restrictions = append(restrictions, DangerousAllergy)
+				restrictions = append(restrictions, person.DangerousAllergy)
 			}
 			if fields[8] == "1" {
-				restrictions = append(restrictions, InconvenientAllergy)
+				restrictions = append(restrictions, person.InconvenientAllergy)
 			}
 
 			foodIssues := ""
 			foodNotes := strings.Replace(fields[9], "|", "\n", -1)
 
 			personKey := guestMap[guestIdInt]
-			var p Person
+			var p person.Person
 			err := datastore.Get(ctx, personKey, &p)
 			if err != nil {
 				log.Errorf(ctx, "%v: %v - %s", err, personKey.Encode(), foodRow)

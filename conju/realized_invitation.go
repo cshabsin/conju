@@ -7,6 +7,7 @@ import (
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -14,7 +15,7 @@ import (
 type RealizedInvitation struct {
 	Invitation                *Invitation
 	EncodedKey                string
-	Invitees                  []PersonWithKey
+	Invitees                  []person.PersonWithKey
 	Event                     *event.Event
 	RsvpMap                   map[string]invitation.RsvpStatusInfo
 	Housing                   HousingPreferenceInfo
@@ -34,15 +35,15 @@ type RealizedInvitation struct {
 	FridayDinnerCount         int
 	FridayIceCreamCount       int
 	OtherInfo                 string
-	LastUpdatedPerson         PersonWithKey
+	LastUpdatedPerson         person.PersonWithKey
 	LastUpdatedTimestamp      time.Time
-	InviteePeople             []Person
+	InviteePeople             []person.Person
 	ReceivedPayDateStr        string
 	Thursday                  bool
 }
 
-func (ri RealizedInvitation) GetPeopleComing() []Person {
-	peopleComing := make([]Person, 0)
+func (ri RealizedInvitation) GetPeopleComing() []person.Person {
+	peopleComing := make([]person.Person, 0)
 	for i, p := range ri.Invitees {
 		if ri.RsvpMap[p.Key].Attending {
 			peopleComing = append(peopleComing, ri.InviteePeople[i])
@@ -53,30 +54,30 @@ func (ri RealizedInvitation) GetPeopleComing() []Person {
 
 func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) RealizedInvitation {
 	personKeys := inv.Invitees
-	var inviteePeople []Person
-	var invitees []PersonWithKey
+	var inviteePeople []person.Person
+	var invitees []person.PersonWithKey
 	for _, personKey := range personKeys {
-		var person Person
-		datastore.Get(ctx, personKey, &person)
-		person.DatastoreKey = personKey
-		personWithKey := PersonWithKey{
-			Person: person,
+		var pers person.Person
+		datastore.Get(ctx, personKey, &pers)
+		pers.DatastoreKey = personKey
+		personWithKey := person.PersonWithKey{
+			Person: pers,
 			Key:    personKey.Encode(),
 		}
 
 		invitees = append(invitees, personWithKey)
-		inviteePeople = append(inviteePeople, person)
+		inviteePeople = append(inviteePeople, pers)
 	}
 
-	var person Person
-	var lastUpdatedPerson PersonWithKey
-	err := datastore.Get(ctx, inv.LastUpdatedPerson, &person)
+	var pers person.Person
+	var lastUpdatedPerson person.PersonWithKey
+	err := datastore.Get(ctx, inv.LastUpdatedPerson, &pers)
 	if err != nil {
 		//log.Infof(ctx, "%v", err)
 	} else {
-		person.DatastoreKey = inv.LastUpdatedPerson
-		lastUpdatedPerson = PersonWithKey{
-			Person: person,
+		pers.DatastoreKey = inv.LastUpdatedPerson
+		lastUpdatedPerson = person.PersonWithKey{
+			Person: pers,
 			Key:    inv.LastUpdatedPerson.Encode(),
 		}
 	}

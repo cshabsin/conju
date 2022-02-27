@@ -10,6 +10,7 @@ import (
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -33,8 +34,8 @@ func handleRsvpReport(wr WrappedRequest) {
 		log.Errorf(ctx, "fetching invitations: %v", err)
 	}
 
-	allRsvpMap := make(map[invitation.RsvpStatus][][]Person)
-	var allNoRsvp [][]Person
+	allRsvpMap := make(map[invitation.RsvpStatus][][]person.Person)
+	var allNoRsvp [][]person.Person
 
 	type ExtraInvitationInfo struct {
 		InvitationKey       string
@@ -59,7 +60,7 @@ func handleRsvpReport(wr WrappedRequest) {
 
 	personToCost := make(map[int64]float64)
 	personToRsvpStatus := make(map[int64]invitation.RsvpStatus)
-	personIdToPerson := make(map[int64]Person)
+	personIdToPerson := make(map[int64]person.Person)
 
 	for i, inv := range invitations {
 		rsvpMap, noRsvp := inv.ClusterByRsvp(ctx)
@@ -89,7 +90,7 @@ func handleRsvpReport(wr WrappedRequest) {
 			}
 			listOfLists := allRsvpMap[r]
 			if listOfLists == nil {
-				listOfLists = make([][]Person, 0)
+				listOfLists = make([][]person.Person, 0)
 			}
 			listOfLists = append(listOfLists, p)
 			allRsvpMap[r] = listOfLists
@@ -102,10 +103,10 @@ func handleRsvpReport(wr WrappedRequest) {
 	}
 
 	for _, p := range allRsvpMap {
-		sort.Slice(p, func(a, b int) bool { return SortByLastFirstName(p[a][0], p[b][0]) })
+		sort.Slice(p, func(a, b int) bool { return person.SortByLastFirstName(p[a][0], p[b][0]) })
 	}
 
-	sort.Slice(allNoRsvp, func(a, b int) bool { return SortByLastFirstName(allNoRsvp[a][0], allNoRsvp[b][0]) })
+	sort.Slice(allNoRsvp, func(a, b int) bool { return person.SortByLastFirstName(allNoRsvp[a][0], allNoRsvp[b][0]) })
 	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe, invitation.No}
 
 	for _, booking := range bookings {
@@ -268,7 +269,7 @@ func handleActivitiesReport(wr WrappedRequest) {
 
 	}
 
-	var people = make([]*Person, len(allPeopleToLookUp))
+	var people = make([]*person.Person, len(allPeopleToLookUp))
 	err = datastore.GetMulti(ctx, allPeopleToLookUp, people)
 	if err != nil {
 		log.Errorf(ctx, "fetching people: %v", err)
@@ -323,8 +324,8 @@ func handleRoomingReport(wr WrappedRequest) {
 		peopleToLookUp = append(peopleToLookUp, booking.Roommates...)
 	}
 
-	personMap := make(map[int64]Person)
-	var people = make([]*Person, len(peopleToLookUp))
+	personMap := make(map[int64]person.Person)
+	var people = make([]*person.Person, len(peopleToLookUp))
 	err = datastore.GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
 		log.Infof(ctx, "%v", err)
@@ -362,7 +363,7 @@ func handleRoomingReport(wr WrappedRequest) {
 		KeyString           string
 		Room                housing.Room
 		Building            *housing.Building
-		Roommates           []Person
+		Roommates           []person.Person
 		ShowConvertToDouble bool
 		FriSat              int
 		PlusThurs           int
@@ -377,7 +378,7 @@ func handleRoomingReport(wr WrappedRequest) {
 	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
 	var totalCostForEveryone float64
 	for i, booking := range bookings {
-		people := make([]Person, len(booking.Roommates))
+		people := make([]person.Person, len(booking.Roommates))
 
 		FridaySaturday := 0
 		PlusThursday := 0
@@ -523,11 +524,11 @@ func handleFoodReport(wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
-	totalRestrictions := len(GetAllFoodRestrictionTags())
+	totalRestrictions := len(person.GetAllFoodRestrictionTags())
 
 	counts := make([]int, totalRestrictions)
 	personToRestrictions := make(map[int64][]bool)
-	var people []Person
+	var people []person.Person
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
@@ -542,11 +543,11 @@ func handleFoodReport(wr WrappedRequest) {
 
 			status := allRsvpStatuses[s]
 			if status.Attending {
-				var person Person
-				datastore.Get(ctx, p, &person)
-				people = append(people, person)
+				var per person.Person
+				datastore.Get(ctx, p, &per)
+				people = append(people, per)
 				restrictionsForPerson := make([]bool, totalRestrictions)
-				for _, restriction := range person.FoodRestrictions {
+				for _, restriction := range per.FoodRestrictions {
 					counts[restriction]++
 					restrictionsForPerson[restriction] = true
 				}
@@ -556,11 +557,11 @@ func handleFoodReport(wr WrappedRequest) {
 
 	}
 
-	sort.Slice(people, func(a, b int) bool { return SortByLastFirstName(people[a], people[b]) })
+	sort.Slice(people, func(a, b int) bool { return person.SortByLastFirstName(people[a], people[b]) })
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/foodReport.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"AllRestrictions":      GetAllFoodRestrictionTags(),
+		"AllRestrictions":      person.GetAllFoodRestrictionTags(),
 		"Counts":               counts,
 		"People":               people,
 		"PersonToRestrictions": personToRestrictions,
@@ -578,7 +579,7 @@ func handleRidesReport(wr WrappedRequest) {
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 
 	type CarRequest struct {
-		People               []*Person
+		People               []*person.Person
 		Preference           DrivingPreference
 		AlsoDrive            bool
 		LeaveFrom            string
@@ -621,7 +622,7 @@ func handleRidesReport(wr WrappedRequest) {
 			continue
 		}
 
-		var people = make([]*Person, len(personKeys))
+		var people = make([]*person.Person, len(personKeys))
 		err = datastore.GetMulti(ctx, personKeys, people)
 		if err != nil {
 			log.Errorf(ctx, "fetching people: %v", err)

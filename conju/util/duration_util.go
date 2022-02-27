@@ -1,4 +1,4 @@
-package conju
+package util
 
 import "time"
 

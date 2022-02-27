@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cshabsin/conju/conju/login"
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -43,7 +45,7 @@ func ClearAllData(wr WrappedRequest, entityNames []string) {
 
 func RepairData(wr WrappedRequest) {
 	q := datastore.NewQuery("Person")
-	var people []Person
+	var people []person.Person
 	personKeys, err := q.GetAll(wr.Context, &people)
 	if err != nil {
 		log.Errorf(wr.Context, "RepairData personQuery: %v", err)
@@ -52,7 +54,7 @@ func RepairData(wr WrappedRequest) {
 	}
 	for i := range personKeys {
 		if people[i].LoginCode == "" {
-			people[i].LoginCode = randomLoginCodeString()
+			people[i].LoginCode = login.RandomLoginCodeString()
 			_, err = datastore.Put(wr.Context, personKeys[i], &people[i])
 			if err != nil {
 				log.Errorf(wr.Context, "RepairData put(%s): %v", people[i].Email, err)

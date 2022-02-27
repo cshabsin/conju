@@ -3,37 +3,18 @@ package conju
 import (
 	"fmt"
 	"html/template"
-	"math/rand"
 	"net/http"
 
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
-
-// A LoginCode is a secret string we send to users as part of their
-// Login link. It's stored as a string field in the Person object.
-const loginCodeLength = 12
-
-func randomLoginCodeString() string {
-	b := make([]rune, loginCodeLength)
-	for i := range b {
-		r := rand.Intn(36)
-		if r < 10 {
-			// 0..9
-			b[i] = int32(r) + 48
-		} else {
-			// A..Z ((r - 10) + 65)
-			b[i] = int32(r) + 55
-		}
-	}
-	return string(b)
-}
 
 type LoginInfo struct {
 	InvitationKey *datastore.Key
 	*Invitation
 	PersonKey *datastore.Key
-	*Person
+	*person.Person
 }
 
 const loginErrorPage = "/loginError"
@@ -61,7 +42,7 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 			http.StatusFound)
 		return
 	}
-	var people []Person
+	var people []person.Person
 	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(wr.Context, &people)
 	if err != nil {
 		http.Redirect(wr.ResponseWriter, wr.Request,
@@ -107,10 +88,10 @@ func PersonGetter(wr *WrappedRequest) error {
 		return nil
 	}
 	personKeyEncoded, ok := wr.Values["person"].(string)
-	var person Person
+	var pers person.Person
 	var personKey *datastore.Key
 	if !ok {
-		var people []Person
+		var people []person.Person
 		peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(wr.Context, &people)
 		if err != nil {
 			return err
@@ -121,7 +102,7 @@ func PersonGetter(wr *WrappedRequest) error {
 		}
 		wr.SetSessionValue("person", peopleKeys[0].Encode())
 		wr.SaveSession()
-		person = people[0]
+		pers = people[0]
 		personKey = peopleKeys[0]
 	} else {
 		var err error
@@ -129,14 +110,14 @@ func PersonGetter(wr *WrappedRequest) error {
 		if err != nil {
 			log.Errorf(wr.Context, "decoding key: %v", err)
 		}
-		err = datastore.Get(wr.Context, personKey, &person)
-		if err != nil || person.LoginCode != code {
+		err = datastore.Get(wr.Context, personKey, &pers)
+		if err != nil || pers.LoginCode != code {
 			return RedirectError{loginErrorPage +
 				"?message=Something went out of sync. Please log in " +
 				"again using the link from your email."}
 		}
 	}
-	li := &LoginInfo{nil, nil, personKey, &person}
+	li := &LoginInfo{nil, nil, personKey, &pers}
 	wr.LoginInfo = li
 	wr.TemplateData["LoginInfo"] = li
 	return nil
@@ -221,7 +202,7 @@ func handleResendInvitation(wr WrappedRequest) {
 		return
 	}
 	q := datastore.NewQuery("Person").Filter("Email =", emailAddresses[0])
-	var people []Person
+	var people []person.Person
 	_, err := q.GetAll(wr.Context, &people)
 	if err != nil {
 		log.Errorf(wr.Context, "%v", err)
@@ -272,6 +253,6 @@ func handleResentInvitation(wr WrappedRequest) {
 	}
 }
 
-func makeLoginUrl(p *Person) string {
+func makeLoginUrl(p *person.Person) string {
 	return SiteLink + "/login?loginCode=" + p.LoginCode
 }

@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
@@ -35,10 +36,10 @@ func handleReceivePay(wr WrappedRequest) {
 	})
 
 	functionMap := template.FuncMap{
-		"PronounString":               GetPronouns,
+		"PronounString":               person.GetPronouns,
 		"HasPreference":               HasPreference,
 		"DerefPeople":                 DerefPeople,
-		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
 		"SharerName":                  MakeSharerName,
 	}
 

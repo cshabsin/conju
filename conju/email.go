@@ -10,6 +10,7 @@ import (
 	"strings"
 	text_template "text/template"
 
+	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"google.golang.org/appengine/log"
 )
@@ -27,8 +28,8 @@ type MailHeaderInfo struct {
 func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, needSubject bool) (string, string, string, error) {
 	functionMap := template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
-		"PronounString":               GetPronouns,
-		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"PronounString":               person.GetPronouns,
+		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
@@ -50,8 +51,8 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 
 	textFunctionMap := text_template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
-		"PronounString":               GetPronouns,
-		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"PronounString":               person.GetPronouns,
+		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
@@ -160,7 +161,7 @@ func handleDoSendMail(wr WrappedRequest) {
 	}
 	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		if _, ok := emailData["LoginLink"]; !ok {
-			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*Person))
+			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*person.Person))
 		}
 		if _, ok := emailData["Env"]; !ok {
 			emailData["Env"] = wr.GetEnvForTemplates()

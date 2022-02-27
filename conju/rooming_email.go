@@ -9,6 +9,7 @@ import (
 
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
+	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"google.golang.org/appengine/datastore"
@@ -16,7 +17,7 @@ import (
 )
 
 type RenderedMail struct {
-	Person  Person
+	Person  person.Person
 	Text    string
 	HTML    string
 	Subject string
@@ -163,8 +164,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 		peopleToLookUp = append(peopleToLookUp, booking.Roommates...)
 	}
 
-	personMap := make(map[int64]*Person)
-	var people = make([]*Person, len(peopleToLookUp))
+	personMap := make(map[int64]*person.Person)
+	var people = make([]*person.Person, len(peopleToLookUp))
 	err = datastore.GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
 		log.Errorf(ctx, "fetching people: %v", err)
@@ -198,8 +199,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	type InviteeRoomBookings struct {
 		Building            *housing.Building
 		Room                *housing.Room
-		Roommates           []*Person // People from this invitation.
-		RoomSharers         []*Person // People from outside the invitation.
+		Roommates           []*person.Person // People from this invitation.
+		RoomSharers         []*person.Person // People from outside the invitation.
 		ShowConvertToDouble bool
 		ReservationMade     bool
 	}
@@ -233,8 +234,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 			}
 		}
 
-		for _, person := range booking.Roommates {
-			invitation := personToInvitationMap[person.IntID()]
+		for _, per := range booking.Roommates {
+			invitation := personToInvitationMap[per.IntID()]
 
 			inviteeBookings, found := allInviteeBookings[invitation]
 			if !found {
@@ -243,8 +244,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 			}
 			_, found = inviteeBookings[buildingRoom]
 			if !found {
-				roommates := make([]*Person, 0)
-				roomSharers := make([]*Person, 0)
+				roommates := make([]*person.Person, 0)
+				roomSharers := make([]*person.Person, 0)
 				for _, maybeRoommate := range booking.Roommates {
 					maybeRoommatePerson := personMap[maybeRoommate.IntID()]
 					if personToInvitationMap[maybeRoommate.IntID()] == invitation {
@@ -267,8 +268,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 
 	functionMap := template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
-		"PronounString":               GetPronouns,
-		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"PronounString":               person.GetPronouns,
+		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
@@ -277,8 +278,8 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 
 	textFunctionMap := text_template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
-		"PronounString":               GetPronouns,
-		"CollectiveAddressFirstNames": CollectiveAddressFirstNames,
+		"PronounString":               person.GetPronouns,
+		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
@@ -339,7 +340,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	return rendered_mail, nil
 }
 
-func MakeSharerName(p *Person) string {
+func MakeSharerName(p *person.Person) string {
 	s := p.FullName()
 	if p.Email != "" {
 		s = s + " (" + p.Email + ")"
@@ -347,8 +348,8 @@ func MakeSharerName(p *Person) string {
 	return s
 }
 
-func DerefPeople(people []*Person) []Person {
-	dp := make([]Person, len(people))
+func DerefPeople(people []*person.Person) []person.Person {
+	dp := make([]person.Person, len(people))
 	for i, p := range people {
 		dp[i] = *p
 	}

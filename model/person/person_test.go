@@ -1,4 +1,4 @@
-package conju
+package person
 
 import (
 	"fmt"

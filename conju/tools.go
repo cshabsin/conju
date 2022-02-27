@@ -9,6 +9,7 @@ import (
 
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
+	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -107,8 +108,8 @@ func handleRoomingTool(wr WrappedRequest) {
 
 	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe}
 	adultPreferenceMask := GetAdultPreferenceMask()
-	rsvpToGroupsMap := make(map[invitation.RsvpStatus][][]Person)
-	var noRsvps [][]Person
+	rsvpToGroupsMap := make(map[invitation.RsvpStatus][][]person.Person)
+	var noRsvps [][]person.Person
 	peopleToProperties := make(map[*datastore.Key]int)
 
 	for _, invitation := range invitations {
@@ -119,7 +120,7 @@ func handleRoomingTool(wr WrappedRequest) {
 					listForRsvp = append(listForRsvp, peopleForRsvp)
 					rsvpToGroupsMap[s] = listForRsvp
 				} else {
-					listForRsvp = [][]Person{}
+					listForRsvp = [][]person.Person{}
 					listForRsvp = append(listForRsvp, peopleForRsvp)
 					rsvpToGroupsMap[s] = listForRsvp
 				}
@@ -151,10 +152,10 @@ func handleRoomingTool(wr WrappedRequest) {
 	}
 
 	for _, v := range rsvpToGroupsMap {
-		sort.Slice(v, func(a, b int) bool { return SortByFirstName(v[a][0], v[b][0]) })
+		sort.Slice(v, func(a, b int) bool { return person.SortByFirstName(v[a][0], v[b][0]) })
 	}
 
-	sort.Slice(noRsvps, func(a, b int) bool { return SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
+	sort.Slice(noRsvps, func(a, b int) bool { return person.SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingTool.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{
@@ -235,9 +236,9 @@ func handleSaveRooming(wr WrappedRequest) {
 		}
 
 	}
-	var people = make([]*Person, len(peopleToLookUp))
+	var people = make([]*person.Person, len(peopleToLookUp))
 	datastore.GetMulti(ctx, peopleToLookUp, people)
-	personMap := make(map[int64]Person)
+	personMap := make(map[int64]person.Person)
 	for i, person := range people {
 		personMap[peopleToLookUp[i].IntID()] = *person
 	}
@@ -266,7 +267,7 @@ func handleSaveRooming(wr WrappedRequest) {
 				return invCountA > invCountB
 			}
 			// really we want to sort by first person on each invitation, close enough for now.
-			return SortByLastFirstName(personMap[people[a].IntID()], personMap[people[b].IntID()])
+			return person.SortByLastFirstName(personMap[people[a].IntID()], personMap[people[b].IntID()])
 		})
 
 		booking := Booking{Event: wr.EventKey, Room: roomMap[rmStr], Roommates: people}
