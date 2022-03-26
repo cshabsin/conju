@@ -1,0 +1,119 @@
+{{define "initial_invitation_subject"}}
+  Summer Retreat at Purity Spring Resort, June 9th-12th: it's time to commit!
+{{end}}
+
+{{define "initial_invitation_text"}}Dear {{CollectiveAddressFirstNames .Invitation.InviteePeople 0}},
+
+Yes, it's happening!  We are hosting our annual retreat at Purity Spring
+Resort in East Madison, NH!   This year it will run from June 9th-12th, and
+you are invited to spend the weekend with us relaxing and having fun,
+whatever that means to you.  It seems likely that there will be fun people,
+board games, swimming, dancing, jigsaw puzzles, hiking, crafting, campfires,
+and beautiful scenery.  The rest is up to you!
+
+You can join us for Friday - Sunday or come up Thursday instead for an extra
+day of vacation.  Most structured activities (such as they are) will happen
+between Friday night and Sunday afternoon.
+
+If you can get vaccinated for COVID-19 and have chosen not to, we ask that 
+you sit this year out.  We're not sure yet what other COVID precautions
+we'll take; that will depend on how things look by then and the comfort 
+level of the people attending.
+
+If you're coming, we will keep you updated as we figure things out. Please
+watch for further email from us, as we'll need your input.
+
+This year, the cost is calculated per room, rather than per person as it has
+been in the past.   We have a range of rooms available.  Some are cheaper,
+some are nicer, some are farther from the middle of things.  Rooms will cost
+$130-$260/night, depending on which buildings they're in and how many people
+they hold.  
+
+Note that these prices do not yet include any food.  Full disclosure: have no
+idea yet how we're going to feed you all and how much it's going to cost --
+the resort is not doing buffet-style meals like we have had in the past.
+But we will try to keep costs as low, or as a la carte, as we can manage.
+
+If finances are the reason you're not coming, let us know.
+
+Please let us know if you can join us. To RSVP, go to
+
+  {{.LoginLink}}
+
+
+For more information on this weekend, as we figure it out ourselves, see:
+   
+  http://psr.shabsin.com
+
+We hope you can join us for our second pandemic summer retreat! It should
+be a lot of fun and the company will be the best part.  We've missed you!
+
+Chris, Dana, Lydia & Max
+{{end}}
+
+
+{{define "initial_invitation_html"}}
+
+<div style="width:40em">
+<p>Dear {{CollectiveAddressFirstNames .Invitation.InviteePeople 0}},</p>
+
+<p>Vaccination rates are up, case counts are down, and we are feeling pretty
+good about our decision to host our annual summer retreat at Purity Spring
+Resort!  This year it will run from August 26th-29th, and you are invited
+to spend the weekend with us relaxing and having fun, whatever that means
+to you.  It seems likely that there will be fun people, board games,
+swimming, dancing, jigsaw puzzles, hiking, crafting, campfires, and
+beautiful scenery.  The rest is up to you!</p>
+
+<p><b>Note:</b> If you can get vaccinated for COVID-19 and have chosen not to, 
+we ask that you sit this year out.</p>
+
+<p>We're not sure yet what other precautions we'll take; that will depend on how
+things look by then and the comfort level of the people attending.</p>
+
+<p>Because of COVID, we need to make some changes this year. The main
+differences are:</p>
+
+<ul>
+  <li>We'll be in	a different building (the ski lodge), which is significantly
+    nicer, but correspondingly more expensive.  We'll also be using a
+    different beach for swimming and boating.</li>
+  <li>Purity Spring is doing food service again but it is also more expensive
+    than we are used to, so we aren't sure we'll go with that.  We are still
+    figuring out how to keep everyone fed for the weekend.</li>
+  <li>The cost structure will be a little different (but simpler).</li>
+</ul>
+
+<p>If you're coming, we will keep you updated as we figure things out. Please
+watch for further email from us, as we'll need your input.</p>
+
+<p>This year, the cost is calculated per room, rather than per person as it
+has been in the past. The cost per night per room is about $265, and you
+have a choice between a two-night stay (Friday to Sunday, about $530), or
+a three-night stay (Thursday to Sunday, about $795).</p>
+
+<p>Note that these prices do not yet include any food.  Our food plan still a
+work in progress; the resort only recently announced the return of food service.</p>
+
+<p>If finances are the reason you're not coming, let us know.</p>
+
+<p>Please let us know if you can join us. To RSVP, go to</p>
+
+<p><a href="{{.LoginLink}}">{{.LoginLink}}</a></p>
+
+<p>If you're coming, we will almost certainly ask you for more information later.
+But for now we need to start getting rooms reserved, so we'd appreciate it if
+you could figure this out soon.</p>
+
+<p>For more information on this weekend, as we figure it out ourselves, see:</p>
+   
+<p><a href="http://psr2021.shabsin.com">http://psr2021.shabsin.com</a></p>
+
+<p>We hope you can join us for our experimental pandemic summer retreat! It should
+be a lot of fun and the company will be the best part.  We've missed you!</p>
+
+<p style="margin-top:30px">Chris, Dana, Lydia & Max</p>
+</div>
+{{end}}
+
+
