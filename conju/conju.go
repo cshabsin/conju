@@ -2,19 +2,19 @@ package conju
 
 import (
 	"html/template"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 // SiteLink holds the current URL to base absolute links on.
-const SiteLink = "https://psr2021.shabsin.com"
+const SiteLink = "https://event-test-345303.uc.r.appspot.com"
 
-func init() {
+func Register() {
 	http.HandleFunc("/_ah/start", func(w http.ResponseWriter, r *http.Request) {
 		datastore.EnableKeyConversion(appengine.NewContext(r))
 	})
@@ -93,13 +93,13 @@ func handleIndex(wr WrappedRequest) {
 	}
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/"+eventName+"/index.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "index.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Println(err)
 	}
 }
 
 func handleAdmin(wr WrappedRequest) {
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/admin.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "admin.html", wr.TemplateData); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Println(err)
 	}
 }

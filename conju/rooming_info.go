@@ -1,13 +1,13 @@
 package conju
 
 import (
+	"log"
 	"math"
 
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 // Booking holds the booking info and is kept in the datastore.
@@ -60,7 +60,7 @@ func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAnd
 	var invitation Invitation
 	err := datastore.Get(wr.Context, invitationKey, &invitation)
 	if err != nil {
-		log.Errorf(wr.Context, "Error retrieving invitation: %v", err)
+		log.Printf("Error retrieving invitation: %v", err)
 	}
 	return getRoomingInfoWithInvitation(wr, &invitation, invitationKey)
 }
@@ -92,7 +92,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	var rooms []*housing.Room
 	err := datastore.GetMulti(wr.Context, roomKeys, rooms)
 	if err != nil {
-		log.Errorf(wr.Context, "fetching rooms: %v", err)
+		log.Printf("fetching rooms: %v", err)
 	}
 
 	// Map room ID -> Room
@@ -110,7 +110,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	var people []*person.Person
 	err = datastore.GetMulti(wr.Context, peopleToLookUp, people)
 	if err != nil {
-		log.Errorf(wr.Context, "fetching people: %v", err)
+		log.Printf("fetching people: %v", err)
 	}
 
 	for i, person := range people {
@@ -121,7 +121,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
 	invitationKeys, err := q.GetAll(wr.Context, &invitations)
 	if err != nil {
-		log.Errorf(wr.Context, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	personToRsvp := make(map[int64]invitation.RsvpStatus)

@@ -6,8 +6,9 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	log2 "log"
+	"log"
 	"net/http"
+
 	"sort"
 	"strconv"
 	"strings"
@@ -19,7 +20,6 @@ import (
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type Invitation struct {
@@ -73,11 +73,11 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			personKeyString := p.Name[12:delimiterIndex]
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
-				log2.Printf("person lookup error: %v", err)
+				log.Printf("person lookup error: %v", err)
 				continue
 			}
 			if personKey == nil {
-				log2.Printf("person lookup yielded nil key for map entry %s", p.Name)
+				log.Printf("person lookup yielded nil key for map entry %s", p.Name)
 				continue
 			}
 
@@ -114,7 +114,7 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 			personKeyString := p.Name[18:delimiterIndex]
 			personKey, err := datastore.DecodeKey(personKeyString)
 			if err != nil {
-				log2.Printf("person lookup error: %v", err)
+				log.Printf("person lookup error: %v", err)
 			}
 
 			mapForPerson := make(map[*datastore.Key]bool)
@@ -308,7 +308,8 @@ func (inv *Invitation) AnyUndecided() bool {
 func (inv *Invitation) HasChildren(ctx context.Context) bool {
 	event, err := event.GetEvent(ctx, inv.Event)
 	if err != nil {
-		log.Errorf(ctx, "GetEvent: %v", err)
+		log.Printf(
+			"GetEvent: %v", err)
 	}
 
 	for _, personKey := range inv.Invitees {
@@ -341,7 +342,8 @@ func handleInvitations(wr WrappedRequest) {
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
 	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf(
+			"fetching invitations: %v", err)
 	}
 
 	realizedInvitations := makeRealizedInvitations(ctx, invitationKeys, invitations)
@@ -403,7 +405,8 @@ func handleInvitations(wr WrappedRequest) {
 		var err error
 		allEvents, err = event.GetAllEvents(ctx)
 		if err != nil {
-			log.Errorf(ctx, "GetAllEvents: %v", err)
+			log.Printf(
+				"GetAllEvents: %v", err)
 		}
 	}
 
@@ -427,7 +430,7 @@ func handleInvitations(wr WrappedRequest) {
 
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/invitations.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "invitations.html", data); err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -437,18 +440,18 @@ func handleCopyInvitations(wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	baseEventKeyEncoded := wr.Request.Form.Get("baseEvent")
-	log.Infof(ctx, "Found base event: %v", baseEventKeyEncoded)
+	log.Printf("Found base event: %v", baseEventKeyEncoded)
 	if baseEventKeyEncoded == "" {
 		return
 	}
 
 	baseEventKey, err := datastore.DecodeKey(baseEventKeyEncoded)
-	log.Infof(ctx, "error decoding event key: %v", err)
+	log.Printf("error decoding event key: %v", err)
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", baseEventKey)
 	q.GetAll(ctx, &invitations)
 
-	log.Infof(ctx, "Found %d invitations from copied event", len(invitations))
+	log.Printf("Found %d invitations from copied event", len(invitations))
 	var newInvitations []Invitation
 	var newInvitationKeys []*datastore.Key
 	for _, invitation := range invitations {
@@ -462,7 +465,7 @@ func handleCopyInvitations(wr WrappedRequest) {
 
 	_, error := datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
 	if error != nil {
-		log.Errorf(ctx, "Error in putmulti: %v", error)
+		log.Printf("Error in putmulti: %v", error)
 	}
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 
@@ -477,7 +480,7 @@ func handleAddInvitation(wr WrappedRequest) {
 	people := wr.Request.Form["person"]
 
 	if len(people) == 0 {
-		log.Infof(ctx, "Couldn't find any selected people!")
+		log.Printf("Couldn't find any selected people!")
 		return
 	}
 
@@ -488,7 +491,7 @@ func handleAddInvitation(wr WrappedRequest) {
 	}
 
 	if invitationKeyEncoded == "" {
-		log.Infof(ctx, "no invitation selected, creating new one...")
+		log.Printf("no invitation selected, creating new one...")
 		newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
 		var newInvitation Invitation
 		newInvitation.Event = currentEventKey
@@ -496,7 +499,7 @@ func handleAddInvitation(wr WrappedRequest) {
 
 		_, err := datastore.Put(ctx, newKey, &newInvitation)
 		if err != nil {
-			log.Errorf(ctx, "%v", err)
+			log.Printf("%v", err)
 		}
 	} else {
 		existingInvitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
@@ -505,7 +508,7 @@ func handleAddInvitation(wr WrappedRequest) {
 		existingInvitation.Invitees = append(existingInvitation.Invitees, newPeople...)
 		_, err := datastore.Put(ctx, existingInvitationKey, &existingInvitation)
 		if err != nil {
-			log.Errorf(ctx, "%v", err)
+			log.Printf("%v", err)
 		}
 	}
 
@@ -519,12 +522,12 @@ func handleDeleteInvitation(wr WrappedRequest) {
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
 	if err != nil {
-		log.Errorf(ctx, "key decryption error: %v", err)
+		log.Printf("key decryption error: %v", err)
 	}
 
 	err = datastore.Delete(ctx, invitationKey)
 	if err != nil {
-		log.Errorf(ctx, "invitation deletion error: %v", err)
+		log.Printf("invitation deletion error: %v", err)
 	}
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
@@ -545,6 +548,7 @@ func handleViewInvitationAdmin(wr WrappedRequest) {
 
 // handleViewInvitationUser handles /rsvp URLs.
 func handleViewInvitationUser(wr WrappedRequest) {
+	log.Printf("in handleViewInvitationUser")
 	handleViewInvitation(wr, wr.InvitationKey)
 }
 
@@ -564,7 +568,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	var inv Invitation
 	err := datastore.Get(wr.Context, invitationKey, &inv)
 	if err != nil {
-		log.Errorf(wr.Context, "error getting invitation: %v", err)
+		log.Printf("error getting invitation: %v", err)
 	}
 
 	formInfoMap := make(map[*datastore.Key]person.PersonUpdateFormInfo)
@@ -577,7 +581,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 
 	realActivities, err := activity.Realize(wr.Context, realizedInvitation.Event.Activities)
 	if err != nil {
-		log.Errorf(wr.Context, "activity.Realize: %v", err)
+		log.Printf("activity.Realize: %v", err)
 	}
 
 	data := wr.MakeTemplateData(map[string]interface{}{
@@ -595,7 +599,7 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 	})
 
 	if err := invitationTpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -721,7 +725,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	_, err = datastore.Put(wr.Context, invitationKey, &inv)
 	if err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 
 	var invitees []person.Person
@@ -762,7 +766,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	ev, err := event.GetEvent(wr.Context, inv.Event)
 	if err != nil {
-		log.Errorf(wr.Context, "GetEvent: %v", err)
+		log.Printf("GetEvent: %v", err)
 	}
 	subject := fmt.Sprintf("%s:%s RSVP from %s", ev.ShortName, newPeopleSubjectFragment, person.CollectiveAddress(invitees, person.Informal))
 
@@ -804,7 +808,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
 		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
-			log.Errorf(wr.Context, "%v", err)
+			log.Printf("%v", err)
 		}
 
 		return

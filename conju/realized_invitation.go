@@ -2,6 +2,7 @@ package conju
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/cshabsin/conju/activity"
@@ -9,7 +10,6 @@ import (
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type RealizedInvitation struct {
@@ -73,7 +73,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 	var lastUpdatedPerson person.PersonWithKey
 	err := datastore.Get(ctx, inv.LastUpdatedPerson, &pers)
 	if err != nil {
-		//log.Infof(ctx, "%v", err)
+		//log.Printf( "%v", err)
 	} else {
 		pers.DatastoreKey = inv.LastUpdatedPerson
 		lastUpdatedPerson = person.PersonWithKey{
@@ -84,7 +84,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 
 	event, err := event.GetEvent(ctx, inv.Event)
 	if err != nil {
-		log.Errorf(ctx, "GetEvent: %v", err)
+		log.Printf("GetEvent: %v", err)
 	}
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
@@ -100,7 +100,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 	var activities []activity.ActivityWithKey
 	for i, activityKey := range event.Activities {
 		if activityKey == nil {
-			log.Errorf(ctx, "nil activityKey in event %v (index %d) (list %v)", event, i, event.Activities)
+			log.Printf("nil activityKey in event %v (index %d) (list %v)", event, i, event.Activities)
 		}
 		var act activity.Activity
 		datastore.Get(ctx, activityKey, &act)

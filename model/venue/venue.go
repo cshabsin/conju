@@ -2,9 +2,9 @@ package venue
 
 import (
 	"context"
+	"log"
 
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type venueDB struct {
@@ -31,7 +31,7 @@ func fromDB(ctx context.Context, key *datastore.Key, v *venueDB) (*Venue, error)
 		v = new(venueDB)
 		err := datastore.Get(ctx, key, v)
 		if err != nil {
-			log.Errorf(ctx, "error loading venue from db for key %v: %v", key.Encode(), err)
+			log.Printf("error loading venue from db for key %v: %v", key.Encode(), err)
 			return nil, err
 		}
 	}

@@ -3,6 +3,7 @@ package conju
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -13,7 +14,6 @@ import (
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/user"
 )
 
@@ -67,14 +67,16 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 	var getters Getters
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
+		ctx := appengine.NewContext(r)
+		log.Printf("Handling request %v", r.URL.Path)
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
 		if err != nil {
+			log.Printf("Could not get session from store: %v", err)
 			// TODO: Clear session instead of erroring out?
 			http.Error(wrw, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		ctx := appengine.NewContext(r)
 		u := user.Current(ctx)
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
@@ -107,6 +109,8 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 				sendErrorMail(wr, fmt.Sprintf(
 					"Getter (index %d) returned an error on request %s: %v",
 					i, wr.Request.URL.Path, err))
+				log.Printf("Getter (index %d) returned an error on request %s: %v",
+					i, wr.Request.URL.Path, err)
 				// TODO: Probably not internal server error
 				http.Error(wrw, err.Error(), http.StatusInternalServerError)
 				return
@@ -127,7 +131,7 @@ func (g *Getters) Needs(getter Getter) *Getters {
 // something since the change to the value will not be saved.
 func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
 	if w.ResponseWriter.HasWrittenHeader() {
-		log.Errorf(w.Context, "SetSessionValue called after header written. key %s, value %v", key, value)
+		log.Printf("SetSessionValue called after header written. key %s, value %v", key, value)
 	}
 	w.Session.Values[key] = value
 }
@@ -135,7 +139,7 @@ func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
 // Call SaveSession before writing any output to writer.
 func (w *WrappedRequest) SaveSession() error {
 	if w.ResponseWriter.HasWrittenHeader() {
-		log.Errorf(w.Context, "SaveSession called after header written.")
+		log.Printf("SaveSession called after header written.")
 	}
 	return w.Session.Save(w.Request, w.ResponseWriter)
 }
@@ -265,7 +269,7 @@ func (wr *WrappedRequest) GetBookingInfo() *BookingInfo {
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	allBookingKeys, err := q.GetAll(wr.Context, &bookings)
 	if err != nil {
-		log.Errorf(wr.Context, "Error reading all booking keys: %v", err)
+		log.Printf("Error reading all booking keys: %v", err)
 		return nil
 	}
 

@@ -3,11 +3,11 @@ package conju
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type LoginInfo struct {
@@ -108,7 +108,7 @@ func PersonGetter(wr *WrappedRequest) error {
 		var err error
 		personKey, err = datastore.DecodeKey(personKeyEncoded)
 		if err != nil {
-			log.Errorf(wr.Context, "decoding key: %v", err)
+			log.Printf("decoding key: %v", err)
 		}
 		err = datastore.Get(wr.Context, personKey, &pers)
 		if err != nil || pers.LoginCode != code {
@@ -126,16 +126,18 @@ func PersonGetter(wr *WrappedRequest) error {
 func InvitationGetter(wr *WrappedRequest) error {
 	if wr.LoginInfo == nil {
 		if err := PersonGetter(wr); err != nil {
+			log.Printf("couldn't get person: %v", err)
 			return err
 		}
 	}
 	if !wr.hasRunEventGetter {
 		if err := EventGetter(wr); err != nil {
+			log.Printf("couldn't get event: %v", err)
 			return err
 		}
 	}
 	if wr.Event == nil {
-		log.Errorf(wr.Context, "nil event")
+		log.Printf("nil event")
 		// Do something.
 	}
 	if wr.LoginInfo.Person == nil {
@@ -182,7 +184,7 @@ func handleLoginError(wr WrappedRequest) {
 		"Message": message,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "bad_login.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -205,7 +207,7 @@ func handleResendInvitation(wr WrappedRequest) {
 	var people []person.Person
 	_, err := q.GetAll(wr.Context, &people)
 	if err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 		http.Redirect(wr.ResponseWriter, wr.Request,
 			loginErrorPage+"?message=Query error (contact admin: code RIGPER).",
 			http.StatusFound)
@@ -249,7 +251,7 @@ func handleResentInvitation(wr WrappedRequest) {
 		"templates/main.html",
 		"templates/resentInvitation.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "resentInvitation.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 

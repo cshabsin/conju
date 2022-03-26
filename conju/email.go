@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -12,7 +13,6 @@ import (
 
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"google.golang.org/appengine/log"
 )
 
 // MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
@@ -177,7 +177,7 @@ func handleDoSendMail(wr WrappedRequest) {
 func handleListMail(wr WrappedRequest) {
 	templateNames, err := filepath.Glob("templates/email/*.html")
 	if err != nil {
-		log.Errorf(wr.Context, "Error globbing email templates: %v", err)
+		log.Printf("Error globbing email templates: %v", err)
 	}
 	for i := range templateNames {
 		templateNames[i] = strings.TrimPrefix(templateNames[i], "templates/email/")
@@ -185,7 +185,7 @@ func handleListMail(wr WrappedRequest) {
 	}
 	eventTemplateNames, err := filepath.Glob("templates/" + wr.Event.ShortName + "/email/*.html")
 	if err != nil {
-		log.Errorf(wr.Context, "Error globbing event email templates: %v", err)
+		log.Printf("Error globbing event email templates: %v", err)
 	}
 	for i := range eventTemplateNames {
 		eventTemplateNames[i] = strings.TrimPrefix(eventTemplateNames[i], "templates/"+wr.Event.ShortName+"/email/")
@@ -199,7 +199,7 @@ func handleListMail(wr WrappedRequest) {
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
 	data := wr.MakeTemplateData(map[string]interface{}{"Templates": templateNames})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listEmail.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Println(err)
 	}
 }
 
@@ -215,7 +215,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		subject = headerData.Subject
 	}
 	if err != nil {
-		log.Errorf(wr.Context, "Error rendering mail: %v", err)
+		log.Printf("Error rendering mail: %v", err)
 		return err
 	}
 	mailSettings := mail.NewMailSettings()
@@ -236,9 +236,9 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		Personalizations: []*mail.Personalization{ToListPersonalization(headerData.To)},
 	}
 
-	log.Infof(wr.Context, "sending mail: %v", message)
+	log.Printf("sending mail: %v", message)
 	if _, err := wr.GetEmailClient().Send(message); err != nil {
-		log.Errorf(wr.Context, "sendgrid.Send: %v", err)
+		log.Printf("sendgrid.Send: %v", err)
 	}
 	return nil
 }
@@ -269,6 +269,6 @@ func sendErrorMail(wr WrappedRequest, message string) {
 		Personalizations: []*mail.Personalization{mailPersonalizations},
 	}
 	if _, err := wr.GetEmailClient().Send(msg); err != nil {
-		log.Errorf(wr.Context, "Error sending error mail: %v", err)
+		log.Printf("Error sending error mail: %v", err)
 	}
 }

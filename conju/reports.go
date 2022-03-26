@@ -3,6 +3,7 @@ package conju
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"math"
 	"net/http"
 	"sort"
@@ -13,13 +14,12 @@ import (
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 // func handleReports(wr WrappedRequest) {
 // 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
 // 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
-// 		log.Errorf(wr.Context, "%v", err)
+// 		log.Printf( "%v", err)
 // 	}
 // }
 
@@ -31,7 +31,7 @@ func handleRsvpReport(wr WrappedRequest) {
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
 	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	allRsvpMap := make(map[invitation.RsvpStatus][][]person.Person)
@@ -177,7 +177,7 @@ func handleRsvpReport(wr WrappedRequest) {
 		"PersonToCost":         personToCost,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -189,14 +189,14 @@ func handleActivitiesReport(wr WrappedRequest) {
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
 	_, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 
 	activities, err := activity.Realize(ctx, wr.Event.Activities)
 	if err != nil {
-		log.Errorf(ctx, "fetching activities: %v", err)
+		log.Printf("fetching activities: %v", err)
 	}
 
 	keysToActivities := make(map[datastore.Key]*activity.Activity)
@@ -272,7 +272,7 @@ func handleActivitiesReport(wr WrappedRequest) {
 	var people = make([]*person.Person, len(allPeopleToLookUp))
 	err = datastore.GetMulti(ctx, allPeopleToLookUp, people)
 	if err != nil {
-		log.Errorf(ctx, "fetching people: %v", err)
+		log.Printf("fetching people: %v", err)
 	}
 
 	personMap := make(map[datastore.Key]string)
@@ -288,7 +288,7 @@ func handleActivitiesReport(wr WrappedRequest) {
 		"PersonMap":           personMap,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "activitiesReport.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 
 }
@@ -304,7 +304,7 @@ func handleRoomingReport(wr WrappedRequest) {
 	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
 	err := datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
 	if err != nil {
-		log.Infof(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 
 	for i, room := range rooms {
@@ -328,7 +328,7 @@ func handleRoomingReport(wr WrappedRequest) {
 	var people = make([]*person.Person, len(peopleToLookUp))
 	err = datastore.GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
-		log.Infof(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 
 	for i, person := range people {
@@ -339,7 +339,7 @@ func handleRoomingReport(wr WrappedRequest) {
 	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
 	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	personToInvitationMap := make(map[int64]int64)
@@ -481,7 +481,7 @@ func handleRoomingReport(wr WrappedRequest) {
 		"TotalCostForEveryone": totalCostForEveryone,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingReport.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -492,7 +492,7 @@ func handleSaveReservations(wr WrappedRequest) {
 	bookingToBooked := make(map[int64]bool)
 
 	for k, v := range wr.Request.PostForm {
-		log.Infof(ctx, "key: %v", k)
+		log.Printf("key: %v", k)
 		if v[0] == "" {
 			continue
 		}
@@ -534,7 +534,7 @@ func handleFoodReport(wr WrappedRequest) {
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
 	_, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	for _, inv := range invitations {
@@ -568,7 +568,7 @@ func handleFoodReport(wr WrappedRequest) {
 	})
 
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "foodReport.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -600,7 +600,7 @@ func handleRidesReport(wr WrappedRequest) {
 	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
 	_, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	for _, inv := range invitations {
@@ -625,7 +625,7 @@ func handleRidesReport(wr WrappedRequest) {
 		var people = make([]*person.Person, len(personKeys))
 		err = datastore.GetMulti(ctx, personKeys, people)
 		if err != nil {
-			log.Errorf(ctx, "fetching people: %v", err)
+			log.Printf("fetching people: %v", err)
 		}
 
 		request := CarRequest{
@@ -672,6 +672,6 @@ func handleRidesReport(wr WrappedRequest) {
 	})
 
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "ridesReport.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }

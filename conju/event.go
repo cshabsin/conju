@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,7 +19,6 @@ import (
 	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type CurrentEvent struct {
@@ -81,17 +81,17 @@ func handleEvents(wr WrappedRequest) {
 	allEvents, err := event.GetAllEvents(ctx)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		log.Errorf(ctx, "GetAllEvents: %v", err)
+		log.Printf("GetAllEvents: %v", err)
 		return
 	}
 
-	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
-	log.Infof(ctx, "Rendering %d events", len(allEvents))
+	log.Printf("Datastore lookup took %s", time.Since(tic).String())
+	log.Printf("Rendering %d events", len(allEvents))
 
 	allVenues, err := venue.AllVenues(ctx)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		log.Errorf(ctx, "AllVenues: %v", err)
+		log.Printf("AllVenues: %v", err)
 		return
 	}
 
@@ -123,12 +123,12 @@ func handleEvents(wr WrappedRequest) {
 
 	activitiesWithKeys, err := activity.QueryAll(ctx)
 	if err != nil {
-		log.Errorf(ctx, "activity.QueryAll: %v", err)
+		log.Printf("activity.QueryAll: %v", err)
 	}
 
 	err = wr.Request.ParseForm()
 	if err != nil {
-		log.Errorf(wr.Context, "Error parsing form: %v", err)
+		log.Printf("Error parsing form: %v", err)
 	}
 	setCurrentKeyEncoded := wr.Request.Form.Get("setCurrent")
 	if setCurrentKeyEncoded != "" {
@@ -140,7 +140,7 @@ func handleEvents(wr WrappedRequest) {
 	if editEventKeyEncoded != "" {
 		editEventKey, err = datastore.DecodeKey(editEventKeyEncoded)
 		if err != nil {
-			log.Errorf(wr.Context, "Error decoding key from editEvent: %v", err)
+			log.Printf("Error decoding key from editEvent: %v", err)
 		}
 	}
 	var editEvent *event.Event
@@ -151,7 +151,7 @@ func handleEvents(wr WrappedRequest) {
 		var err error
 		editEvent, err = event.GetEvent(wr.Context, editEventKey)
 		if err != nil {
-			log.Errorf(ctx, "Get event: %v", err)
+			log.Printf("Get event: %v", err)
 		}
 		for _, roomKey := range editEvent.Rooms {
 			room := roomMap[roomKey.IntID()]
@@ -195,7 +195,7 @@ func handleEvents(wr WrappedRequest) {
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/events.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "events.html", data); err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -207,7 +207,7 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	for key, value := range form {
 		b := new(bytes.Buffer)
 		fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
-		log.Infof(ctx, b.String())
+		log.Printf(b.String())
 	}
 
 	ev := &event.Event{}
@@ -216,17 +216,17 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 		var err error
 		eventKey, err = datastore.DecodeKey(form["editEventKeyEncoded"][0])
 		if err != nil {
-			log.Errorf(ctx, "decoding event key from form: %v", err)
+			log.Printf("decoding event key from form: %v", err)
 		}
 		ev, err = event.GetEvent(wr.Context, eventKey)
 		if err != nil {
-			log.Errorf(ctx, "decoding event key from form: %v", err)
+			log.Printf("decoding event key from form: %v", err)
 		}
 	}
 
 	venueKey, err := datastore.DecodeKey(form["venue"][0])
 	if err != nil {
-		log.Infof(ctx, "decoding venue key from form: %v", err)
+		log.Printf("decoding venue key from form: %v", err)
 	}
 	ev.Name = form["name"][0]
 	ev.ShortName = form["shortName"][0]
@@ -235,11 +235,11 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	layout := "01/02/2006"
 	ev.StartDate, err = time.Parse(layout, form["startDate"][0])
 	if err != nil {
-		log.Infof(ctx, "decoding start date from form: %v", err)
+		log.Printf("decoding start date from form: %v", err)
 	}
 	ev.EndDate, err = time.Parse(layout, form["endDate"][0])
 	if err != nil {
-		log.Infof(ctx, "decoding end date from form: %v", err)
+		log.Printf("decoding end date from form: %v", err)
 	}
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
@@ -255,24 +255,24 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 	for _, room := range form["rooms"] {
 
 		components := strings.Split(room, "_")
-		//log.Infof(ctx, "found room in building "+components[0]+" with number "+components[1])
+		//log.Printf( "found room in building "+components[0]+" with number "+components[1])
 		q := datastore.NewQuery("Building").Filter("Code =", components[0]).KeysOnly()
 		buildingKeys, err := q.GetAll(ctx, nil)
 		if err != nil {
-			log.Errorf(ctx, "Getting buildings by code %q: %v", components[0], err)
+			log.Printf("Getting buildings by code %q: %v", components[0], err)
 		}
-		//log.Infof(ctx, "Found building keys: %v", buildingKeys)
+		//log.Printf( "Found building keys: %v", buildingKeys)
 		roomNumber, err := strconv.ParseInt(components[1], 10, 64)
 		if err != nil {
-			log.Errorf(ctx, "Parsing value %q: %v", components[1], err)
+			log.Printf("Parsing value %q: %v", components[1], err)
 		}
-		//log.Infof(ctx, "Room number: %v", roomNumber)
+		//log.Printf( "Room number: %v", roomNumber)
 		q = datastore.NewQuery("Room").Filter("Building =", buildingKeys[0]).Filter("RoomNumber =", roomNumber).Filter("Partition =", components[2]).KeysOnly()
 		roomKeys, err := q.GetAll(ctx, nil)
 		if err != nil {
-			log.Errorf(ctx, "Reading room: %v", err)
+			log.Printf("Reading room: %v", err)
 		}
-		//log.Infof(ctx, "room keys: %v", roomKeys)
+		//log.Printf( "room keys: %v", roomKeys)
 
 		rooms = append(rooms, roomKeys[0])
 	}
@@ -290,21 +290,21 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 		// make all events not current
 		allEvents, err := event.GetAllEvents(ctx)
 		if err != nil {
-			log.Errorf(ctx, "GetAllEvents: %v", err)
+			log.Printf("GetAllEvents: %v", err)
 		}
 
 		for _, event := range allEvents {
 			event.Current = false
 			_, err := datastore.Put(ctx, event.Key, event)
 			if err != nil {
-				log.Errorf(ctx, "Updating event: %v", err)
+				log.Printf("Updating event: %v", err)
 			}
 		}
 	}
 
 	ev.Current = makeCurrent
 	if err := event.PutEvent(ctx, ev); err != nil {
-		log.Errorf(ctx, "PutEvent: %v", err)
+		log.Printf("PutEvent: %v", err)
 		http.Error(wr.ResponseWriter, fmt.Sprintf("PutEvent: %v", err), http.StatusInternalServerError)
 		return
 	}

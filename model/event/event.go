@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 // TODO: add object that's a map of string names to values and attach one to every event
@@ -176,15 +176,15 @@ func GetEventForHost(ctx context.Context, host string, e **Event, key **datastor
 	q := datastore.NewQuery("Event").Filter("ShortName =", shortname)
 	keys, err := q.GetAll(ctx, &eventDBs)
 	if err != nil {
-		log.Errorf(ctx, "Error querying for %s(url) event: %v", shortname, err)
+		log.Printf("Error querying for %s(url) event: %v", shortname, err)
 		return false, nil
 	}
 	if len(keys) == 0 {
-		log.Errorf(ctx, "Found no %s(url) event", shortname)
+		log.Printf("Found no %s(url) event", shortname)
 		return false, nil
 	}
 	if len(keys) > 1 {
-		log.Errorf(ctx, "Found more than one %s(url) event (%d)", shortname, len(keys))
+		log.Printf("Found more than one %s(url) event (%d)", shortname, len(keys))
 		return false, nil
 	}
 	ev, err := eventFromDB(ctx, keys[0], eventDBs[0])

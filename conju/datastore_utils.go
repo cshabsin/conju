@@ -2,12 +2,12 @@ package conju
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/cshabsin/conju/conju/login"
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 func ClearAllData(wr WrappedRequest, entityNames []string) {
@@ -23,21 +23,21 @@ func ClearAllData(wr WrappedRequest, entityNames []string) {
 
 		keys, err := q.GetAll(wr.Context, nil)
 		if err != nil {
-			log.Errorf(wr.Context, "%v", err)
+			log.Println("ClearAllData GetAll:", err)
 			return
 		}
 
-		wr.ResponseWriter.Write([]byte(
+		_, err = wr.ResponseWriter.Write([]byte(
 			fmt.Sprintf("	%d %s to delete\n", len(keys), entityName)))
 
 		if err != nil {
-			log.Errorf(wr.Context, "%v", err)
+			log.Println("ClearAllData Write:", err)
 			return
 		}
 
 		err = datastore.DeleteMulti(wr.Context, keys)
 		if err != nil {
-			log.Errorf(wr.Context, "%v", err)
+			log.Println("ClearAllData DeleteMulti:", err)
 			return
 		}
 	}
@@ -48,7 +48,7 @@ func RepairData(wr WrappedRequest) {
 	var people []person.Person
 	personKeys, err := q.GetAll(wr.Context, &people)
 	if err != nil {
-		log.Errorf(wr.Context, "RepairData personQuery: %v", err)
+		log.Printf("RepairData personQuery: %v", err)
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +57,7 @@ func RepairData(wr WrappedRequest) {
 			people[i].LoginCode = login.RandomLoginCodeString()
 			_, err = datastore.Put(wr.Context, personKeys[i], &people[i])
 			if err != nil {
-				log.Errorf(wr.Context, "RepairData put(%s): %v", people[i].Email, err)
+				log.Printf("RepairData put(%s): %v", people[i].Email, err)
 				http.Error(wr.ResponseWriter, fmt.Sprintf("put(%s): %v", people[i].Email, err), http.StatusInternalServerError)
 				return
 			}

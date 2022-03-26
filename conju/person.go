@@ -5,6 +5,7 @@ package conju
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 func handleListPeople(wr WrappedRequest) {
@@ -26,11 +26,11 @@ func handleListPeople(wr WrappedRequest) {
 	keys, err := q.GetAll(ctx, &allPeople)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 		return
 	}
-	log.Infof(ctx, "Datastore lookup took %s", time.Since(tic).String())
-	log.Infof(ctx, "Rendering %d people", len(allPeople))
+	log.Printf("Datastore lookup took %s", time.Since(tic).String())
+	log.Printf("Rendering %d people", len(allPeople))
 
 	for i := 0; i < len(allPeople); i++ {
 		allPeople[i].DatastoreKey = keys[i]
@@ -47,7 +47,7 @@ func handleListPeople(wr WrappedRequest) {
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listPeople.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -56,7 +56,7 @@ func fetchPerson(wr WrappedRequest, encodedKey string) (*person.Person, error) {
 
 	key, e := datastore.DecodeKey(encodedKey)
 	if e != nil {
-		log.Errorf(ctx, "%v", e)
+		log.Printf("%v", e)
 		return nil, e
 	}
 
@@ -65,7 +65,7 @@ func fetchPerson(wr WrappedRequest, encodedKey string) (*person.Person, error) {
 	person.DatastoreKey = key
 
 	if e != nil {
-		log.Errorf(ctx, "%v", e)
+		log.Printf("%v", e)
 		return nil, e
 	}
 
@@ -73,8 +73,6 @@ func fetchPerson(wr WrappedRequest, encodedKey string) (*person.Person, error) {
 }
 
 func handleUpdatePersonForm(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
-
 	queryMap := wr.Request.URL.Query()
 
 	var err error
@@ -87,7 +85,7 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 		keyForUpdatePerson := queryMap["key"][0]
 		pers, err = fetchPerson(wr, keyForUpdatePerson)
 		if err != nil {
-			log.Errorf(ctx, "%v", err)
+			log.Printf("%v", err)
 			http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
 		}
 		key, _ := datastore.DecodeKey(keyForUpdatePerson)
@@ -105,7 +103,7 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 
 	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/updatePerson.html", "templates/updatePersonForm.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -131,11 +129,11 @@ func savePeople(wr WrappedRequest) error {
 		if encodedKey != "" {
 			p, err = fetchPerson(wr, encodedKey)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 			key, err = datastore.DecodeKey(encodedKey)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 		} else {
 			key = person.PersonKey(ctx)
@@ -166,7 +164,7 @@ func savePeople(wr WrappedRequest) error {
 			}
 
 		} else {
-			log.Errorf(ctx, "%v", dateError)
+			log.Printf("%v", dateError)
 		}
 		foodRestrictions := form[fmt.Sprintf("%s%d", "FoodRestrictions", i)]
 		var thisPersonRestrictions []person.FoodRestriction
@@ -193,7 +191,7 @@ func savePeople(wr WrappedRequest) error {
 
 		_, err = datastore.Put(ctx, key, p)
 		if err != nil {
-			log.Errorf(ctx, "------ %v", err)
+			log.Printf("------ %v", err)
 		}
 
 	}

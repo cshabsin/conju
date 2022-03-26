@@ -6,10 +6,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
-
-	//"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,7 +22,6 @@ import (
 	"github.com/cshabsin/conju/model/person"
 	"github.com/cshabsin/conju/model/venue"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 //const Import_Data_Directory = "test_import_data"
@@ -73,7 +71,7 @@ func ReloadData(wr WrappedRequest) {
 func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 	activitiesFile, err := os.Open(Import_Data_Directory + "/" + Activities_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	defer activitiesFile.Close()
 
@@ -95,7 +93,7 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 
 			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Activity", nil), &activity)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 			w.Write([]byte(fmt.Sprintf("Loading activity %s\n", fields[0])))
 		}
@@ -117,7 +115,7 @@ func AskReloadData(wr WrappedRequest) {
 func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	eventsFile, err := os.Open(Import_Data_Directory + "/" + Events_Data_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	defer eventsFile.Close()
 
@@ -128,7 +126,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = *venueKey
@@ -139,7 +137,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
@@ -185,7 +183,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 				}
 				activityKey := activityMap[activity]
 				if activityKey == nil {
-					log.Errorf(ctx, "nil activityKey for activity %s", activity)
+					log.Printf("nil activityKey for activity %s", activity)
 				}
 				//if activityKey != nil {
 				activityKeys = append(activityKeys, activityKey)
@@ -210,7 +208,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 
 			err := event.PutEvent(ctx, e)
 			if err != nil {
-				log.Infof(ctx, "PutEvent: %v", err)
+				log.Printf("PutEvent: %v", err)
 				w.Write([]byte(fmt.Sprintf("Error calling PutEvent: %v\n", err)))
 			}
 
@@ -231,7 +229,7 @@ func getRoomsFromString(roomsString string, ctx context.Context, buildingsMap ma
 			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).KeysOnly()
 			roomKeys, err := q.GetAll(ctx, nil)
 			if err != nil {
-				log.Errorf(ctx, "fetching rooms for building %s: %v", parts[0], err)
+				log.Printf("fetching rooms for building %s: %v", parts[0], err)
 			}
 			rooms = append(rooms, roomKeys...)
 		}
@@ -240,7 +238,7 @@ func getRoomsFromString(roomsString string, ctx context.Context, buildingsMap ma
 			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).Filter("RoomNumber =", roomNumber).KeysOnly()
 			roomKeys, err := q.GetAll(ctx, nil)
 			if err != nil {
-				log.Errorf(ctx, "fetching room %v %v: %v", parts[0], parts[1], err)
+				log.Printf("fetching room %v %v: %v", parts[0], parts[1], err)
 			}
 			rooms = append(rooms, roomKeys...)
 		}
@@ -270,7 +268,7 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 	b := new(bytes.Buffer)
 	guestFile, err := os.Open(Import_Data_Directory + "/" + Guest_Data_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "File error: %v", err)
+		log.Printf("File error: %v", err)
 	}
 	defer guestFile.Close()
 
@@ -319,7 +317,7 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -358,7 +356,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 	w.Write([]byte(fmt.Sprintf("Adding person: %s\n", p.FullName())))
 	key, err2 := datastore.Put(ctx, person.PersonKey(ctx), &p)
 	if err2 != nil {
-		log.Errorf(ctx, "%v", err2)
+		log.Printf("%v", err2)
 	}
 	return key, err2
 }
@@ -367,13 +365,13 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	b := new(bytes.Buffer)
 	rsvpFile, err := os.Open(Import_Data_Directory + "/" + RSVP_Data_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 	defer rsvpFile.Close()
 
 	e, err := event.GetAllEvents(ctx)
 	if err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 	// map from eventID to event
 	eventMap := make(map[int]*event.Event)
@@ -406,7 +404,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 				guestIdInt, _ := strconv.Atoi(guestId)
 				personKey, exists := guestMap[guestIdInt]
 				if !exists {
-					log.Infof(ctx, "Missing person in %s", fields[2])
+					log.Printf("Missing person in %s", fields[2])
 					continue
 				}
 				var p person.Person
@@ -429,7 +427,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 
 			invitationKey, err = datastore.Put(ctx, invitationKey, &invitation)
 			if err != nil {
-				log.Errorf(ctx, "RSVPs: %v -- %s", err, rsvpRow)
+				log.Printf("RSVPs: %v -- %s", err, rsvpRow)
 			}
 
 			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s (%v)\n", printInvitation(ctx, invitationKey, &invitation), *invitationKey)))
@@ -446,7 +444,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 		//log.Fatal(err)
 	}
 
@@ -516,7 +514,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 
 	foodFile, err := os.Open(Import_Data_Directory + "/" + Food_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 	defer foodFile.Close()
 
@@ -564,7 +562,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 			var p person.Person
 			err := datastore.Get(ctx, personKey, &p)
 			if err != nil {
-				log.Errorf(ctx, "%v: %v - %s", err, personKey.Encode(), foodRow)
+				log.Printf("%v: %v - %s", err, personKey.Encode(), foodRow)
 			}
 			p.FoodRestrictions = restrictions
 			for _, rest := range restrictions {
@@ -576,7 +574,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 			w.Write([]byte(fmt.Sprintf("Restrictions for %s: %s %s\n", name, foodIssues, foodNotes)))
 			_, err = datastore.Put(ctx, personKey, &p)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 		}
 		processedHeader = true
@@ -616,7 +614,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	q := datastore.NewQuery("Venue")
 	keys, err := q.GetAll(ctx, &venues)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = venueKey
@@ -627,7 +625,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	q = datastore.NewQuery("Building")
 	keys, err = q.GetAll(ctx, &buildings)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = *buildingKey
@@ -636,7 +634,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 	eventsMap := make(map[string]*event.Event)
 	events, err := event.GetAllEvents(ctx)
 	if err != nil {
-		log.Infof(ctx, "GetAllEvents: %v", err)
+		log.Printf("GetAllEvents: %v", err)
 	}
 	for _, ev := range events {
 		eventsMap[ev.ShortName] = ev
@@ -644,7 +642,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 
 	eventsFile, err := os.Open(Import_Data_Directory + "/" + Events_Data_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	defer eventsFile.Close()
 	scanner := bufio.NewScanner(eventsFile)
@@ -667,7 +665,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 
 			err := event.PutEvent(ctx, ev)
 			if err != nil {
-				log.Infof(ctx, "PutEvent: %v", err)
+				log.Printf("PutEvent: %v", err)
 			}
 		}
 		processedHeader = true
@@ -677,7 +675,7 @@ func ReloadHousingSetup(wr WrappedRequest) {
 func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 	venuesFile, err := os.Open(Import_Data_Directory + "/" + Venues_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	defer venuesFile.Close()
 
@@ -705,7 +703,7 @@ func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 
 			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Venue", nil), &venue)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 			w.Write([]byte(fmt.Sprintf("Loading venue %s\n", fields[0])))
 		}
@@ -717,7 +715,7 @@ func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	buildingsFile, err := os.Open(Import_Data_Directory + "/" + Buildings_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	defer buildingsFile.Close()
 
@@ -733,7 +731,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	for _, hpb := range GetAllHousingPreferenceBooleans() {
 		propertiesMap[hpb.Name] = hpb.Bit
 	}
-	log.Infof(ctx, "Properties Map: %v", propertiesMap)
+	log.Printf("Properties Map: %v", propertiesMap)
 
 	scanner := bufio.NewScanner(buildingsFile)
 	processedHeader := false
@@ -750,9 +748,9 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 			properties := 0
 			for _, b := range propertyStrings {
 				properties += propertiesMap[b]
-				log.Infof(ctx, "%s: %s --> %d", name, b, propertiesMap[b])
+				log.Printf("%s: %s --> %d", name, b, propertiesMap[b])
 			}
-			log.Infof(ctx, "%s total properties: %d", name, properties)
+			log.Printf("%s total properties: %d", name, properties)
 
 			building := housing.Building{
 				Venue:             venue,
@@ -764,7 +762,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 
 			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Building", venue), &building)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 			w.Write([]byte(fmt.Sprintf("Loading building %s\n", fields[1])))
 		}
@@ -776,7 +774,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 	roomsFile, err := os.Open(Import_Data_Directory + "/" + Rooms_File_Name)
 	if err != nil {
-		log.Errorf(ctx, "GetAll: %v", err)
+		log.Printf("GetAll: %v", err)
 	}
 	defer roomsFile.Close()
 
@@ -843,7 +841,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 
 			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Room", building), &room)
 			if err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 			w.Write([]byte(fmt.Sprintf("Loading room %s%s%s\n", fields[0], fields[1], fields[2])))
 		}

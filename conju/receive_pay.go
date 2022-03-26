@@ -3,13 +3,13 @@ package conju
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 func handleReceivePay(wr WrappedRequest) {
@@ -25,7 +25,7 @@ func handleReceivePay(wr WrappedRequest) {
 	var invitation Invitation
 	err = datastore.Get(wr.Context, invitationKey, &invitation)
 	if err != nil {
-		log.Errorf(wr.Context, "error getting invitation: %v", err)
+		log.Printf("error getting invitation: %v", err)
 	}
 
 	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &invitation)
@@ -45,7 +45,7 @@ func handleReceivePay(wr WrappedRequest) {
 
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/receive_pay.html", "templates/roomingInfo.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "receive_pay.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 }
 
@@ -76,14 +76,14 @@ func handleDoReceivePay(wr WrappedRequest) {
 	var invitation Invitation
 	err = datastore.Get(wr.Context, invitationKey, &invitation)
 	if err != nil {
-		log.Errorf(wr.Context, "error getting invitation: %v", err)
+		log.Printf("error getting invitation: %v", err)
 	}
 	invitation.ReceivedPay = float64(pay)
 	invitation.ReceivedPayDate = payDate
 	invitation.ReceivedPayMethod = wr.Request.Form.Get("pay_method")
 	_, err = datastore.Put(wr.Context, invitationKey, &invitation)
 	if err != nil {
-		log.Errorf(wr.Context, "error saving invitation: %v", err)
+		log.Printf("error saving invitation: %v", err)
 	}
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }

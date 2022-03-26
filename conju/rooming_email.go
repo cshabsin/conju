@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	text_template "text/template"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 type RenderedMail struct {
@@ -131,7 +131,7 @@ func handleSendRoomingEmail(wr WrappedRequest, emailName string, isTest bool) {
 		fmt.Fprintf(wr.ResponseWriter, "Sending to %s (isTest = %v)<p>", p.FullName(), isTest)
 		_, err = wr.GetEmailClient().Send(message)
 		if err != nil {
-			log.Errorf(wr.Context, "Error sending mail: %v", err)
+			log.Printf("Error sending mail: %v", err)
 		}
 	}
 }
@@ -144,13 +144,13 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	_, err := q.GetAll(ctx, &bookings)
 	if err != nil {
-		log.Errorf(ctx, "fetching bookings: %v", err)
+		log.Printf("fetching bookings: %v", err)
 	}
 
 	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
 	err = datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
 	if err != nil {
-		log.Errorf(ctx, "fetching rooms: %v", err)
+		log.Printf("fetching rooms: %v", err)
 	}
 
 	// Map room ID -> Room
@@ -168,7 +168,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	var people = make([]*person.Person, len(peopleToLookUp))
 	err = datastore.GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
-		log.Errorf(ctx, "fetching people: %v", err)
+		log.Printf("fetching people: %v", err)
 	}
 
 	for i, person := range people {
@@ -179,7 +179,7 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
 	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	personToInvitationMap := make(map[int64]int64)
@@ -322,17 +322,17 @@ func getRoomingEmails(wr WrappedRequest, emailName string) (map[int64]RenderedMa
 			})
 			var text bytes.Buffer
 			if err := text_tpl.ExecuteTemplate(&text, emailName+"_text", data); err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 
 			var htmlBuf bytes.Buffer
 			if err := tpl.ExecuteTemplate(&htmlBuf, emailName+"_html", data); err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 
 			var subject bytes.Buffer
 			if err := text_tpl.ExecuteTemplate(&subject, emailName+"_subject", data); err != nil {
-				log.Errorf(ctx, "%v", err)
+				log.Printf("%v", err)
 			}
 			rendered_mail[p.DatastoreKey.IntID()] = RenderedMail{p, text.String(), htmlBuf.String(), subject.String()}
 		}

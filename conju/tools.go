@@ -3,6 +3,7 @@ package conju
 import (
 	"context"
 	"html/template"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 )
 
 func handleRoomingTool(wr WrappedRequest) {
@@ -42,17 +42,17 @@ func handleRoomingTool(wr WrappedRequest) {
 	for _, room := range wr.Event.Rooms {
 		var rm housing.Room
 		if err := datastore.Get(wr.Context, room, &rm); err != nil {
-			log.Errorf(wr.Context, "Reading room (id %s): %v", room.Encode(), err)
+			log.Printf("Reading room (id %s): %v", room.Encode(), err)
 			continue
 		}
 		buildingKey := room.Parent()
 		building, ok := buildingsMap[buildingKey.IntID()]
 		if !ok {
-			log.Errorf(wr.Context, "building not found in buildingsMap for building %v", buildingKey)
+			log.Printf("building not found in buildingsMap for building %v", buildingKey)
 			continue
 		}
 		if building == nil {
-			log.Errorf(wr.Context, "nil building in buildingsMap for building %v", buildingKey)
+			log.Printf("nil building in buildingsMap for building %v", buildingKey)
 			continue
 		}
 		if len(buildingsInOrder) == 0 || buildingsInOrder[len(buildingsInOrder)-1] != *building {
@@ -103,7 +103,7 @@ func handleRoomingTool(wr WrappedRequest) {
 	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
 	_, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe}
@@ -173,7 +173,7 @@ func handleRoomingTool(wr WrappedRequest) {
 		"InvitationsToExplode": invitationsToExplode,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingTool.html", data); err != nil {
-		log.Errorf(wr.Context, "%v", err)
+		log.Printf("%v", err)
 	}
 
 }
@@ -220,7 +220,7 @@ func handleSaveRooming(wr WrappedRequest) {
 	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
 	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
-		log.Errorf(ctx, "fetching invitations: %v", err)
+		log.Printf("fetching invitations: %v", err)
 	}
 
 	personToInvitationMap := make(map[int64]int64)
@@ -284,7 +284,7 @@ func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[in
 	keys, err := q.GetAll(ctx, &buildings)
 
 	if err != nil {
-		log.Infof(ctx, "%v", err)
+		log.Printf("%v", err)
 	}
 	for i, buildingKey := range keys {
 		buildingsMap[buildingKey.IntID()] = buildings[i]

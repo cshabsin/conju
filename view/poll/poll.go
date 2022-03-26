@@ -2,14 +2,14 @@ package poll
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 
 	"github.com/cshabsin/conju/conju"
 	"github.com/cshabsin/conju/model/poll"
-	"google.golang.org/appengine/log"
 )
 
-func init() {
+func Register() {
 	conju.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
 }
 
@@ -20,7 +20,7 @@ func HandlePoll(wr conju.WrappedRequest) {
 	}
 	key, poll, err := poll.GetAnswer(ctx, wr.InvitationKey)
 	if err != nil {
-		log.Errorf(ctx, "error reading answer: %v", err)
+		log.Printf("error reading answer: %v", err)
 		http.Error(wr.ResponseWriter, "error reading answer", http.StatusInternalServerError)
 		return
 	}
@@ -34,7 +34,7 @@ func HandlePoll(wr conju.WrappedRequest) {
 	}
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/poll.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "poll.html", data); err != nil {
-		log.Errorf(wr.Context, "error executing poll template %v", err)
+		log.Printf("error executing poll template %v", err)
 		http.Error(wr.ResponseWriter, "error executing poll template", http.StatusInternalServerError)
 	}
 }
