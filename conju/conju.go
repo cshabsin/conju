@@ -13,7 +13,7 @@ import (
 )
 
 // SiteLink holds the current URL to base absolute links on.
-const SiteLink = "https://event-test-345303.uc.r.appspot.com"
+const SiteLink = "https://psr2021.shabsin.com"
 
 func Register() {
 	http.HandleFunc("/_ah/start", func(w http.ResponseWriter, r *http.Request) {
@@ -80,9 +80,9 @@ func Register() {
 
 	AddSessionHandler("/testFinalEmail", handleTestSendFinalEmail).Needs(AdminGetter)
 
-	AddSessionHandler("/info", handleInfo)
+	AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
-	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
+	AddSessionHandler("/", handleIndex)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 
 	rand.Seed(time.Now().UnixNano())
