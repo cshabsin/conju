@@ -18,3 +18,5 @@ env_variables:
   VENMO_ADDRESS: "..."
   PAYPAL_ADDRESS: "..."
   PAYPAL_URL: "https://www.paypal.com/"
+
+app_engine_apis: true
