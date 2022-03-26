@@ -100,7 +100,7 @@ func GetAllHousingPreferences() []HousingPreferenceInfo {
 type HousingPreferenceBoolean int
 
 const (
-	MonitorRange = iota
+	MonitorRange HousingPreferenceBoolean = iota
 	CloseBuilding
 	FarBuilding
 	CanCrossRoad
@@ -112,7 +112,7 @@ const (
 type HousingPreferenceBooleanType int
 
 const (
-	Desired = iota
+	Desired HousingPreferenceBooleanType = iota
 	Acceptable
 )
 

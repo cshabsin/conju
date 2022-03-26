@@ -321,10 +321,6 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 	return false
 }
 
-func (inv *Invitation) HasHousingPreference(preference HousingPreferenceBoolean) bool {
-	return (inv.HousingPreferenceBooleans & GetAllHousingPreferenceBooleans()[preference].Bit) > 0
-}
-
 // Handles /invitations, listing invitations.
 func handleInvitations(wr WrappedRequest) {
 	ctx := appengine.NewContext(wr.Request)
