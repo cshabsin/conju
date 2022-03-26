@@ -118,7 +118,12 @@ func PersonGetter(ctx context.Context, wr *WrappedRequest) error {
 				"again using the link from your email."}
 		}
 	}
-	li := &LoginInfo{nil, nil, personKey, &pers}
+	li := &LoginInfo{
+		InvitationKey: nil,
+		Invitation:    nil,
+		PersonKey:     personKey,
+		Person:        &pers,
+	}
 	wr.LoginInfo = li
 	wr.TemplateData["LoginInfo"] = li
 	return nil
