@@ -4,6 +4,7 @@ package conju
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -17,7 +18,6 @@ import (
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/venue"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -26,8 +26,7 @@ type CurrentEvent struct {
 }
 
 // Sets up Event in the WrappedRequest.
-func EventGetter(wr *WrappedRequest) error {
-	ctx := wr.Context
+func EventGetter(ctx context.Context, wr *WrappedRequest) error {
 	if wr.hasRunEventGetter {
 		return nil // Only retrieve once.
 	}
@@ -74,8 +73,7 @@ func EventGetter(wr *WrappedRequest) error {
 	return nil
 }
 
-func handleEvents(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request) // TODO: why isn't this just wr.Context?
+func handleEvents(ctx context.Context, wr WrappedRequest) {
 	tic := time.Now()
 
 	allEvents, err := event.GetAllEvents(ctx)
@@ -149,7 +147,7 @@ func handleEvents(wr WrappedRequest) {
 	activityMap := make(map[string]bool)
 	if editEventKey != nil {
 		var err error
-		editEvent, err = event.GetEvent(wr.Context, editEventKey)
+		editEvent, err = event.GetEvent(ctx, editEventKey)
 		if err != nil {
 			log.Printf("Get event: %v", err)
 		}
@@ -199,8 +197,7 @@ func handleEvents(wr WrappedRequest) {
 	}
 }
 
-func handleCreateUpdateEvent(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	form := wr.Request.Form
 
@@ -218,7 +215,7 @@ func handleCreateUpdateEvent(wr WrappedRequest) {
 		if err != nil {
 			log.Printf("decoding event key from form: %v", err)
 		}
-		ev, err = event.GetEvent(wr.Context, eventKey)
+		ev, err = event.GetEvent(ctx, eventKey)
 		if err != nil {
 			log.Printf("decoding event key from form: %v", err)
 		}

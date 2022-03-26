@@ -24,7 +24,6 @@ var store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
 type WrappedRequest struct {
 	ResponseWriter WrappedResponseWriter
 	*http.Request
-	context.Context
 	*sessions.Session
 	hasRunEventGetter bool
 	EventKey          *datastore.Key // TODO: stick these in EventInfo
@@ -39,7 +38,7 @@ type WrappedRequest struct {
 	*BookingInfo
 }
 
-type Getter func(*WrappedRequest) error
+type Getter func(context.Context, *WrappedRequest) error
 
 type Getters struct {
 	Getters []Getter
@@ -63,7 +62,7 @@ func (dpe DoneProcessingError) Error() string {
 	return "Done processing, do not continue."
 }
 
-func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
+func AddSessionHandler(url string, f func(context.Context, WrappedRequest)) *Getters {
 	var getters Getters
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +80,6 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
-			Context:        ctx,
 			Session:        sess,
 			User:           u,
 			TemplateData: map[string]interface{}{
@@ -98,7 +96,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 		// TODO: make this always true once we go live.
 		wr.TemplateData["ShowRsvp"] = wr.IsAdminUser()
 		for i, getter := range getters.Getters {
-			if err = getter(&wr); err != nil {
+			if err = getter(ctx, &wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
 					http.Redirect(wrw, r, redirect.Target, http.StatusFound)
 					return
@@ -116,7 +114,7 @@ func AddSessionHandler(url string, f func(WrappedRequest)) *Getters {
 				return
 			}
 		}
-		f(wr)
+		f(ctx, wr)
 	})
 	return &getters
 }
@@ -260,14 +258,14 @@ type BookingInfo struct {
 	PersonToBookingMap map[int64]int64
 }
 
-func (wr *WrappedRequest) GetBookingInfo() *BookingInfo {
+func (wr *WrappedRequest) GetBookingInfo(ctx context.Context) *BookingInfo {
 	if wr.BookingInfo != nil {
 		return wr.BookingInfo
 	}
 	// Load all bookings for the event.
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	allBookingKeys, err := q.GetAll(wr.Context, &bookings)
+	allBookingKeys, err := q.GetAll(ctx, &bookings)
 	if err != nil {
 		log.Printf("Error reading all booking keys: %v", err)
 		return nil

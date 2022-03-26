@@ -1,6 +1,7 @@
 package poll
 
 import (
+	"context"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,8 +14,7 @@ func Register() {
 	conju.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
 }
 
-func HandlePoll(wr conju.WrappedRequest) {
-	ctx := wr.Context
+func HandlePoll(ctx context.Context, wr conju.WrappedRequest) {
 	if wr.Invitation == nil {
 		http.Redirect(wr.ResponseWriter, wr.Request, "/login", http.StatusSeeOther)
 	}

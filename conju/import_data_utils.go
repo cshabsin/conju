@@ -36,35 +36,35 @@ const Venues_File_Name = "venues.tsv"
 const Buildings_File_Name = "buildings.tsv"
 const Rooms_File_Name = "rooms.tsv"
 
-func ReloadData(wr WrappedRequest) {
+func ReloadData(ctx context.Context, wr WrappedRequest) {
 	if wr.Method != "POST" {
 		http.Error(wr.ResponseWriter, "Invalid GET on reload.",
 			http.StatusBadRequest)
 		return
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	ClearAllData(wr, []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"})
+	ClearAllData(ctx, wr, []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"})
 	wr.ResponseWriter.Write([]byte("\n\n"))
-	SetupVenues(wr.ResponseWriter, wr.Context)
-	wr.ResponseWriter.Write([]byte("\n\n"))
-	time.Sleep(2 * time.Second)
-	SetupBuildings(wr.ResponseWriter, wr.Context)
+	SetupVenues(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-	SetupRooms(wr.ResponseWriter, wr.Context)
+	SetupBuildings(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-	SetupActivities(wr.ResponseWriter, wr.Context)
+	SetupRooms(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-	SetupEvents(wr.ResponseWriter, wr.Context)
+	SetupActivities(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-	guestMap := ImportGuests(wr.ResponseWriter, wr.Context)
+	SetupEvents(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
-	ImportFoodPreferences(wr.ResponseWriter, wr.Context, guestMap)
+	time.Sleep(2 * time.Second)
+	guestMap := ImportGuests(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
-	ImportRsvps(wr.ResponseWriter, wr.Context, guestMap)
+	ImportFoodPreferences(wr.ResponseWriter, ctx, guestMap)
+	wr.ResponseWriter.Write([]byte("\n\n"))
+	ImportRsvps(wr.ResponseWriter, ctx, guestMap)
 
 }
 
@@ -102,7 +102,7 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 	return err
 }
 
-func AskReloadData(wr WrappedRequest) {
+func AskReloadData(ctx context.Context, wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	// fmt.Fprintf(wr.ResponseWriter, `
 	// <form method="POST" action="/doReloadData">
@@ -584,7 +584,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 	io.Copy(w, b)
 }
 
-func AskReloadHousingSetup(wr WrappedRequest) {
+func AskReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprintf(wr.ResponseWriter, `
 	<form method="POST" action="/doReloadHousingSetup">
@@ -594,20 +594,18 @@ func AskReloadHousingSetup(wr WrappedRequest) {
 	//fmt.Fprintf(wr.ResponseWriter, "NO")
 }
 
-func ReloadHousingSetup(wr WrappedRequest) {
-	ClearAllData(wr, []string{"Venue", "Building", "Room"})
+func ReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
+	ClearAllData(ctx, wr, []string{"Venue", "Building", "Room"})
 	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	SetupVenues(wr.ResponseWriter, wr.Context)
+	SetupVenues(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-	SetupBuildings(wr.ResponseWriter, wr.Context)
+	SetupBuildings(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-	SetupRooms(wr.ResponseWriter, wr.Context)
+	SetupRooms(wr.ResponseWriter, ctx)
 	wr.ResponseWriter.Write([]byte("\n\n"))
 	time.Sleep(2 * time.Second)
-
-	ctx := wr.Context
 
 	venuesMap := make(map[string]*datastore.Key)
 	var venues []venue.Venue

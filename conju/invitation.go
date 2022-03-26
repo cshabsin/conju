@@ -18,7 +18,6 @@ import (
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -323,8 +322,7 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 }
 
 // Handles /invitations, listing invitations.
-func handleInvitations(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleInvitations(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var notInvitedSet = make(map[datastore.Key]person.PersonWithKey)
@@ -434,8 +432,7 @@ func handleInvitations(wr WrappedRequest) {
 	}
 }
 
-func handleCopyInvitations(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
@@ -471,8 +468,7 @@ func handleCopyInvitations(wr WrappedRequest) {
 
 }
 
-func handleAddInvitation(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleAddInvitation(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
@@ -515,8 +511,7 @@ func handleAddInvitation(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
-func handleDeleteInvitation(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleDeleteInvitation(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -533,7 +528,7 @@ func handleDeleteInvitation(wr WrappedRequest) {
 }
 
 // handleViewInvitationUser handles /viewInvitation URLs.
-func handleViewInvitationAdmin(wr WrappedRequest) {
+func handleViewInvitationAdmin(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -543,13 +538,13 @@ func handleViewInvitationAdmin(wr WrappedRequest) {
 			fmt.Sprintf("Error decoding invitation key: %v", err),
 			http.StatusBadRequest)
 	}
-	handleViewInvitation(wr, invitationKey)
+	handleViewInvitation(ctx, wr, invitationKey)
 }
 
 // handleViewInvitationUser handles /rsvp URLs.
-func handleViewInvitationUser(wr WrappedRequest) {
+func handleViewInvitationUser(ctx context.Context, wr WrappedRequest) {
 	log.Printf("in handleViewInvitationUser")
-	handleViewInvitation(wr, wr.InvitationKey)
+	handleViewInvitation(ctx, wr, wr.InvitationKey)
 }
 
 var (
@@ -564,22 +559,22 @@ var (
 	invitationTpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
 )
 
-func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
+func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) {
 	var inv Invitation
-	err := datastore.Get(wr.Context, invitationKey, &inv)
+	err := datastore.Get(ctx, invitationKey, &inv)
 	if err != nil {
 		log.Printf("error getting invitation: %v", err)
 	}
 
 	formInfoMap := make(map[*datastore.Key]person.PersonUpdateFormInfo)
-	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &inv)
+	realizedInvitation := makeRealizedInvitation(ctx, invitationKey, &inv)
 	for i, invitee := range realizedInvitation.Invitees {
 		personKey := invitee.Person.DatastoreKey
 		formInfo := person.MakePersonUpdateFormInfo(personKey, invitee.Person, i, true)
 		formInfoMap[personKey] = formInfo
 	}
 
-	realActivities, err := activity.Realize(wr.Context, realizedInvitation.Event.Activities)
+	realActivities, err := activity.Realize(ctx, realizedInvitation.Event.Activities)
 	if err != nil {
 		log.Printf("activity.Realize: %v", err)
 	}
@@ -593,9 +588,9 @@ func handleViewInvitation(wr WrappedRequest, invitationKey *datastore.Key) {
 		"AllHousingPreferenceBooleans": GetAllHousingPreferenceBooleans(),
 		"AllDrivingPreferences":        GetAllDrivingPreferences(),
 		"AllParkingTypes":              GetAllParkingTypes(),
-		"InvitationHasChildren":        inv.HasChildren(wr.Context),
+		"InvitationHasChildren":        inv.HasChildren(ctx),
 		"IsAdminUser":                  wr.IsAdminUser(),
-		"RoomingInfo":                  getRoomingInfo(wr, invitationKey),
+		"RoomingInfo":                  getRoomingInfo(ctx, wr, invitationKey),
 	})
 
 	if err := invitationTpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
@@ -607,8 +602,7 @@ func HasPreference(total int, mask int) bool {
 	return (total & mask) != 0
 }
 
-func handleSaveInvitation(wr WrappedRequest) {
-	//ctx := appengine.NewContext(wr.Request)
+func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -622,7 +616,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	}
 
 	var inv Invitation
-	datastore.Get(wr.Context, invitationKey, &inv)
+	datastore.Get(ctx, invitationKey, &inv)
 
 	people := wr.Request.Form["person"]
 	rsvps := wr.Request.Form["rsvp"]
@@ -633,7 +627,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	for i, personKey := range people {
 		key, _ := datastore.DecodeKey(personKey)
 		var person person.Person
-		datastore.Get(wr.Context, key, &person)
+		datastore.Get(ctx, key, &person)
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
 		if rsvp >= 0 {
@@ -723,7 +717,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 
 	inv.LastUpdatedTimestamp = time.Now()
 
-	_, err = datastore.Put(wr.Context, invitationKey, &inv)
+	_, err = datastore.Put(ctx, invitationKey, &inv)
 	if err != nil {
 		log.Printf("%v", err)
 	}
@@ -731,7 +725,7 @@ func handleSaveInvitation(wr WrappedRequest) {
 	var invitees []person.Person
 	for _, personKey := range inv.Invitees {
 		var person person.Person
-		datastore.Get(wr.Context, personKey, &person)
+		datastore.Get(ctx, personKey, &person)
 		invitees = append(invitees, person)
 	}
 
@@ -764,13 +758,13 @@ func handleSaveInvitation(wr WrappedRequest) {
 		}
 	}
 
-	ev, err := event.GetEvent(wr.Context, inv.Event)
+	ev, err := event.GetEvent(ctx, inv.Event)
 	if err != nil {
 		log.Printf("GetEvent: %v", err)
 	}
 	subject := fmt.Sprintf("%s:%s RSVP from %s", ev.ShortName, newPeopleSubjectFragment, person.CollectiveAddress(invitees, person.Informal))
 
-	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &inv)
+	realizedInvitation := makeRealizedInvitation(ctx, invitationKey, &inv)
 	// TODO: escape this.
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 

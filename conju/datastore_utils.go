@@ -1,6 +1,7 @@
 package conju
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-func ClearAllData(wr WrappedRequest, entityNames []string) {
+func ClearAllData(ctx context.Context, wr WrappedRequest, entityNames []string) {
 	fmt.Fprintf(wr.ResponseWriter, "Disabled for now.\n")
 	wr.Values["event"] = nil
 	wr.SaveSession()
@@ -21,7 +22,7 @@ func ClearAllData(wr WrappedRequest, entityNames []string) {
 		wr.ResponseWriter.Write([]byte(fmt.Sprintf("Clearing: %s\n", entityName)))
 		q := datastore.NewQuery(entityName).KeysOnly()
 
-		keys, err := q.GetAll(wr.Context, nil)
+		keys, err := q.GetAll(ctx, nil)
 		if err != nil {
 			log.Println("ClearAllData GetAll:", err)
 			return
@@ -35,7 +36,7 @@ func ClearAllData(wr WrappedRequest, entityNames []string) {
 			return
 		}
 
-		err = datastore.DeleteMulti(wr.Context, keys)
+		err = datastore.DeleteMulti(ctx, keys)
 		if err != nil {
 			log.Println("ClearAllData DeleteMulti:", err)
 			return
@@ -43,10 +44,10 @@ func ClearAllData(wr WrappedRequest, entityNames []string) {
 	}
 }
 
-func RepairData(wr WrappedRequest) {
+func RepairData(ctx context.Context, wr WrappedRequest) {
 	q := datastore.NewQuery("Person")
 	var people []person.Person
-	personKeys, err := q.GetAll(wr.Context, &people)
+	personKeys, err := q.GetAll(ctx, &people)
 	if err != nil {
 		log.Printf("RepairData personQuery: %v", err)
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
@@ -55,7 +56,7 @@ func RepairData(wr WrappedRequest) {
 	for i := range personKeys {
 		if people[i].LoginCode == "" {
 			people[i].LoginCode = login.RandomLoginCodeString()
-			_, err = datastore.Put(wr.Context, personKeys[i], &people[i])
+			_, err = datastore.Put(ctx, personKeys[i], &people[i])
 			if err != nil {
 				log.Printf("RepairData put(%s): %v", people[i].Email, err)
 				http.Error(wr.ResponseWriter, fmt.Sprintf("put(%s): %v", people[i].Email, err), http.StatusInternalServerError)

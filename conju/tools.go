@@ -11,13 +11,10 @@ import (
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
-func handleRoomingTool(wr WrappedRequest) {
-	ctx := wr.Context
-
+func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := q.GetAll(ctx, &bookings)
@@ -34,14 +31,14 @@ func handleRoomingTool(wr WrappedRequest) {
 	var invitationsToExplode []string
 
 	wr.Event.LoadVenue(ctx)
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
+	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
 	var buildingsInOrder []housing.Building
 	var availableRooms []*housing.RealRoom
 	var buildingsToRooms = make(map[housing.Building][]*housing.RealRoom)
 
 	for _, room := range wr.Event.Rooms {
 		var rm housing.Room
-		if err := datastore.Get(wr.Context, room, &rm); err != nil {
+		if err := datastore.Get(ctx, room, &rm); err != nil {
 			log.Printf("Reading room (id %s): %v", room.Encode(), err)
 			continue
 		}
@@ -178,8 +175,7 @@ func handleRoomingTool(wr WrappedRequest) {
 
 }
 
-func handleSaveRooming(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey).KeysOnly()

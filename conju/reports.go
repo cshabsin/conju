@@ -1,6 +1,7 @@
 package conju
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,7 +13,6 @@ import (
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
 
@@ -23,8 +23,7 @@ import (
 // 	}
 // }
 
-func handleRsvpReport(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
@@ -181,8 +180,7 @@ func handleRsvpReport(wr WrappedRequest) {
 	}
 }
 
-func handleActivitiesReport(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleActivitiesReport(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
@@ -293,9 +291,7 @@ func handleActivitiesReport(wr WrappedRequest) {
 
 }
 
-func handleRoomingReport(wr WrappedRequest) {
-	ctx := wr.Context
-
+func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := q.GetAll(ctx, &bookings)
@@ -373,7 +369,7 @@ func handleRoomingReport(wr WrappedRequest) {
 		Reserved            bool
 	}
 
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
+	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
 	// doesn't deal with consolidating partitioned rooms
 	var realBookingsByBuilding = make([][]RealBooking, len(buildingOrderMap))
 	var totalCostForEveryone float64
@@ -485,8 +481,7 @@ func handleRoomingReport(wr WrappedRequest) {
 	}
 }
 
-func handleSaveReservations(wr WrappedRequest) {
-	ctx := appengine.NewContext(wr.Request)
+func handleSaveReservations(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	bookingToBooked := make(map[int64]bool)
@@ -519,8 +514,7 @@ func handleSaveReservations(wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }
 
-func handleFoodReport(wr WrappedRequest) {
-	ctx := wr.Context
+func handleFoodReport(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
@@ -572,8 +566,7 @@ func handleFoodReport(wr WrappedRequest) {
 	}
 }
 
-func handleRidesReport(wr WrappedRequest) {
-	ctx := wr.Context
+func handleRidesReport(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()

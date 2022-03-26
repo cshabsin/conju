@@ -1,6 +1,7 @@
 package conju
 
 import (
+	"context"
 	"log"
 	"math"
 
@@ -55,19 +56,19 @@ func (r RoomingAndCostInfo) IsPaid() bool {
 	return r.TotalCost-r.Invitation.ReceivedPay < 0.05
 }
 
-func getRoomingInfo(wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
+func getRoomingInfo(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
 	// Load the invitation.
 	var invitation Invitation
-	err := datastore.Get(wr.Context, invitationKey, &invitation)
+	err := datastore.Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("Error retrieving invitation: %v", err)
 	}
-	return getRoomingInfoWithInvitation(wr, &invitation, invitationKey)
+	return getRoomingInfoWithInvitation(ctx, wr, &invitation, invitationKey)
 }
 
-func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
+func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *Invitation,
 	invitationKey *datastore.Key) *RoomingAndCostInfo {
-	bookingInfo := wr.GetBookingInfo()
+	bookingInfo := wr.GetBookingInfo(ctx)
 
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
@@ -90,7 +91,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	}
 
 	rooms := make([]*housing.Room, len(roomKeys))
-	err := datastore.GetMulti(wr.Context, roomKeys, rooms)
+	err := datastore.GetMulti(ctx, roomKeys, rooms)
 	if err != nil {
 		log.Printf("fetching rooms: %v", err)
 	}
@@ -108,7 +109,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 
 	personMap := make(map[int64]*person.Person)
 	people := make([]*person.Person, len(peopleToLookUp))
-	err = datastore.GetMulti(wr.Context, peopleToLookUp, people)
+	err = datastore.GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
 		log.Printf("fetching people: %v", err)
 	}
@@ -119,7 +120,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	invitationKeys, err := q.GetAll(wr.Context, &invitations)
+	invitationKeys, err := q.GetAll(ctx, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -136,8 +137,8 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
-	wr.Event.LoadVenue(wr.Context)
-	buildingsMap := getBuildingMapForVenue(wr.Context, wr.Event.Venue.Key)
+	wr.Event.LoadVenue(ctx)
+	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
 	allInviteeBookings := make(map[int64]InviteeBookingsMap)
 	personToCost := make(map[*person.Person]float64)
 	for _, booking := range bookingsForInvitation {

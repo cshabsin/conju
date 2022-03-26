@@ -1,6 +1,7 @@
 package conju
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,7 +13,7 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-func handleReceivePay(wr WrappedRequest) {
+func handleReceivePay(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
@@ -23,13 +24,13 @@ func handleReceivePay(wr WrappedRequest) {
 	}
 
 	var invitation Invitation
-	err = datastore.Get(wr.Context, invitationKey, &invitation)
+	err = datastore.Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("error getting invitation: %v", err)
 	}
 
-	realizedInvitation := makeRealizedInvitation(wr.Context, invitationKey, &invitation)
-	roomingInfo := getRoomingInfoWithInvitation(wr, &invitation, invitationKey)
+	realizedInvitation := makeRealizedInvitation(ctx, invitationKey, &invitation)
+	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, &invitation, invitationKey)
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"Invitation":  realizedInvitation,
 		"RoomingInfo": roomingInfo,
@@ -49,7 +50,7 @@ func handleReceivePay(wr WrappedRequest) {
 	}
 }
 
-func handleDoReceivePay(wr WrappedRequest) {
+func handleDoReceivePay(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	payStr := wr.Request.Form.Get("pay")
@@ -74,14 +75,14 @@ func handleDoReceivePay(wr WrappedRequest) {
 	}
 
 	var invitation Invitation
-	err = datastore.Get(wr.Context, invitationKey, &invitation)
+	err = datastore.Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("error getting invitation: %v", err)
 	}
 	invitation.ReceivedPay = float64(pay)
 	invitation.ReceivedPayDate = payDate
 	invitation.ReceivedPayMethod = wr.Request.Form.Get("pay_method")
-	_, err = datastore.Put(wr.Context, invitationKey, &invitation)
+	_, err = datastore.Put(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("error saving invitation: %v", err)
 	}

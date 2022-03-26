@@ -1,6 +1,7 @@
 package conju
 
 import (
+	"context"
 	"html/template"
 	"log"
 	"math/rand"
@@ -88,7 +89,7 @@ func Register() {
 
 }
 
-func handleIndex(wr WrappedRequest) {
+func handleIndex(ctx context.Context, wr WrappedRequest) {
 	eventName := "PSR2021"
 	if wr.Event != nil {
 		eventName = wr.Event.ShortName
@@ -99,7 +100,7 @@ func handleIndex(wr WrappedRequest) {
 	}
 }
 
-func handleAdmin(wr WrappedRequest) {
+func handleAdmin(ctx context.Context, wr WrappedRequest) {
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/admin.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "admin.html", wr.TemplateData); err != nil {
 		log.Println(err)

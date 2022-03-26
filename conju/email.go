@@ -89,21 +89,21 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 	return text.String(), htmlBuf.String(), "", nil
 }
 
-func handleSendMail(wr WrappedRequest) {
+func handleSendMail(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.Form["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
 		emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
 	}
 	if !ok || len(emailTemplates) == 0 {
-		handleListMail(wr)
+		handleListMail(ctx, wr)
 		return
 	}
 	emailTemplate := emailTemplates[0]
 	// TODO: What data do we send this?
-	realizedInvitation := makeRealizedInvitation(wr.Context, wr.LoginInfo.InvitationKey,
+	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
-	roomingInfo := getRoomingInfoWithInvitation(wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
@@ -134,7 +134,7 @@ func handleSendMail(wr WrappedRequest) {
 	}
 }
 
-func handleDoSendMail(wr WrappedRequest) {
+func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.PostForm["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
@@ -168,13 +168,13 @@ func handleDoSendMail(wr WrappedRequest) {
 		}
 		return sendMail(wr, emailTemplate, emailData, headerData)
 	}
-	if err := distributor.Distribute(wr, senderFunc); err != nil {
+	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
 		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
 	}
 }
 
-func handleListMail(wr WrappedRequest) {
+func handleListMail(ctx context.Context, wr WrappedRequest) {
 	templateNames, err := filepath.Glob("templates/email/*.html")
 	if err != nil {
 		log.Printf("Error globbing email templates: %v", err)

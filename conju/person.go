@@ -3,6 +3,7 @@ package conju
 // TODO: move to "package models"?
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -16,9 +17,7 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-func handleListPeople(wr WrappedRequest) {
-
-	ctx := appengine.NewContext(wr.Request)
+func handleListPeople(ctx context.Context, wr WrappedRequest) {
 	tic := time.Now()
 	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
 
@@ -72,7 +71,7 @@ func fetchPerson(wr WrappedRequest, encodedKey string) (*person.Person, error) {
 	return &person, nil
 }
 
-func handleUpdatePersonForm(wr WrappedRequest) {
+func handleUpdatePersonForm(ctx context.Context, wr WrappedRequest) {
 	queryMap := wr.Request.URL.Query()
 
 	var err error
@@ -107,7 +106,7 @@ func handleUpdatePersonForm(wr WrappedRequest) {
 	}
 }
 
-func handleSaveUpdatePerson(wr WrappedRequest) {
+func handleSaveUpdatePerson(ctx context.Context, wr WrappedRequest) {
 	savePeople(wr)
 	// Where to go from here will depend on who's logged in and what they're doing
 	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)

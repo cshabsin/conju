@@ -1,6 +1,7 @@
 package conju
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"log"
@@ -20,9 +21,9 @@ type LoginInfo struct {
 const loginErrorPage = "/loginError"
 const resentInvitationPage = "/resentInvitation"
 
-func handleLogin(urlTarget string) func(wr WrappedRequest) {
-	return func(wr WrappedRequest) {
-		handleLoginInner(wr, urlTarget)
+func handleLogin(urlTarget string) func(ctx context.Context, wr WrappedRequest) {
+	return func(ctx context.Context, wr WrappedRequest) {
+		handleLoginInner(ctx, wr, urlTarget)
 	}
 }
 
@@ -31,7 +32,7 @@ func handleLogin(urlTarget string) func(wr WrappedRequest) {
 // table, and either puts the login code into the session, or writes
 // an error. On error, we display an error page with help. On success,
 // we redirect to urlTarget.
-func handleLoginInner(wr WrappedRequest, urlTarget string) {
+func handleLoginInner(ctx context.Context, wr WrappedRequest, urlTarget string) {
 	// TODO(cshabsin): Read "message" CGI arg if present and
 	// display it. Prettify this page in general, using templates.
 	url_q := wr.URL.Query()
@@ -43,7 +44,7 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 		return
 	}
 	var people []person.Person
-	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(wr.Context, &people)
+	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(ctx, &people)
 	if err != nil {
 		http.Redirect(wr.ResponseWriter, wr.Request,
 			fmt.Sprintf("%s?message=DB error looking you up: %v", loginErrorPage, err),
@@ -76,7 +77,7 @@ func handleLoginInner(wr WrappedRequest, urlTarget string) {
 // database.
 //
 // If EventGetter has not been called, LoginGetter calls it.
-func PersonGetter(wr *WrappedRequest) error {
+func PersonGetter(ctx context.Context, wr *WrappedRequest) error {
 	if wr.LoginInfo != nil {
 		return nil // This has already been run.
 	}
@@ -92,7 +93,7 @@ func PersonGetter(wr *WrappedRequest) error {
 	var personKey *datastore.Key
 	if !ok {
 		var people []person.Person
-		peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(wr.Context, &people)
+		peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(ctx, &people)
 		if err != nil {
 			return err
 		}
@@ -110,7 +111,7 @@ func PersonGetter(wr *WrappedRequest) error {
 		if err != nil {
 			log.Printf("decoding key: %v", err)
 		}
-		err = datastore.Get(wr.Context, personKey, &pers)
+		err = datastore.Get(ctx, personKey, &pers)
 		if err != nil || pers.LoginCode != code {
 			return RedirectError{loginErrorPage +
 				"?message=Something went out of sync. Please log in " +
@@ -123,15 +124,15 @@ func PersonGetter(wr *WrappedRequest) error {
 	return nil
 }
 
-func InvitationGetter(wr *WrappedRequest) error {
+func InvitationGetter(ctx context.Context, wr *WrappedRequest) error {
 	if wr.LoginInfo == nil {
-		if err := PersonGetter(wr); err != nil {
+		if err := PersonGetter(ctx, wr); err != nil {
 			log.Printf("couldn't get person: %v", err)
 			return err
 		}
 	}
 	if !wr.hasRunEventGetter {
-		if err := EventGetter(wr); err != nil {
+		if err := EventGetter(ctx, wr); err != nil {
 			log.Printf("couldn't get event: %v", err)
 			return err
 		}
@@ -147,7 +148,7 @@ func InvitationGetter(wr *WrappedRequest) error {
 	invitationKeys, err := datastore.NewQuery("Invitation").
 		Filter("Invitees =", wr.LoginInfo.PersonKey).
 		Filter("Event =", wr.EventKey).
-		GetAll(wr.Context, &invitations)
+		GetAll(ctx, &invitations)
 	if err != nil {
 		return err
 	}
@@ -164,11 +165,11 @@ func InvitationGetter(wr *WrappedRequest) error {
 
 // Simple URL handler that prints out the invitation retrieved by
 // LoginGetter, for testing.
-func CheckLogin(wr WrappedRequest) {
-	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(wr.Context, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation))))
+func CheckLogin(ctx context.Context, wr WrappedRequest) {
+	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(ctx, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation))))
 }
 
-func handleLoginError(wr WrappedRequest) {
+func handleLoginError(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	message_list, ok := wr.Request.Form["message"]
 	var message string
@@ -188,14 +189,14 @@ func handleLoginError(wr WrappedRequest) {
 	}
 }
 
-func handleLogout(wr WrappedRequest) {
+func handleLogout(ctx context.Context, wr WrappedRequest) {
 	wr.SetSessionValue("code", nil)
 	wr.SetSessionValue("person", nil)
 	wr.SaveSession()
 	http.Redirect(wr.ResponseWriter, wr.Request, "/", http.StatusFound)
 }
 
-func handleResendInvitation(wr WrappedRequest) {
+func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	emailAddresses, ok := wr.Request.PostForm["emailAddress"]
 	if !ok || len(emailAddresses) != 1 {
@@ -205,7 +206,7 @@ func handleResendInvitation(wr WrappedRequest) {
 	}
 	q := datastore.NewQuery("Person").Filter("Email =", emailAddresses[0])
 	var people []person.Person
-	_, err := q.GetAll(wr.Context, &people)
+	_, err := q.GetAll(ctx, &people)
 	if err != nil {
 		log.Printf("%v", err)
 		http.Redirect(wr.ResponseWriter, wr.Request,
@@ -236,7 +237,7 @@ func handleResendInvitation(wr WrappedRequest) {
 		http.StatusFound)
 }
 
-func handleResentInvitation(wr WrappedRequest) {
+func handleResentInvitation(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	emailAddresses, ok := wr.Request.Form["emailAddress"]
 	if !ok || len(emailAddresses) != 1 {
