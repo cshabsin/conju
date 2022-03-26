@@ -36,7 +36,7 @@ func QueryAll(ctx context.Context) ([]ActivityWithKey, error) {
 }
 
 func Realize(ctx context.Context, activityKeys []*datastore.Key) ([]*Activity, error) {
-	var activities []*Activity
+	activities := make([]*Activity, len(activityKeys))
 	if err := datastore.GetMulti(ctx, activityKeys, activities); err != nil {
 		return nil, err
 	}

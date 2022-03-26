@@ -89,7 +89,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 		roomKeys = append(roomKeys, booking.Room)
 	}
 
-	var rooms []*housing.Room
+	rooms := make([]*housing.Room, len(roomKeys))
 	err := datastore.GetMulti(wr.Context, roomKeys, rooms)
 	if err != nil {
 		log.Printf("fetching rooms: %v", err)
@@ -107,7 +107,7 @@ func getRoomingInfoWithInvitation(wr WrappedRequest, inv *Invitation,
 	}
 
 	personMap := make(map[int64]*person.Person)
-	var people []*person.Person
+	people := make([]*person.Person, len(peopleToLookUp))
 	err = datastore.GetMulti(wr.Context, peopleToLookUp, people)
 	if err != nil {
 		log.Printf("fetching people: %v", err)
