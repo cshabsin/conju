@@ -79,6 +79,8 @@ func Register() {
 
 	AddSessionHandler("/testFinalEmail", handleTestSendFinalEmail).Needs(AdminGetter)
 
+	AddSessionHandler("/info", handleInfo)
+
 	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 
