@@ -167,6 +167,8 @@ func GetEventForHost(ctx context.Context, host string, e **Event, key **datastor
 		shortname = "PSR2019"
 	} else if host == "psr2021.shabsin.com" {
 		shortname = "PSR2021"
+	} else if host == "psr.shabsin.com" {
+		shortname = "PSR2022"
 	} else {
 		return false, nil
 	}
