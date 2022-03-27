@@ -24,7 +24,7 @@
 {{if not .RealizedInvitations}}Copy invitations from: 
   <select name="baseEvent">
     {{range .AllEvents}}
-      <option value="{{.Key}}">{{.ShortName}}</option>
+      <option value="{{.EncodedKey}}">{{.ShortName}}</option>
     {{end}}
   </select>
   <input type="submit" value="Create"/>

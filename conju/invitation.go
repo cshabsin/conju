@@ -443,7 +443,9 @@ func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
 	}
 
 	baseEventKey, err := datastore.DecodeKey(baseEventKeyEncoded)
-	log.Printf("error decoding event key: %v", err)
+	if err != nil {
+		log.Printf("error decoding event key: %v", err)
+	}
 	var invitations []*Invitation
 	q := datastore.NewQuery("Invitation").Filter("Event =", baseEventKey)
 	q.GetAll(ctx, &invitations)
