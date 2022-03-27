@@ -208,10 +208,8 @@ func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 	}
 
 	ev := &event.Event{}
-	eventKey := datastore.NewIncompleteKey(ctx, "Event", nil)
 	if form["editEventKeyEncoded"] != nil && form["editEventKeyEncoded"][0] != "" {
-		var err error
-		eventKey, err = datastore.DecodeKey(form["editEventKeyEncoded"][0])
+		eventKey, err := datastore.DecodeKey(form["editEventKeyEncoded"][0])
 		if err != nil {
 			log.Printf("decoding event key from form: %v", err)
 		}
