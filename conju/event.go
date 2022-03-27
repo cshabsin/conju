@@ -3,7 +3,6 @@ package conju
 // TODO: move to "package models"?
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"html/template"
@@ -83,7 +82,7 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 		return
 	}
 
-	log.Printf("Datastore lookup took %s", time.Since(tic).String())
+	log.Printf("GetAllEvents: Datastore lookup took %s", time.Since(tic).String())
 	log.Printf("Rendering %d events", len(allEvents))
 
 	allVenues, err := venue.AllVenues(ctx)
@@ -141,6 +140,7 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 			log.Printf("Error decoding key from editEvent: %v", err)
 		}
 	}
+	log.Print(2)
 	var editEvent *event.Event
 	eventRoomMap := make(map[string]bool)
 	rsvpStatusMap := make(map[invitation.RsvpStatus]bool)
@@ -165,6 +165,7 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 	}
 
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	log.Print(3)
 
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"Events":              allEvents,
@@ -195,6 +196,7 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "events.html", data); err != nil {
 		log.Printf("%v", err)
 	}
+	log.Print(4)
 }
 
 func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
@@ -202,9 +204,7 @@ func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 	form := wr.Request.Form
 
 	for key, value := range form {
-		b := new(bytes.Buffer)
-		fmt.Fprintf(b, "%s=\"%s\"\n", key, value)
-		log.Printf(b.String())
+		log.Printf("%s=\"%s\"\n", key, value)
 	}
 
 	ev := &event.Event{}
@@ -217,7 +217,7 @@ func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 		}
 		ev, err = event.GetEvent(ctx, eventKey)
 		if err != nil {
-			log.Printf("decoding event key from form: %v", err)
+			log.Printf("getting event from form: %v", err)
 		}
 	}
 
