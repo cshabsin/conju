@@ -128,6 +128,7 @@ type HousingPreferenceBooleanInfo struct {
 	ForMultiples              bool
 	Bit                       int
 	PreferenceType            HousingPreferenceBooleanType
+	Hidden                    bool
 }
 
 func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
@@ -168,6 +169,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ForChildren:               true,
 		Bit:                       8,
 		PreferenceType:            Acceptable,
+		Hidden:                    true,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean:                   PreferFar,
@@ -187,6 +189,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		ReportDescription:         "Farther Building Okay",
 		Bit:                       1,
 		PreferenceType:            Acceptable,
+		Hidden:                    true,
 	})
 	toReturn = append(toReturn, HousingPreferenceBooleanInfo{
 		Boolean:                   ShareBed,

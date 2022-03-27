@@ -1,6 +1,7 @@
 <script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
 {{template "main.html" .}}
 {{define "body"}}
+<!-- viewInvitation.html -->
 
 <script>
   var allStatuses = [
@@ -8,8 +9,6 @@
  {shortDescription: "{{.ShortDescription}}", attending: {{.Attending}}, undecided: {{.Undecided}}, noLodging: {{.NoLodging }}},
   {{end}}
 ];
-
-
 
   function adjustArrows() {
     $(".listUpArrow img").show();
@@ -329,7 +328,7 @@ function validate(form) {
 <td>
   {{$InvitationHasChildren := .InvitationHasChildren}}
   {{range $i, $pref := .AllHousingPreferenceBooleans}}
-    {{if or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples))}}
+    {{if and (not $pref.Hidden) (or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples)))}}
       <div><input type="checkbox" name="housingPreferenceBooleans" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}>
         {{if $single}}
           {{$pref.SinglePersonDescription}}
