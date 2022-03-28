@@ -207,6 +207,8 @@ func makeSendMailLink(templateName string) string {
 	return "/sendMail?emailTemplate=" + templateName
 }
 
+const senders = "Dana Scott and Chris Shabsin"
+
 func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 	headerData MailHeaderInfo) error {
 	text, html, subject, err := renderMail(wr, templatePrefix, data,
@@ -226,7 +228,7 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 
 	// TODO(cshabsin): get string name from somewhere environmental?
 	message := &mail.SGMailV3{
-		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+		From:    mail.NewEmail(senders, wr.GetSenderAddress()),
 		Subject: subject,
 		Content: []*mail.Content{
 			mail.NewContent("text/plain", text),
@@ -261,7 +263,7 @@ func sendErrorMail(wr WrappedRequest, message string) {
 	mailPersonalizations := mail.NewPersonalization()
 	mailPersonalizations.AddTos(mail.NewEmail("Errors", wr.GetErrorAddress()))
 	msg := &mail.SGMailV3{
-		From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+		From:    mail.NewEmail(senders, wr.GetSenderAddress()),
 		Subject: "[conju] Runtime error report",
 		Content: []*mail.Content{
 			mail.NewContent("text/plain", message),

@@ -115,7 +115,7 @@ func handleSendRoomingEmail(ctx context.Context, wr WrappedRequest, emailName st
 	for _, to_render := range rendered_mail {
 		p := to_render.Person
 		message := &mail.SGMailV3{
-			From:    mail.NewEmail("Chris and Dana", wr.GetSenderAddress()),
+			From:    mail.NewEmail(senders, wr.GetSenderAddress()),
 			Subject: to_render.Subject,
 			Content: []*mail.Content{
 				mail.NewContent("text/plain", to_render.Text),
