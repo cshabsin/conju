@@ -10,13 +10,13 @@ handlers:
   secure: always
 
 env_variables:
-  SENDGRID_API_KEY: "put key here"
-  SENDER_ADDRESS: "*** sender address ***"
-  BCC_ADDRESS: "*** bcc address ***"
-  ERROR_ADDRESS: "*** error address ***"
-  GOOGLE_WALLET_ADDRESS: "..."
-  VENMO_ADDRESS: "..."
-  PAYPAL_ADDRESS: "..."
+  SENDGRID_API_KEY: "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"
+  SENDER_ADDRESS: "chrisanddana@shabsin.com"
+  BCC_ADDRESS: "psr-mail@googlegroups.com"
+  ERROR_ADDRESS: "chrisanddana@shabsin.com"
+  GOOGLE_WALLET_ADDRESS: "dana.m.scott@gmail.com"
+  VENMO_ADDRESS: "@Chris-Shabsin"
+  PAYPAL_ADDRESS: "cshabsin@gmail.com"
   PAYPAL_URL: "https://www.paypal.com/"
 
 app_engine_apis: true
