@@ -32,6 +32,7 @@ var AllDistributors = map[string]EmailDistributorEntry{
 }
 
 func SelfOnlyDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
 	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
