@@ -10,7 +10,7 @@ handlers:
   secure: always
 
 env_variables:
-  SENDGRID_API_KEY: "***FILL THIS IN***"
+  SENDGRID_API_KEY: "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"
   SENDER_ADDRESS: "chrisanddana@shabsin.com"
   BCC_ADDRESS: "psr-mail@googlegroups.com"
   ERROR_ADDRESS: "chrisanddana@shabsin.com"
