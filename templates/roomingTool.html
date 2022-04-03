@@ -174,7 +174,7 @@
       <img src="/media/floorplan/{{.FloorplanImageUrl}}" style="width:350px;position:absolute;top:78px"/>
 
    {{range $rooms}}
-      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if (len .Room.Partition) gt 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="dropFromEvent(event)"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}}</div><span class="roomProperties">{{.AllProperties}}</span></div>
+      <div id="{{.Building.Code}}_{{.Room.RoomNumber}}{{if gt (len .Room.Partition) 0}}_{{.Room.Partition}}{{end}}" style="top:{{.Room.ImageTop}}px;left:{{.Room.ImageLeft}}px;width:{{.Room.ImageWidth}}px;height:{{.Room.ImageHeight}}px" ondragover="allowDrop(event)" onDrop="dropFromEvent(event)"><div class="roomLabel">{{.Room.RoomNumber}}{{.Room.Partition}}: {{.BedsString}}</div><span class="roomProperties">{{.AllProperties}}</span></div>
    {{end}}
    </div>
  {{end}}
