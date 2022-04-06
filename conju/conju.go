@@ -82,7 +82,7 @@ func Register() {
 
 	AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
-	AddSessionHandler("/", handleIndex)
+	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 
 	rand.Seed(time.Now().UnixNano())
