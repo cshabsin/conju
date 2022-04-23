@@ -56,14 +56,14 @@
       }
 
       function propertiesMatch(roomProperties, peopleProperties) {
-          var desiredRoomProperties = roomProperties & {{.DesiredMask}};
-          var desiredPeopleProperties = peopleProperties & {{.DesiredMask}};
-          if ((desiredRoomProperties & desiredPeopleProperties) != desiredPeopleProperties) {
-              return false;
-          }
-          var acceptableRoomProperties = roomProperties & {{.AcceptableMask}};
-          var acceptablePeopleProperties = peopleProperties & {{.AcceptableMask}};
-          return (acceptableRoomProperties & ~acceptablePeopleProperties) == 0;
+         var desiredMask = {{.DesiredMask}};
+         var paddingMask = 511; //TODO: generate this programmatically
+
+         var bitwiseResult =  (roomProperties & peopleProperties) |
+                (desiredMask & paddingMask & ~peopleProperties) |
+                (~desiredMask & paddingMask & ~roomProperties);
+
+         return (~bitwiseResult & paddingMask) == 0;
       }
 
       function dropFromEvent(event) {
