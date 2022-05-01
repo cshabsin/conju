@@ -63,7 +63,7 @@ before deploying (look for `****` in at least `email.go` and
 To deploy to AppEngine, use
 
 ```
-$ gcloud app deploy
+$ gcloud beta app deploy
 ```
 
 (Add `--project project-id` if needed.)
