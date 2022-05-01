@@ -208,9 +208,9 @@ function validate(form) {
   Last updated by <b>{{.Invitation.LastUpdatedPerson.Person.FullName}}</b> at {{.Invitation.LastUpdatedTimestamp.Format "2006-01-02 15:04:05"}}.<br><br>
 {{end}}
 
-{{if .RoomingInfo}}
+{{/* {{if .RoomingInfo}}
      {{template "roomingAndCosts_html" .RoomingInfo}}
-{{end}}
+{{end}} */}}
 
 <form action="saveInvitation" method="POST" onsubmit="return validate(this)">
   <input type="hidden" name="invitation" value="{{with .Invitation}}{{.EncodedKey}}{{end}}">
