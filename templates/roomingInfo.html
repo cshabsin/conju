@@ -1,6 +1,6 @@
 {{define "roomingAndCosts_html"}}
 {{template "roomingInfo_html" .}}
-{{template "costs_html" .}}
+{{- /* {template "costs_html" .}} */ -}}
 {{end}}
 
 {{define "roomingInfo_html"}}
@@ -12,7 +12,7 @@
   {{else}}
     <strong>Your room:</strong><br>
   {{end}}
-  <div style="display:inline-block;margin-bottom:20px">
+  <div style="display:inline-block;margin-bottom:0px">
 
   {{range .InviteeBookings}}
   <div style="margin:10px 0px 15px 20px">
@@ -34,6 +34,18 @@
   {{end}}
 </div>
 </div>
+
+{{- if gt (len .Unreserved) 1}}
+<p>Please have one person from each room call Purity Spring at 603-367-8896, tell them you are with the Scott/Shabsin party of June 9-12, and ask to reserve:<p>
+<div style="margin-left:20px">{{range .Unreserved}}
+    {{.Building.Name}}, Room {{.Room.RoomNumber}}<br>{{end}}
+</div>
+  {{- else if gt (len .Unreserved) 0}}
+<p>Please have one person call Purity Spring at 603-367-8896, tell them you are with the Scott/Shabsin party of June 9-12, and ask to reserve {{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}{{end}}{{- if gt (len .Unreserved) 1}}<p>{{else}} {{end -}}
+
+for {{if .ThuFriSat}}Thursday to Saturday nights (6/9-6/12){{else}}Friday and Saturday nights (6/10-6/12){{end}}.</p>
+
+They will have this information on file.  You will need to leave a deposit equal to one night's stay, and pay the balance when you check out.</p>
 {{end}}
 
 {{define "costs_html"}}
@@ -55,23 +67,44 @@
 
 {{define "roomingAndCosts_text"}}
 {{template "roomingInfo_text" .}}
-{{template "costs_text" .}}
+{{- /* {{template "costs_text" .}} */ -}}
 {{end}}
 
 
 
 {{define "roomingInfo_text"}}
 {{$MultiRoom := (gt (len .InviteeBookings) 1)}}
-{{if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
+{{- if $MultiRoom}}Your rooms:{{else}}Your room:{{end}}
 {{range .InviteeBookings}}
-{{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
+  {{- if $MultiRoom}}  {{CollectiveAddressFirstNames (DerefPeople .Roommates) 0}}:
 {{end}}
-{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}{{end}}
-{{- if gt (len .RoomSharers) 0}} with:
+{{- if .Building}}    {{.Building.Name}}, room {{.Room.RoomNumber}}
+{{end}}
+{{- if gt (len .RoomSharers) 0}}  with:
   {{- range .RoomSharers}}
-      {{SharerName . -}}
-  {{end}}{{end}}{{end}}
+    {{SharerName .}}
 {{end}}
+{{end}}{{end}}
+
+{{- if gt (len .Unreserved) 1}}
+Please have one person from each room (the person you told us would make the reservation) call Purity Spring
+at 603-367-8896, tell them you are with the Scott/Shabsin party of June 9-12, and ask to reserve:
+{{range .Unreserved}}
+    {{.Building.Name}}, Room {{.Room.RoomNumber}}{{end}}
+{{- else if gt (len .Unreserved) 0}}
+Please have one person per roon (the person you told us would make the reservation) call Purity Spring
+at 603-367-8896, tell them you arewith the Scott/Shabsin party of June 9-12, and ask to reserve
+{{(index .Unreserved 0).Building.Name}}, room {{(index .Unreserved 0).Room.RoomNumber}}{{end}}
+{{- if gt (len .Unreserved) 1}}
+
+{{else}} {{end -}}
+for {{if .ThuFriSat}}Thursday to Saturday nights (6/9-6/12){{else}}Friday and Saturday nights (6/10-6/12){{end}}.
+
+They will have this information on file.  You will need to leave a deposit equal
+to one night's stay, and pay the balance when you check out.
+{{end}}
+
+
 
 {{define "costs_text"}}
 Cost:
