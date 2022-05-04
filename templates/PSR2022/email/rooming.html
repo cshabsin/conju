@@ -1,6 +1,6 @@
 {{define "rooming_and_costs_subject"}}
   {{if gt (len .Unreserved) 0}}
-    Please reserve your room at Purity Spring Resort!
+    Please put down your deposit at Purity Spring Resort!
   {{else}}
     Your room assignment for Purity Spring Resort
   {{end}}
@@ -9,14 +9,14 @@
 {{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
 
 
-Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end -}}
+Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to pay your room deposit.{{end -}}
 
 {{- template "roomingInfo_text" .RoomingInfo}}
 If you foresee any problem with your rooms, let us know.  We're happy to answer
 any questions.  We appreciate your patience and flexibility.
 
-{{if gt (len .Unreserved) 0}}We are right up against our deposit deadline, so we'd appreciate 
-it if you could book your rooms as soon as possible.{{else}}Thank you for reserving your room promptly! Consider this a purely informative email.{{end}}
+{{if gt (len .Unreserved) 0}}We are right up against our deposit deadline, so we'd appreciate it if you could call  as soon
+as possible.{{else}}Thank you for reserving your room promptly! Consider this a purely informative email.{{end}}
 
 As always, you can update your rsvp or profile on our event website: 
 
@@ -32,13 +32,13 @@ Chris, Dana, Lydia & Max
 <p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
 
 
-<p>Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to reserve your room.{{end}}</p>
+<p>Our Purity Spring weekend is coming up fast! (Yikes!){{if gt (len .Unreserved) 0}} It's time to pay your room deposit.{{end}}</p>
 
  {{template "roomingInfo_html" .RoomingInfo}}
 
 <p>If you foresee any problem with your rooms, let us know.  We're happy to answer any questions.  We appreciate your patience and flexibility</p>
 
-<p>{{if gt (len .Unreserved) 0}}<strong>We'd appreciate it if you could book your rooms as soon as possible.</strong>{{else}}Thank you for reserving your room promptly!  Consider this a purely informative email.{{end}}</p>
+<p>{{if gt (len .Unreserved) 0}}<strong>We'd appreciate it if you could call as soon as possible.</strong>{{else}}Thank you for reserving your room promptly!  Consider this a purely informative email.{{end}}</p>
 
 <p>As always, you can <a href="{{.LoginLink}}">update your rsvp or profile</a> on our event website.
 
