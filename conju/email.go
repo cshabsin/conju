@@ -40,7 +40,7 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 
 	tpl, err = tpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", fmt.Errorf("parsing templates %s: %v", "templates/"+wr.Event.ShortName+"/email/*.html", err)
 	}
 
 	// Hard-code that we want the roomingInfo template available for now.
@@ -104,6 +104,12 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
 	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	var unreserved []BuildingRoom
+	for _, booking := range roomingInfo.InviteeBookings {
+		if !booking.ReservationMade {
+			unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+		}
+	}
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
@@ -111,6 +117,7 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person),
 		"RoomingInfo": roomingInfo,
 		"Env":         wr.GetEnvForTemplates(),
+		"Unreserved":  unreserved,
 	}
 	text, html, subject, err := renderMail(wr, emailTemplate, emailData, true)
 	if err != nil {
@@ -166,6 +173,14 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 		if _, ok := emailData["Env"]; !ok {
 			emailData["Env"] = wr.GetEnvForTemplates()
 		}
+
+		var unreserved []BuildingRoom
+		for _, booking := range emailData["RoomingInfo"].(*RoomingAndCostInfo).InviteeBookings {
+			if !booking.ReservationMade {
+				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+			}
+		}
+		emailData["Unreserved"] = unreserved
 		return sendMail(wr, emailTemplate, emailData, headerData)
 	}
 	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {

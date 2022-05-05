@@ -273,7 +273,7 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 		"DerefPeople":                 DerefPeople,
 	}
 
-	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2018/email/" + emailName + ".html"))
+	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/PSR2022/email/" + emailName + ".html"))
 
 	textFunctionMap := text_template.FuncMap{
 		"HasHousingPreference":        RealInvHasHousingPreference,
@@ -282,13 +282,13 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
-	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2018/email/" + emailName + ".html"))
+	text_tpl := text_template.Must(text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/PSR2022/email/" + emailName + ".html"))
 
 	rendered_mail := make(map[int64]RenderedMail, 0)
 	for inv, bookings := range allInviteeBookings {
 		// invitation is ID from key.
 		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", inv, nil), invitationMap[inv])
-		unreserved := make([]BuildingRoom, 0)
+		var unreserved []BuildingRoom
 		for _, booking := range bookings {
 			if !booking.ReservationMade {
 				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
