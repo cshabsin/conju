@@ -105,9 +105,11 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		wr.LoginInfo.Invitation)
 	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	var unreserved []BuildingRoom
-	for _, booking := range roomingInfo.InviteeBookings {
-		if !booking.ReservationMade {
-			unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+	if roomingInfo != nil {
+		for _, booking := range roomingInfo.InviteeBookings {
+			if !booking.ReservationMade {
+				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+			}
 		}
 	}
 	emailData := map[string]interface{}{
@@ -132,7 +134,12 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		"HTMLBody":        template.HTML(html),
 		"AllDistributors": AllDistributors,
 	})
-	tpl := template.Must(template.ParseFiles("templates/main.html", "templates/sendEmail.html"))
+	tpl, err := template.ParseFiles("templates/main.html", "templates/sendEmail.html")
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Parsing files: %v", err),
+			http.StatusInternalServerError)
+		return
+	}
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "sendEmail.html", data); err != nil {
 		http.Error(wr.ResponseWriter,
 			fmt.Sprintf("Rendering HTML display: %v", err),
