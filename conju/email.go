@@ -174,17 +174,21 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 		return
 	}
 	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
+		p := emailData["Person"].(*person.Person)
 		if _, ok := emailData["LoginLink"]; !ok {
-			emailData["LoginLink"] = makeLoginUrl(emailData["Person"].(*person.Person))
+			emailData["LoginLink"] = makeLoginUrl(p)
 		}
 		if _, ok := emailData["Env"]; !ok {
 			emailData["Env"] = wr.GetEnvForTemplates()
 		}
 
+		roomingAndCostInfo := emailData["RoomingInfo"].(*RoomingAndCostInfo)
 		var unreserved []BuildingRoom
-		for _, booking := range emailData["RoomingInfo"].(*RoomingAndCostInfo).InviteeBookings {
-			if !booking.ReservationMade {
-				unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+		if roomingAndCostInfo != nil {
+			for _, booking := range roomingAndCostInfo.InviteeBookings {
+				if !booking.ReservationMade {
+					unreserved = append(unreserved, BuildingRoom{booking.Room, booking.Building})
+				}
 			}
 		}
 		emailData["Unreserved"] = unreserved
