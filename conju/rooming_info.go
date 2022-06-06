@@ -41,6 +41,18 @@ type BuildingRoom struct {
 // about the people in the room.
 type InviteeBookingsMap map[BuildingRoom]InviteeRoomBookings
 
+func (ibm InviteeBookingsMap) IsKingPine() bool {
+	for k := range ibm {
+		if k.Building.Name == "Upper King Pine" {
+			return true
+		}
+		if k.Building.Name == "Lower King Pine" {
+			return true
+		}
+	}
+	return false
+}
+
 // RoomingAndCostInfo contains the cost info for the people in one invitation.
 type RoomingAndCostInfo struct {
 	Invitation      *Invitation
@@ -173,7 +185,11 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 		// Figure out if anyone's invitation signals need for a double bed.
 		doubleBedNeeded := false
 		for _, person := range booking.Roommates {
-			invitation := invitationMap[personToInvitationMap[person.IntID()]]
+			invitation, ok := invitationMap[personToInvitationMap[person.IntID()]]
+			if !ok {
+				log.Printf("no invitation for person %v", person)
+				break
+			}
 			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
 		}
 
