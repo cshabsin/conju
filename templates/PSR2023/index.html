@@ -1,0 +1,96 @@
+<script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
+{{template "main.html" .}}
+{{define "body"}}
+{{$photoDirectory := "media/PSR2021/photos"}}
+<script>
+  $(document).ready(function () {
+
+    $(".headerMainPicture img")
+      .mouseover(function () {
+        $(this).attr("src", "{{$photoDirectory}}/group-2017-silly.jpg");
+      })
+      .mouseout(function () {
+        $(this).attr("src", "{{$photoDirectory}}/group-2017-normal.jpg");
+      });
+  })
+
+</script>
+<div class="headerPictures">
+  <div class="headerSidePicture"><img src="{{$photoDirectory}}/campfire.jpg" /></div>
+  <div class="headerMainPicture"><img src="{{$photoDirectory}}/group-2017-normal.jpg" /></div>
+  <div class="headerSidePicture"><img src="{{$photoDirectory}}/concept.jpg"></div>
+</div>
+
+<div class="bottom">
+  <div class="sidebarPictures">
+    <img src="{{$photoDirectory}}/jigsaw_puzzle.jpg" />
+    <img src="{{$photoDirectory}}/group-jumping.jpg" />
+    {{if .LoginInfo.Person}}
+    <img src="{{$photoDirectory}}/SingingGroup.jpg" />
+    <img src="{{$photoDirectory}}/group-hiking.jpg" />
+    <img src="{{$photoDirectory}}/archery.jpg" />
+    <img src="{{$photoDirectory}}/Shenanigans.jpg" />
+    {{end}}
+  </div>
+
+  <div class="homeMain">
+    <div class="textHeader">
+      <h1 class="textHeaderTitle">Chris &amp; Dana's Summer Retreat</h1>
+      <h2 class="textHeaderPlace">at Purity Spring Resort</h2>
+      <h2 class="textHeaderDate">June 8th-11th, 2023</h2>
+    </div>
+    <div class="mainContent">
+      <p> Eleven years ago we invited some of our friends and family up into the mountains of New Hampshire to hang out
+        for the weekend while we got married. We had so much fun that we're doing it again and skipping the wedding
+        part!
+      </p>
+
+      {{if not .LoginInfo.Person}}
+      <!-- <p>For more information, click on the link in your invitation to log in. Can't find the email? <a
+          href="login">Fetch your login information.</a></p>  -->
+      <p style="font-size:150%">Yes, this is happening!  Save the date!  Email invitations will be going out soon.</p> -->
+      {{else}}
+      <p>
+	This year our retreat will run from Thursday, June 8th until Sunday, June 11th. Most structured activities
+        will happen between Friday evening and Sunday night. We expect that there will be a small group Thursday night
+	and many more people around Friday - Sunday.
+      </p>
+
+      <p>
+	Our goal is to provide a framework for you to have the kind of weekend that would be most fun for you, whether
+        that means hiking and swimming, playing board games and doing jigsaw puzzles, or sitting in a quiet pretty place
+        with a book. If you would like to run an activity, let us know if there is any support you need from us or from
+        Purity Spring.
+      </p>
+
+      <p>
+	We ask that everyone be as vaccinated against COVID as they can be (initial series plus covalent booster if possible)
+        before the weekend, and take a rapid test before arriving or before leaving your room in the morning.
+      </p>
+
+
+      <p>
+	The cost PER ROOM per night ranges from $145-$245, and you have a choice between a two-night stay (Friday to Sunday, 
+	$290-$490 per room), or a three-night stay (Thursday to Sunday, $435-$735 per room). This cost does not yet include
+	any food: we're still working on a plan.  If the cost of the weekend is what's preventing you from attending, let us know.
+      </p>
+
+      <p>
+	If you'd like to join us, fill out our <a href="rsvp">RSVP form.</a> 
+      </p>
+
+
+      <p style="margin-top:30px;">
+	We hope to see you in June! <a href="rsvp">Let us know</a> if you can join us &ndash;
+        you can always use the link at the top of this page. Please <a href="mailto:shabsinscott@gmail.com">email us</a>
+        if you have any concerns or questions.
+      </p>
+
+      {{end}}
+
+    </div>
+  </div>
+</div>
+
+
+{{end}}
