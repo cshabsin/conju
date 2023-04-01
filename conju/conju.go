@@ -12,9 +12,6 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-// SiteLink holds the current URL to base absolute links on.
-const SiteLink = "https://psr.shabsin.com"
-
 func Register() {
 	http.HandleFunc("/_ah/start", func(w http.ResponseWriter, r *http.Request) {
 		datastore.EnableKeyConversion(appengine.NewContext(r))

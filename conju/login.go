@@ -262,5 +262,5 @@ func handleResentInvitation(ctx context.Context, wr WrappedRequest) {
 }
 
 func makeLoginUrl(p *person.Person) string {
-	return SiteLink + "/login?loginCode=" + p.LoginCode
+	return "/login?loginCode=" + p.LoginCode
 }
