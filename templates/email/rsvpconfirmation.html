@@ -64,9 +64,10 @@
 {{if not (eq $Invitation.AdditionalPassengers "")}}
   <tr><td>Additional Passengers:</td><td><b>{{$Invitation.AdditionalPassengers}}</b></td></tr>
 {{end}}
-  {{if not (eq $Invitation.TravelNotes "")}}
+{{if not (eq $Invitation.TravelNotes "")}}
 <tr><td style="vertical-align:top">Travel notes:</td><td><b>{{$Invitation.TravelNotes}}</b></td></tr>
 {{end}}
+<tr><td style="vertical-align:top">COVID policy acknowledgement:</td><td><b>{{$Invitation.COVIDAcked}}</b></td></tr>
 </table>
 
 <table>

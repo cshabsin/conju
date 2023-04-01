@@ -46,6 +46,7 @@ type Invitation struct {
 	ReceivedPay               float64 // US Dollars
 	ReceivedPayMethod         string
 	ReceivedPayDate           time.Time
+	COVIDAcked                bool
 }
 
 const delimiter = "|_|"
@@ -227,6 +228,10 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		{
 			Name:  "ReceivedPayMethod",
 			Value: inv.ReceivedPayMethod,
+		},
+		{
+			Name:  "COVIDAcked",
+			Value: inv.COVIDAcked,
 		},
 	}
 
@@ -692,6 +697,8 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	inv.AdditionalPassengers = wr.Request.Form.Get("additionalPassengers")
 	inv.TravelNotes = wr.Request.Form.Get("travelNotes")
 	inv.OtherInfo = wr.Request.Form.Get("otherInfo")
+	log.Printf("covidAcked = %q", wr.Request.Form.Get("covidAcked"))
+	inv.COVIDAcked = wr.Request.Form.Get("covidAcked") == "on"
 
 	thursdayDinnerCount, err := strconv.Atoi(wr.Request.Form.Get("ThursdayDinnerCount"))
 	if err == nil {
