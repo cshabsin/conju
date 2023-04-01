@@ -1,6 +1,8 @@
 package conju
 
-import "github.com/cshabsin/conju/invitation"
+import (
+	"github.com/cshabsin/conju/invitation"
+)
 
 // Each event should have a list of acceptable RSVP statuses
 type RsvpStatus int
@@ -109,6 +111,8 @@ const (
 	ShareBed
 	WillingExpensive
 	PreferExpensive
+	WillingCOVIDCautious
+	PreferCOVIDCautious
 )
 
 type HousingPreferenceBooleanType int
@@ -199,7 +203,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 			SinglePersonDescription:   "I would be willing to stay in nicer, more expensive (+~$50/night) housing that is ~300 yards away from the main common room.",
 			ReportDescription:         "Expensive Housing Okay",
 			Bit:                       128,
-			PreferenceType:		   Acceptable,
+			PreferenceType:            Acceptable,
 		},
 		{
 			Boolean:                   PreferExpensive,
@@ -208,7 +212,7 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 			SinglePersonDescription:   "I would prefer to stay in nicer, more expensive (+~$50/night) housing that is ~300 yards away from the main common room.",
 			ReportDescription:         "Expensive Housing Preferred",
 			Bit:                       256,
-			PreferenceType:		   Desired,
+			PreferenceType:            Desired,
 		},
 		{
 			Boolean:                   ShareBed,
@@ -220,8 +224,25 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 			Bit:                       2,
 			PreferenceType:            Desired,
 		},
+		{
+			Boolean:                   WillingCOVIDCautious,
+			Name:                      "WillingCOVIDCautious",
+			MultiplePeopleDescription: "We are willing to stay in COVID-cautious housing.",
+			SinglePersonDescription:   "I am willing to stay in COVID-cautious housing.",
+			ReportDescription:         "COVID Okay",
+			Bit:                       512,
+			PreferenceType:            Acceptable,
+		},
+		{
+			Boolean:                   PreferCOVIDCautious,
+			Name:                      "PreferCOVIDCautious",
+			MultiplePeopleDescription: "We would prefer to stay in COVID-cautious housing.",
+			SinglePersonDescription:   "I would prefer to stay in COVID-cautious housing.",
+			ReportDescription:         "COVID Okay",
+			Bit:                       1024,
+			PreferenceType:            Acceptable,
+		},
 	}
-
 	return toReturn
 }
 
