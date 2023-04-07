@@ -1,4 +1,5 @@
 <script type="text/JavaScript" src="../media/jquery-3.3.1.min.js"></script>
+<script type="text/JavaScript" src="../media/pricing_estimate.js"></script>
 {{template "main.html" .}}
 {{define "body"}}
 <!-- viewInvitation.html -->
@@ -91,6 +92,7 @@
       $(".extraInfoThursday").hide();
     }
 
+    computeCost();
   }
 
 
@@ -353,7 +355,7 @@ function validate(form) {
 
     {{$single := (eq (len .Invitation.Invitees) 1)}}
     <table class="rsvpHousing"><tr><td>
-	  <select class="housingPreference" name="housingPreference">
+	  <select class="housingPreference" name="housingPreference" onchange="computeCost()">
             {{range $p, $pref := .AllHousingPreferences}}
 	    <option value="{{$p}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
             {{end}}
@@ -365,7 +367,7 @@ function validate(form) {
   {{$InvitationHasChildren := .InvitationHasChildren}}
   {{range $i, $pref := .AllHousingPreferenceBooleans}}
     {{if and (not $pref.Hidden) (or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples)))}}
-      <div><input type="checkbox" name="housingPreferenceBooleans" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}>
+      <div><input type="checkbox" name="housingPreferenceBooleans" onchange="computeCost()" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}>
         {{if $single}}
           {{$pref.SinglePersonDescription}}
         {{else}}
@@ -427,6 +429,19 @@ function validate(form) {
     Anything else you'd like us to know in advance of the weekend?<br>
     <textarea class="freeformtextfield" name="otherInfo">{{$Invitation.OtherInfo}}</textarea>
   <div class="invitationCloser">{{$Invitation.Event.InvitationClosingText}}</div>
+
+
+    Your ESTIMATED cost for the weekend: <span class="onlyCost"></span> <br><br>
+    <table class="roommateCosts">
+      <th><td>Number of Roommates</td><td>Your cost</td></th>
+      <tr><td>0</td><td class="cost0Roommates"><td></tr>
+      <tr><td>1</td><td class="cost1Roommates"><td></tr>
+      <tr><td>2</td><td class="cost2Roommates"><td></tr>
+      <tr><td>3</td><td class="cost3Roommates"><td></tr>
+    </table>
+
+
+
   </div>
 
   <input class="emphasizedSubmit" type="submit" value="Submit">
