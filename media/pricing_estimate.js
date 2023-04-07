@@ -15,13 +15,13 @@ function computeCost() {
     $(".cost1Roommates").text("$" + computeCostWithRoommates(1));
     $(".cost2Roommates").text("$" + computeCostWithRoommates(2));
     $(".cost3Roommates").text("$" + computeCostWithRoommates(3)); 
-    $(".onlyCosts").hide();
+    $(".onlyCost").hide();
     $(".roommateCosts").show();
 
   } else {
-    $(".onlyCost").text("$" + computeCostWithRoommates(0));  
+    $(".onlyCost").text("$" + computeCostWithRoommates(0));
     $(".roommateCosts").hide();
-    $(".onlyCosts").show();
+    $(".onlyCost").show();
   }
 }
 
