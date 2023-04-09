@@ -26,22 +26,25 @@
 {{end}}
 
 {{define "foodInfoForm"}}
-      {{$index := .PersonIndex}}
-      {{$FoodRestrictionMap := .ThisPerson.GetFoodRestrictionMap}}
-      <tr class="foodInfo"><td>Food Restrictions:</td><td>
-        <table><tr><td>
-          {{range $i, $restriction := .AllFoodRestrictions}}
-            {{$RestrictionMapValue := index $FoodRestrictionMap $restriction.Tag}} 
-            <label><input type="checkbox" name="FoodRestrictions{{$index}}" value="{{.Tag}}"
-            {{if eq 1 $RestrictionMapValue}}checked{{end}}
-            >{{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}</label><br>
-            {{if eq $i 4}}</td><td>{{end}}
-          {{end}}
-        </td></tr></table>
-      </td></tr>
+   
+  {{$index := .PersonIndex}}
+  {{$FoodRestrictionMap := .ThisPerson.GetFoodRestrictionMap}}
+    <div class="foodInfo">
+      <div class="foodRestrictions">
+      {{range $i, $restriction := .AllFoodRestrictions}}
+        {{$RestrictionMapValue := index $FoodRestrictionMap $restriction.Tag}} 
+        <div>
+          <label><input type="checkbox" name="FoodRestrictions{{$index}}" value="{{.Tag}}"
+          {{if eq 1 $RestrictionMapValue}}checked{{end}}>  {{.Description}}{{if ne .Supplemental ""}}: {{.Supplemental}}{{end}}</label>
+        </div>
+      {{end}}
+    </div>
 
-      <tr class="foodInfo"><td style="width:150px">What else do we need to know to keep you fed for a weekend? </td><td><textarea type="text" name="FoodNotes" class="freeformTextField">{{with .ThisPerson}}{{.FoodNotes}}{{end}}</textarea></td></tr>
+    What else do we need to know to keep you fed for a weekend?<br><br>
+    <textarea type="text" name="FoodNotes" class="freeformTextField">{{with .ThisPerson}}{{.FoodNotes}}{{end}}</textarea>
+  </div>
 {{end}}
+
 {{define "adminInfoForm"}}
         <tr><td>Approx age during current event:</td><td><input type="text" name="FallbackAge" value="{{with .ThisPerson}}{{.FallbackAge}}{{end}}"></td></tr>
         <tr><td>Need birthdate:</td><td><input type="checkbox" name="NeedBirthdate" {{if .ThisPerson.NeedBirthdate}}checked{{end}}></td></tr>

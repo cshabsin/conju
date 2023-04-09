@@ -51,6 +51,32 @@ input[type=checkbox]
   padding: 10px;
 }
 
+@media only screen and (max-width:1000px) {
+    .textarea{font-size: 22pt;}
+    .formTable{width:100%} 
+    .formTable td, th{font-size: 22pt;}
+    .formTable input, select {
+       margin:15px 0px;
+       -ms-transform: scale(2); /* IE */
+       -moz-transform: scale(2); /* FF */
+       -webkit-transform: scale(2); /* Safari and Chrome */
+       -o-transform: scale(2); /* Opera */
+     }
+     .formTable input[type=checkbox] {margin-right:25px}
+     .formTable input[type=radio] {margin-right:25px}
+     label{font-size: 20pt}
+     h4{margin-top:70px}
+     input[type=radio]{
+       /* Double-sized Checkboxes */
+       -ms-transform: scale(2); /* IE */
+       -moz-transform: scale(2); /* FF */
+       -webkit-transform: scale(2); /* Safari and Chrome */
+       -o-transform: scale(2); /* Opera */
+       padding: 10px;
+     }
+ }
+ 
+
 #header {
     padding:5px 10px;
     border-bottom:1px solid  #1F1497;
@@ -116,11 +142,15 @@ textarea {width:100%}
 table.listTable{margin:20px; border-collapse: collapse}
 table.listTable td{padding:5px; vertical-align:top; border-top:1px solid #1F1497; border-bottom:1px solid #1F1497;}
 
-table.formtable {margin:20px}
-.formtable td{padding:5px 0px;vertical-align:top}
+table.formTable {margin:20px}
+.formTable td{padding:5px 0px;vertical-align:top}
+.formTable input[type="checkbox"] {padding-right:10px}
 
 .addressField {width:150px;}
 .freeformTextField {width: 450px;height: 150px}
+@media only screen and (max-width:1000px) {
+  .freeformTextField{width:100%}
+}
 
 .rideSharingOptions {
     margin:10px 0px;
@@ -191,12 +221,58 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
 
 .invitationPersonalInfoLink a:hover{    color:      #1F1497;}
 
+
 .food {padding: 20px;}
+.foodRestrictions{margin: 20px}
+.foodRestrictions div{padding: 5px 0px}
 .personal {padding: 20px;}
 
 .inputHighlight{color: red}
 
-.rsvpStatus {margin-left:25px}
+.addNewPersonButton {
+    font-size: 120%;
+    border: 2px solid #1F1497;
+    margin-top: 15px;
+}
+
+.rsvpStatus{margin-left:29px}
+
+@media only screen and (max-width:1000px) {
+.rsvpStatus {
+    margin: 25px 0px 25px 138px;
+    /* Double-sized Checkboxes */
+    -ms-transform: scale(2); /* IE */
+    -moz-transform: scale(2); /* FF */
+    -webkit-transform: scale(2); /* Safari and Chrome */
+    -o-transform: scale(2); /* Opera */
+    padding: 10px;
+  }
+  .personSupplementaryInfo{font-size:22pt}
+  .personalInfo td:nth-child(2){width:100%; padding-left: 20px;}
+  .personalInfo textarea{width:100%; height:60px; font-size:25px}
+  .personalInfo input  {margin-left:90px}
+  .personalInfo select {margin-left:68px}
+  .housingPreference, .drivingPreference {margin:20px 0px 35px 200px}
+  .housingPreferenceBoolean {font-size:22pt; padding:5px 0px;}
+  .rideSharingOptions td{font-size:22pt}
+  .rideSharingOptions td:nth-child(1){width:60%;}
+  .rideSharingOptions input{margin-left:120px; width:150px}
+  .allDrivers{font-size:22pt}
+  .emphasizedSubmit{
+    width:200px;
+    height:100px;
+    font-size:200%;
+    border-radius:25px;
+    margin-top:30px;
+  }
+  .covidAcknowledgement{font-weight:bold; font-size:25pt}
+  .addNewPersonButton {font-size: 22pt; border: 2px solid #1F1497;}
+  .newPersonInstructionsSingular{font-size:22pt}
+  .newPersonInstructionsPlural{font-size:22pt}
+}
+
+
+
 
 .rsvpHousing td {
     vertical-align: top;
@@ -240,10 +316,6 @@ input[type="submit"] {background-color: #1F1497; color: #EEEEEE;}
 .newPersonInstructionsSingular, .newPersonInstructionsPlural {
     margin-top:20px;
     margin-bottom:20px;
-}
-
-.addNewPersonButton {
-    font-size: 120%;
 }
 
 .allDrivers {

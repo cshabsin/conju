@@ -116,9 +116,11 @@
   }
 
   function addNewPersonContainer() {
-    $("#newPersonCollectionContainer").append("<div class=\"newPersonContainer\">" +
-      "Name: <input type=\"text\" name=\"newPersonName\">" +
-      "Who is this person? <input type=\"text\" name=\"newPersonDescription\"/></div>");
+
+    $("#newPersonCollectionContainer").append("<div class=\"newPersonContainer\">" +                     
+      "<table class=\"formTable\">" + 
+      "<tr><td>Name:</td><td><input type=\"text\" name=\"newPersonName\"></td></tr>" +
+      "<tr><td>Who is this person?</td><td><input type=\"text\" name=\"newPersonDescription\"/></td></tr></table></div>");
       adjustAddPersonInputs();
   }
 
@@ -161,11 +163,17 @@
         processRsvpStatus(i);
     }
     adjustDrivingFields();
+    computeCost();
 
   })
 
 
 function validate(form) {
+    if (anyoneMeetsCriteria(attending) && !$("#covidAcked").is(":checked")) {
+        alert("Please acknowledge this event's COVID policy.");
+        return false;
+    }
+
     errorMessages = "";
 
      {{range $i, $invitee := .Invitation.Invitees}}
@@ -234,7 +242,8 @@ function validate(form) {
            <td>
 	     <input type="hidden" name="PersonKey" value="{{$invitee.Key}}">
 	     {{$RsvpStatus := (index $Invitation.RsvpMap $invitee.Key)}}
-             <span class="invitationPersonHeading">{{.Person.FullName}}</span>
+             <!-- <span class="invitationPersonHeading">{{.Person.FullName}}</span> -->
+             <h2>{{.Person.FullName}}</h2>
 	     <select name="rsvp" class="rsvpStatus" onchange="processRsvpStatus({{$i}})">
                <option value="-1"{{if not $RsvpStatus}} selected{{end}}>-- Will you be joining us? --</option>
 	       {{range $Invitation.Event.RsvpStatuses}}
@@ -251,8 +260,8 @@ function validate(form) {
  		 Hooray!  We're so glad you can join us.<br>
 		 <br>
 		 We need to make sure we'll have food for you.
-		 Please check off any food restrictions you have.
-		 <table class="formtable">
+		 Please check off any food restrictions you have:
+		 <table class="formTable">
 		   {{template "foodInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
 		 </table>
 	       </div>
@@ -283,19 +292,16 @@ function validate(form) {
 
                <div class="personal hidden">
                  <div class="personal-intro-positive-rsvp hidden ">
-                   Please double-check the information we have for you.  The only thing we REALLY need is your email address.  A phone number can also be helpful.<br>
-                   <br>
-                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                   <p>Please double-check the information we have for you.  The only thing we REALLY need is your email address.  A phone number can also be helpful.</p>
+                   <p>The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.</p>
 		 </div>
                  <div class="personal-intro-negative-rsvp hidden">
-                   We'll miss you!  But as long as you're here...<br>
-                   <br>
-                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                   <p>We'll miss you!  But as long as you're here...</p>
+                   <p>The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.</p>
                  </div>
 		 <div class="personal-intro-maybe-rsvp hidden">
-                   Please let us know if you'll be joining us as soon as you know!  But as long as you're here...<br>
-                   <br>
-                   The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.
+                   <p>Please let us know if you'll be joining us as soon as you know!  But as long as you're here...</p>
+                   <p>The PSR management software doubles as our contact-management system, so feel free to give us whatever information you think we should have.</p>
                  </div>
                  <table class="formTable">
                    {{template "personInfoForm" (index $FormInfoMap .Person.DatastoreKey)}}
@@ -319,7 +325,7 @@ function validate(form) {
 
     We expect that attendees will:
     <ul>
-      <li>Be vaccinated and boosted against COVID.</li>
+      <li>Be vaccinated and boosted against COVID if possible.</li>
       <li>Take a rapid COVID test before arriving, and every day before leaving their room.</li>
       <li>Notify us in the event of a positive COVID test, and either go home or work with us to
           maintain isolation onsite.</li>
@@ -344,30 +350,28 @@ function validate(form) {
        in the shared kitchen.</p>
   
   <input type="checkbox" id="covidAcked" name="covidAcked" {{if .Invitation.COVIDAcked}}checked{{end}}>
-  <label for="covidAcked">I acknowledge these COVID policies.</label>
+  <label for="covidAcked"><span class="covidAcknowledgement">I have read and understood this COVID policy.</span></label>
 
   </div>
-
+  <div class="anyAttendeesContainer hidden">
   <div class="lodgingFormContainer hidden">
     <h4>Housing Preferences</h4>
-    Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.<br>
-    <br>
+    <p>Tell us about your housing needs.  We will do our best to meet as many preferences as we possibly can, but we can't guarantee that we will be able to accommodate all of them.</p>
 
     {{$single := (eq (len .Invitation.Invitees) 1)}}
-    <table class="rsvpHousing"><tr><td>
+
 	  <select class="housingPreference" name="housingPreference" onchange="computeCost()">
             {{range $p, $pref := .AllHousingPreferences}}
 	    <option value="{{$p}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
             {{end}}
     </select>
-    <div>What else do we need to know to assign you a room?</div>
-    <textarea type="text" name="housingNotes" class="freeformTextField">{{.Invitation.HousingNotes}}</textarea>
-</td>
-<td>
+  <br>
   {{$InvitationHasChildren := .InvitationHasChildren}}
+  <table class="formTable">
   {{range $i, $pref := .AllHousingPreferenceBooleans}}
     {{if and (not $pref.Hidden) (or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples)))}}
-      <div><input type="checkbox" name="housingPreferenceBooleans" onchange="computeCost()" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}>
+      <tr><td><input type="checkbox" name="housingPreferenceBooleans" onchange="computeCost()" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}></td>
+      <td>
         {{if $single}}
           {{$pref.SinglePersonDescription}}
         {{else}}
@@ -377,26 +381,28 @@ function validate(form) {
             {{$pref.MultiplePeopleDescription}}
           {{end}}
         {{end}}
-      </div>
-      {{if ne $pref.SupplementalInfo ""}}
-        <div style="font-size:smaller; padding-left:26px;font-style:italic">{{$pref.SupplementalInfo}}</div>
-      {{end}}
-   {{end}}
-{{end}}
+        {{if ne $pref.SupplementalInfo ""}}
+          <div style="font-size:smaller; padding-left:26px;font-style:italic">{{$pref.SupplementalInfo}}</div>
+        {{end}}
+      </td></tr>
+    {{end}}
+  {{end}}
+  </table>
 
+<p>What else do we need to know to assign you a room?</p>
+    <textarea type="text" name="housingNotes" class="freeformTextField">{{.Invitation.HousingNotes}}</textarea>
 
-</td></tr></table>
   </div>
 
-  <div class="anyAttendeesContainer hidden">
+
     <h4>Travel information</h4>
-    How do you feel about ride sharing?  <select class="drivingPreference" id="id_driving_preference" onchange="adjustDrivingFields(this.value);" name="drivingPreference">
+    <p>How do you feel about ride sharing?</p>  <select class="drivingPreference" id="id_driving_preference" onchange="adjustDrivingFields(this.value);" name="drivingPreference">
     {{range $i, $pref := .AllDrivingPreferences}}
        <option value="{{$i}}">{{if $single}}{{$pref.SinglePersonDescription}}{{else}}{{$pref.MultiplePeopleDescription}}{{end}}</option>
     {{end}}
 </select><br>
     <div class="rideSharingOptions hidden">
-      <table>
+      <table class="formTable">
         <tr><td>Where are you starting from?</td><td><input type="text" name="leaveFrom" id="id_leaving_from" value="{{$Invitation.LeaveFrom}}"/></td></tr>
         <tr><td>When would you ideally like to leave?</td><td><input type="text" name="leaveTime" id="id_leaving_around" value="{{$Invitation.LeaveTime}}" /></td></tr>
         <tr class="sharingDrivers"><td>How many extra passengers can you take<br> (in addition to {{if $single}}yourself{{else}}yourselves{{end}})?</td><td style="vertical-align:top">
@@ -404,9 +410,14 @@ function validate(form) {
       </table>
     </div>
     <div class="allDrivers hidden">
+      <table class="formTable">
       {{range $i, $parking := $AllParkingTypes}}
-      <input type="radio" id="parking_{{$i}}" name="parking" value="{{.Parking}}">{{if $single}}{{$parking.SinglePersonDescription}}{{else}}{{$parking.MultiplePeopleDescription}}{{end}}<br>
+        <tr>
+          <td><input type="radio" id="parking_{{$i}}" name="parking" value="{{.Parking}}"></td>
+          <td>{{if $single}}{{$parking.SinglePersonDescription}}{{else}}{{$parking.MultiplePeopleDescription}}{{end}}</td>
+        </tr>  
       {{end}}
+      </table>
     </div>
 
     <div style="margin-top:20px">
@@ -432,7 +443,7 @@ function validate(form) {
 
 
     <h4>Your ESTIMATED cost for the weekend: <span class="onlyCost"></span></h4> 
-    <table class="roommateCosts">
+    <table class="roommateCosts formTable">
       <tr><th>Number of Roommates</th><th>Your Cost</th></tr>
       <tr><td>0</td><td class="cost0Roommates"><td></tr>
       <tr><td>1</td><td class="cost1Roommates"><td></tr>
