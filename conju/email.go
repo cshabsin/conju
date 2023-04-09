@@ -116,7 +116,7 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
 		"Person":      wr.LoginInfo.Person,
-		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person),
+		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person, true),
 		"RoomingInfo": roomingInfo,
 		"Env":         wr.GetEnvForTemplates(),
 		"Unreserved":  unreserved,
@@ -176,7 +176,7 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		p := emailData["Person"].(*person.Person)
 		if _, ok := emailData["LoginLink"]; !ok {
-			emailData["LoginLink"] = makeLoginUrl(p)
+			emailData["LoginLink"] = makeLoginUrl(p, true)
 		}
 		if _, ok := emailData["Env"]; !ok {
 			emailData["Env"] = wr.GetEnvForTemplates()
@@ -262,9 +262,11 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		},
 	}
 
-	log.Printf("sending mail: %v", message)
-	if _, err := wr.GetEmailClient().Send(message); err != nil {
-		log.Printf("sendgrid.Send: %v", err)
+	log.Printf("sending mail to %v: %v", headerData.To, message)
+	if resp, err := wr.GetEmailClient().Send(message); err != nil {
+		log.Printf("sendgrid.Send got err: %v, %v", resp, err)
+	} else {
+		log.Printf("sendgrid.Send got resp: %v", resp)
 	}
 	return nil
 }

@@ -223,7 +223,7 @@ func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
 	// people they know. This may be a bad UI, but it is good
 	// privacy.
 	if len(people) == 1 {
-		loginUrl := makeLoginUrl(&people[0])
+		loginUrl := makeLoginUrl(&people[0], true)
 		data := map[string]interface{}{
 			"Event":     *wr.Event,
 			"LoginLink": loginUrl,
@@ -261,6 +261,10 @@ func handleResentInvitation(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func makeLoginUrl(p *person.Person) string {
-	return "/login?loginCode=" + p.LoginCode
+func makeLoginUrl(p *person.Person, absolute bool) string {
+	var prefix string
+	if absolute {
+		prefix = "http://psr.shabsin.com"
+	}
+	return prefix + "/login?loginCode=" + p.LoginCode
 }

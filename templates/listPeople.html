@@ -13,7 +13,7 @@
 	{{range .FormattedAddressForHtml}} {{.}}<br>{{end}}
       </td>
       <td>
-	<a href="{{makeLoginUrl .}}">Login</a>
+	<a href="{{makeLoginUrl . false}}">Login</a>
       </td>
     </tr>
 {{end}}
