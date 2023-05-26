@@ -1,0 +1,110 @@
+{{define "rooming_and_costs_subject"}}
+  Purity Spring Retreat update: rooms, Discord server, ride assignments incoming
+{{end}}
+
+{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
+
+We are two weeks out from our retreat weekend (!) and everything is starting to come together. 
+
+
+Rooms
+
+{{- template "roomingInfo_text" .RoomingInfo}}
+If you have concerns about your room assignment, let us know immediately.  We're happy to answer
+any questions, and we appreciate your patience and flexibility.
+
+You may find the map helpful: https://tinyurl.com/psr2023-map
+
+Note that you do NOT have to call the resort to reserve your room or leave a deposit this year.
+We have taken care of that for you.
+
+
+Discord Server
+
+Robert set up a Discord server for us!  We're not sure exactly how we'll use it, but some 
+ideas include:
+
+ - We can harass you with questions before the weekend (lucky you!)
+ - We can all communicate during the weekend to find people to play a specific game with, go to
+   the pool with, etc.
+ - If you meet a new person you like at the weekend, you will have an easy way to contact them
+   afterwards
+
+Check it out: **discord url**
+
+Once you're there, set your name on the PSR server to be something you would put on a nametag in
+person, and head to the #i-am-going channel to configure some roles for yourself.
+
+Talk amongst yourselves!
+
+
+Rides
+
+If you need a ride, or have offered to give rides, expect email from us very soon.  If you 
+offered to give rides and you do not hear from us, we are not expecting you to drive anyone else.
+
+
+
+As always, you can update your RSVP or profile on our event website: 
+
+  {{.LoginLink}}
+
+We're getting excited!  We can't wait to see you in New Hampshire!
+
+
+Chris, Dana, Lydia & Max
+{{end}}
+
+{{define "rooming_and_costs_html"}}
+<p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
+
+
+<p>We are two weeks out from our retreat weekend (!) and everything is starting to come together.</p>
+
+<h3>Rooms</h3>
+
+ {{template "roomingInfo_html" .RoomingInfo}}
+
+<p>If you foresee any problem with your rooms, let us know.  We're happy to answer any questions, and we appreciate your patience and flexibility.</p>
+
+<p>If you have concerns about your room assignment, let us know immediately.  We're happy to answer
+any questions, and we appreciate your patience and flexibility.</p>
+
+<p>You may find the map helpful: https://tinyurl.com/psr2023-map</p>
+
+<p>Note that you do <em>not</em> have to call the resort to reserve your room or leave a deposit this year.  We have taken care of that for you.</p>
+
+
+<h3>Discord Server</h3>
+
+<p>Robert set up a Discord server for us!  We're not sure exactly how we'll use it, but some 
+ideas include:</p>
+
+<ul>
+ <li>We can harass you with questions before the weekend (lucky you!)
+ <li>We can all communicate during the weekend to find people to play a specific game with, go to the pool with, etc.
+ <li>If you meet a new person you like at the weekend, you will have an easy way to contact them afterwards
+</ul>
+
+<p>Check it out: **discord url** </p>
+
+<p>Once you're there, set your name on the PSR server to be something you would put on a nametag in person, and head to the #i-am-going channel to configure some roles for yourself.</p>
+
+<p>Talk amongst yourselves!</p>
+
+
+<h3>Rides</h3>
+
+<p>If you need a ride, or have offered to give rides, expect email from us very soon.  If you offered to give rides and you do not hear from us, we are not expecting you to drive anyone else.</p>
+
+
+
+<p>As always, you can <a href="{{.LoginLink}}">update your rsvp or profile</a> on our event website.
+
+<p>We can't wait to see you in New Hampshire!</p>
+
+<div style="margin-left:30px;margin-top:20px">Chris, Dana, Lydia & Max</div>
+
+  </div>
+</div>
+{{end}}
