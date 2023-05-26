@@ -143,9 +143,9 @@ func (w *WrappedRequest) SaveSession() error {
 }
 
 // Attempts to read a datastore key from the request session, returning:
-//  - a key value (if the value is present and valid)
-//  - nil (if the value is not present)
-//  - nil and an error (if the value is invalid)
+//   - a key value (if the value is present and valid)
+//   - nil (if the value is not present)
+//   - nil and an error (if the value is invalid)
 func (w *WrappedRequest) RetrieveKeyFromSession(values_field string) (*datastore.Key, error) {
 	encoded_key_interface := w.Values[values_field]
 	if encoded_key_interface == nil {
@@ -196,7 +196,7 @@ func (w WrappedRequest) GetErrorAddress() string {
 
 func (w WrappedRequest) GetEnvForTemplates() map[string]string {
 	rc := make(map[string]string)
-	for _, s := range []string{"GOOGLE_WALLET_ADDRESS", "VENMO_ADDRESS", "PAYPAL_ADDRESS", "PAYPAL_URL"} {
+	for _, s := range []string{"GOOGLE_WALLET_ADDRESS", "VENMO_ADDRESS", "PAYPAL_ADDRESS", "PAYPAL_URL", "DISCORD_URL"} {
 		rc[s] = os.Getenv(s)
 	}
 	return rc
@@ -216,9 +216,9 @@ func (w WrappedRequest) GetHost() string {
 	return strings.ToLower(host[0])
 }
 
-/// WrappedResponseWriter simply records when the header has been
-/// written, so SetSessionValue can check and error when this has
-/// occurred.
+// / WrappedResponseWriter simply records when the header has been
+// / written, so SetSessionValue can check and error when this has
+// / occurred.
 type WrappedResponseWriter struct {
 	http.ResponseWriter
 	stats *responseWriterStats

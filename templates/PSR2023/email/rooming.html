@@ -1,8 +1,8 @@
-{{define "rooming_and_costs_subject"}}
+{{define "rooming_subject"}}
   Purity Spring Retreat update: rooms, Discord server, ride assignments incoming
 {{end}}
 
-{{define "rooming_and_costs_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
+{{define "rooming_text"}}Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},
 
 We are two weeks out from our retreat weekend (!) and everything is starting to come together. 
 
@@ -30,7 +30,7 @@ ideas include:
  - If you meet a new person you like at the weekend, you will have an easy way to contact them
    afterwards
 
-Check it out: **discord url**
+Check it out: {{.Env.DISCORD_URL}}
 
 Once you're there, set your name on the PSR server to be something you would put on a nametag in
 person, and head to the #i-am-going channel to configure some roles for yourself.
@@ -55,7 +55,7 @@ We're getting excited!  We can't wait to see you in New Hampshire!
 Chris, Dana, Lydia & Max
 {{end}}
 
-{{define "rooming_and_costs_html"}}
+{{define "rooming_html"}}
 <p>Dear {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}},<p>
 
 
@@ -86,7 +86,7 @@ ideas include:</p>
  <li>If you meet a new person you like at the weekend, you will have an easy way to contact them afterwards
 </ul>
 
-<p>Check it out: **discord url** </p>
+<p>Check it out: <a href="{{.Env.DISCORD_URL}}">{{.Env.DISCORD_URL}}</a> </p>
 
 <p>Once you're there, set your name on the PSR server to be something you would put on a nametag in person, and head to the #i-am-going channel to configure some roles for yourself.</p>
 
