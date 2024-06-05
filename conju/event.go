@@ -41,22 +41,24 @@ func EventGetter(ctx context.Context, wr *WrappedRequest) error {
 		return nil
 	}
 
-	key, err = wr.RetrieveKeyFromSession("EventKey")
-	if err != nil {
-		return err
-	}
+	// Don't use the current event in the session - always use the database.
+	//
+	// key, err = wr.RetrieveKeyFromSession("EventKey")
+	// if err != nil {
+	// 	return err
+	// }
 
-	if key != nil {
-		ev, err := event.GetEvent(ctx, key)
-		if err == nil {
-			// We have retrieved the event successfully.
-			wr.Event = ev
-			wr.EventKey = key
-			wr.TemplateData["CurrentEvent"] = ev
-			return nil
-		}
-		// eat the error and fall back to the db current event
-	}
+	// if key != nil {
+	// 	ev, err := event.GetEvent(ctx, key)
+	// 	if err == nil {
+	// 		// We have retrieved the event successfully.
+	// 		wr.Event = ev
+	// 		wr.EventKey = key
+	// 		wr.TemplateData["CurrentEvent"] = ev
+	// 		return nil
+	// 	}
+	// 	// eat the error and fall back to the db current event
+	// }
 
 	ev, err := event.GetCurrentEvent(ctx)
 	if err != nil {
