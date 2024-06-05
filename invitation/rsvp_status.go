@@ -68,13 +68,13 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		{
 			Status:           SatSun,
 			ShortDescription: "SatSun",
-			LongDescription:  "Will attend: Saturday - Sunday",
+			LongDescription:  "Will attend: Saturday - Monday",
 			Attending:        true,
 		},
 		{
 			Status:           FriSatSun,
 			ShortDescription: "FriSatSun",
-			LongDescription:  "Will attend: Friday - Sunday",
+			LongDescription:  "Will attend: Friday - Monday",
 			Attending:        true,
 		},
 		{
@@ -105,7 +105,7 @@ func GetAllRsvpStatuses() []RsvpStatusInfo {
 		{
 			Status:           MealsOnly,
 			ShortDescription: "Meals",
-			LongDescription:  "Will need meals but not lodging",
+			LongDescription:  "May need meals but not lodging",
 			Attending:        true,
 			NoLodging:        true,
 		},
