@@ -5,7 +5,7 @@ Event/invitation/email management system
 
 Set up Github account (https://github.com/)  
 
-Add ssh keys to Github account ([Instructions](https://help.github.com/enterprise/2.12/user/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/))  
+Add ssh keys to Github account ([Instructions](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account))  
 (Optional: also add ssh key to ~/.ssh/authorized_keys on minimancer for ease of ssh/scp)
 
 Install Google Cloud SDK	https://cloud.google.com/sdk/  
