@@ -82,8 +82,10 @@
 
     if (anyoneMeetsCriteria(attending)) {
       $(".anyAttendeesContainer").show();
+      $(".storylandFormContainer").show();
     } else {
       $(".anyAttendeesContainer").hide();
+      $(".storylandFormContainer").hide();
     }
    
     if (anyoneMeetsCriteria(thursday)) {
@@ -392,6 +394,12 @@ function validate(form) {
 <p>What else do we need to know to assign you a room?</p>
     <textarea type="text" name="housingNotes" class="freeformTextField">{{.Invitation.HousingNotes}}</textarea>
 
+  </div>
+
+  <div class="storylandFormContainer hidden">
+  <h4>Story Land Preferences</h4>
+  Chris, Dana, Max and Lydia are going up for an extra day on Thursday and visiting Story Land. Wanna go?
+  <input type="checkbox" class="storylandPreference" id="id_storyland_preference" name="storylandPreference" value="yes"{{if ($Invitation.Storyland)}} checked{{end}}>
   </div>
 
 

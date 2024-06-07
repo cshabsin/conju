@@ -41,6 +41,7 @@ type RealizedInvitation struct {
 	ReceivedPayDateStr        string
 	Thursday                  bool
 	COVIDAcked                bool
+	Storyland                 bool
 }
 
 func (ri RealizedInvitation) GetPeopleComing() []person.Person {
@@ -159,6 +160,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		ReceivedPayDateStr:        inv.ReceivedPayDate.Format("2006-01-02"),
 		Thursday:                  thursday,
 		COVIDAcked:                inv.COVIDAcked,
+		Storyland:                 inv.Storyland,
 	}
 
 	return realizedInvitation

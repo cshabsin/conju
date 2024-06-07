@@ -47,6 +47,7 @@ type Invitation struct {
 	ReceivedPayMethod         string
 	ReceivedPayDate           time.Time
 	COVIDAcked                bool
+	Storyland                 bool
 }
 
 const delimiter = "|_|"
@@ -232,6 +233,10 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 		{
 			Name:  "COVIDAcked",
 			Value: inv.COVIDAcked,
+		},
+		{
+			Name:  "Storyland",
+			Value: inv.Storyland,
 		},
 	}
 
@@ -685,6 +690,9 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 
 	drivingPreference, _ := strconv.Atoi(wr.Request.Form.Get("drivingPreference"))
 	inv.Driving = DrivingPreference(drivingPreference)
+
+	storylandPreference := wr.Request.Form.Get("storylandPreference")
+	inv.Storyland = storylandPreference == "yes"
 
 	parkingType, _ := strconv.Atoi(wr.Request.Form.Get("parking"))
 	if parkingType >= 0 {
