@@ -1,0 +1,156 @@
+{{define "initial_invitation_subject"}}
+  Summer Retreat at Purity Spring Resort, August 30th-September 2nd
+{{end}}
+
+{{define "initial_invitation_text"}}Dear {{CollectiveAddressFirstNames .Invitation.InviteePeople 0}},
+
+Many years ago, we got married at Purity Spring Resort in East Madison,
+NH, and we had such a great time that we decided to make the easy part
+(i.e. not the wedding) a recurring event.  Please join us for our
+annual summer retreat over Labor Day Weekend, Friday August 30th -
+Monday September 2nd!
+
+You are invited to spend the weekend with us relaxing and having fun, 
+whatever that means to you.  We predict that there will be fun people,
+board games, swimming, dancing, jigsaw puzzles, hiking, crafting,
+campfires, and beautiful scenery.  The rest is up to you!
+
+Because our retreat is happening over the holiday weekend, we expect
+most people will stay from Friday through Monday.  Purity Spring requires
+a minimum 2-night stay, so if you need to you can also stay Friday-Sunday
+or Saturday-Monday.
+
+We will be going up Thursday night and taking the kids to Story Land on
+Friday, when the Somerville Public Schools mysteriously have the day off.
+You are welcome to join us!  Purity Spring will also honor our room rates
+for a few days before or after the weekend.
+
+
+The cost for the weekend will include:
+- your room
+- access to resort amenities, like our common rooms and kitchen, the
+  beaches and lake, and the pool
+- lunches and dinners
+
+A lot of factors go into the cost of the weekend, so we put a (pretty
+rough) cost estimator on the RSVP form.
+
+If you're not coming because of the cost, please let us know.
+
+-- COVID
+
+Our goal is to make everyone feel safe at the weekend, and as such, we
+are instituting a basic COVID testing requirement for all attendees, but
+we don't foresee imposing other mitigations (such as masking).  See the
+RSVP form for details.
+
+or
+
+We will require daily COVID testing, but do not plan to require masking.
+See the RSVP form for full details on the COVID plan.
+
+
+
+-- Discord
+
+
+
+
+
+
+Let us know if you can join us.  To RSVP, go to
+
+  {{.LoginLink}}
+
+
+For more information on this weekend, as we figure it out ourselves,
+see:
+   
+  http://psr.shabsin.com
+
+
+We also have a Discord server!  We'll use is during the weekend to
+make announcments and solve problems.  Before then you can keep an
+eye on the planning process, contribute opinions, or just hang out.
+Come say hi!: {{.Env.DISCORD_URL}}
+
+We hope you can join us for Labor Day Weekend!  It should be a lot of fun and the company will
+be the best part. 
+
+Chris, Dana, Lydia & Max
+{{end}}
+
+
+{{define "initial_invitation_html"}}
+
+<div style="width:40em">
+<p>Dear {{CollectiveAddressFirstNames .Invitation.InviteePeople 0}},</p>
+
+<p>
+Many years ago, we got married at Purity Spring Resort in East Madison,
+NH, and we had such a great time that we decided to make the easy part
+(i.e. not the wedding) a recurring event.  Please join us for our
+annual summer retreat, from June 8th-11th!
+</p>
+
+<p>
+You are invited to spend the weekend with us relaxing and having fun, 
+whatever that means to you.  We predict that there will be fun people,
+board games, swimming, dancing, jigsaw puzzles, hiking, crafting,
+campfires, and beautiful scenery.  The rest is up to you!
+</p>
+
+<p>
+You can join us for Friday through Sunday, or come up Thursday evening
+for an extra day of vacation.  Most structured activities (such as
+they are) will happen between Friday night and Sunday afternoon.
+</p>
+
+<p>
+The cost for the weekend will include:
+<ul>
+<li>your room</li>
+<li>access to resort amenities, like our common rooms and kitchen, the beaches and lake, and the pool</li>
+<li>lunches and dinners (unlike recent years)</li>
+</ul>
+</p>
+
+<p>
+A lot of factors go into the cost of the weekend, so we put a (pretty
+rough) cost estimator on the RSVP form.
+</p>
+
+<p>
+If you're not coming because of the cost, please let us know.
+</p>
+
+<p>
+Lunches and dinners will be provided through the resort, so the
+logistics of these meals will be much simpler than the past couple of
+years.  In addition, we will have access to a kitchen, and there is
+a restaurant on the premises with breakfast options.
+</p>
+
+<p>
+We will require daily COVID testing, but do not plan to require masking
+in most spaces.  See the RSVP form for full details on the COVID plan.
+</p>
+
+
+<p>Please let us know if you can join us. To RSVP, go to</p>
+
+<p><a href="{{.LoginLink}}">{{.LoginLink}}</a></p>
+
+<p>For more information on this weekend, as we figure it out ourselves, see:</p>
+   
+<p><a href="http://psr.shabsin.com">http://psr.shabsin.com</a></p>
+
+<p>
+We hope you can join us!  It should be a lot of fun and the company will
+be the best part. 
+</p>
+
+<p style="margin-top:30px">Chris, Dana, Lydia & Max</p>
+</div>
+{{end}}
+
