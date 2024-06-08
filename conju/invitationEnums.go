@@ -224,24 +224,24 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 			Bit:                       2,
 			PreferenceType:            Desired,
 		},
-		{
-			Boolean:                   WillingCOVIDCautious,
-			Name:                      "WillingCOVIDCautious",
-			MultiplePeopleDescription: "We are willing to stay in COVID-cautious housing.",
-			SinglePersonDescription:   "I am willing to stay in COVID-cautious housing.",
-			ReportDescription:         "COVID Okay",
-			Bit:                       512,
-			PreferenceType:            Acceptable,
-		},
-		{
-			Boolean:                   PreferCOVIDCautious,
-			Name:                      "PreferCOVIDCautious",
-			MultiplePeopleDescription: "We would prefer to stay in COVID-cautious housing.",
-			SinglePersonDescription:   "I would prefer to stay in COVID-cautious housing.",
-			ReportDescription:         "COVID Okay",
-			Bit:                       1024,
-			PreferenceType:            Acceptable,
-		},
+		// {
+		// 	Boolean:                   WillingCOVIDCautious,
+		// 	Name:                      "WillingCOVIDCautious",
+		// 	MultiplePeopleDescription: "We are willing to stay in COVID-cautious housing.",
+		// 	SinglePersonDescription:   "I am willing to stay in COVID-cautious housing.",
+		// 	ReportDescription:         "COVID Okay",
+		// 	Bit:                       512,
+		// 	PreferenceType:            Acceptable,
+		// },
+		// {
+		// 	Boolean:                   PreferCOVIDCautious,
+		// 	Name:                      "PreferCOVIDCautious",
+		// 	MultiplePeopleDescription: "We would prefer to stay in COVID-cautious housing.",
+		// 	SinglePersonDescription:   "I would prefer to stay in COVID-cautious housing.",
+		// 	ReportDescription:         "COVID Okay",
+		// 	Bit:                       1024,
+		// 	PreferenceType:            Acceptable,
+		// },
 	}
 	return toReturn
 }
