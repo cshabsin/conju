@@ -2,6 +2,7 @@ package conju
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/datastore"
+	"google.golang.org/appengine/user"
 )
 
 type LoginInfo struct {
@@ -68,6 +70,83 @@ func handleLoginInner(ctx context.Context, wr WrappedRequest, urlTarget string) 
 	http.Redirect(wr.ResponseWriter, wr.Request, urlTarget, http.StatusFound)
 }
 
+func getPersonFromEncodedKey(ctx context.Context, wr *WrappedRequest) (*datastore.Key, *person.Person, error) {
+	log.Printf("getPersonFromEncodedKey")
+	personKeyEncoded, ok := wr.Values["person"].(string)
+	if !ok {
+		log.Printf("person cookie not set")
+		return nil, nil, errors.New("person cookie not set")
+	}
+	personKey, err := datastore.DecodeKey(personKeyEncoded)
+	if err != nil {
+		log.Printf("person key decode error: %v", err)
+		return nil, nil, err
+	}
+	pers := person.Person{}
+	err = datastore.Get(ctx, personKey, &pers)
+	if err != nil {
+		log.Printf("person get error: %v", err)
+		return nil, nil, err
+	}
+	return personKey, &pers, nil
+}
+
+func getPersonFromLoggedInUser(ctx context.Context, wr *WrappedRequest) (*datastore.Key, *person.Person, error) {
+	log.Printf("getPersonFromLoggedInUser")
+	if wr.User == nil {
+		log.Printf("not logged in")
+		return nil, nil, errors.New("not logged in")
+	}
+	var people []*person.Person
+	peopleKeys, err := datastore.NewQuery("Person").Filter("Email =", wr.User.Email).GetAll(ctx, &people)
+	if err != nil {
+		log.Printf("person lookup by email (%v) error: %v", wr.User.Email, err)
+		return nil, nil, err
+	}
+	if len(people) > 1 {
+		log.Printf("collision on email (%v)", wr.User.Email)
+		// multiple people with the same email address, punt to code.
+		return nil, nil, fmt.Errorf("multiple people with email address %v", wr.User.Email)
+	}
+	return peopleKeys[0], people[0], nil
+}
+
+func getPersonFromInvitationCode(ctx context.Context, wr *WrappedRequest) (*datastore.Key, *person.Person, error) {
+	log.Printf("getPersonFromInvitationCode")
+	code, ok := wr.Values["code"].(string)
+	if !ok {
+		log.Printf("invitation code not set")
+		return nil, nil, errors.New("invitation code not set")
+	}
+	var people []*person.Person
+	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(ctx, &people)
+	if err != nil {
+		log.Printf("person lookup by login code (%v) error: %v", code, err)
+		return nil, nil, err
+	}
+	if len(people) > 1 {
+		log.Printf("collision on loginCode (%v)", code)
+		return nil, nil, fmt.Errorf("loginCode collision: %q", code)
+	}
+	return peopleKeys[0], people[0], nil
+}
+
+func getPersonFromSession(ctx context.Context, wr *WrappedRequest) (*datastore.Key, *person.Person, bool, error) {
+	key, person, err := getPersonFromEncodedKey(ctx, wr)
+	if err == nil {
+		return key, person, false, err
+	}
+	key, person, err = getPersonFromLoggedInUser(ctx, wr)
+	if err == nil {
+		return key, person, true, err
+	}
+	key, person, err = getPersonFromInvitationCode(ctx, wr)
+	if err == nil {
+		return key, person, true, err
+	}
+	return nil, nil, false, err
+}
+
 // LoginGetter validates the login code from the session, looking up
 // the Person with the matching code. Then it finds the Invitation in
 // the current Event (per the WrappedRequest field Event) that
@@ -81,51 +160,22 @@ func PersonGetter(ctx context.Context, wr *WrappedRequest) error {
 	if wr.LoginInfo != nil {
 		return nil // This has already been run.
 	}
-	code, ok := wr.Values["code"].(string)
-	if !ok {
-		li := &LoginInfo{nil, nil, nil, nil}
-		wr.LoginInfo = li
-		wr.TemplateData["LoginInfo"] = li
-		return nil
-	}
-	personKeyEncoded, ok := wr.Values["person"].(string)
-	var pers person.Person
-	var personKey *datastore.Key
-	if !ok {
-		var people []person.Person
-		peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(ctx, &people)
-		if err != nil {
-			return err
-		}
-		if len(people) > 1 {
-			return RedirectError{loginErrorPage +
-				"?message=DB Error: loginCode collision."}
-		}
-		wr.SetSessionValue("person", peopleKeys[0].Encode())
-		wr.SaveSession()
-		pers = people[0]
-		personKey = peopleKeys[0]
-	} else {
-		var err error
-		personKey, err = datastore.DecodeKey(personKeyEncoded)
-		if err != nil {
-			log.Printf("decoding key: %v", err)
-		}
-		err = datastore.Get(ctx, personKey, &pers)
-		if err != nil || pers.LoginCode != code {
-			return RedirectError{loginErrorPage +
-				"?message=Something went out of sync. Please log in " +
-				"again using the link from your email."}
-		}
+	personKey, pers, writeToSession, err := getPersonFromSession(ctx, wr)
+	if err != nil {
+		log.Printf("error getting person: %v", err)
 	}
 	li := &LoginInfo{
 		InvitationKey: nil,
 		Invitation:    nil,
 		PersonKey:     personKey,
-		Person:        &pers,
+		Person:        pers,
 	}
 	wr.LoginInfo = li
 	wr.TemplateData["LoginInfo"] = li
+	if writeToSession {
+		wr.SetSessionValue("person", personKey.Encode())
+		wr.SaveSession()
+	}
 	return nil
 }
 
@@ -186,8 +236,10 @@ func handleLoginError(ctx context.Context, wr WrappedRequest) {
 	tpl := template.Must(template.New("").ParseFiles(
 		"templates/main.html",
 		"templates/bad_login.html"))
+	url, _ := user.LoginURL(ctx, "/")
 	data := wr.MakeTemplateData(map[string]interface{}{
-		"Message": message,
+		"Message":  message,
+		"LoginURL": url,
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "bad_login.html", data); err != nil {
 		log.Printf("%v", err)
