@@ -47,9 +47,7 @@ function computeCostWithRoommates(additionalPeople) {
 
   // if only 1 person and no roommates, set room rate to single room cost
   if (totalAttendees == 1) {
-    if ($('select[name="housingPreference"]').val() == "1") {
-      roomRate = 300;
-    } else {
+    if ($('select[name="housingPreference"]').val() != "1") {
       roomRate /= (additionalPeople + 1); // this is correct because we only get here if this is a single person
     }
   }

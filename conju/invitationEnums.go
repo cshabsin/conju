@@ -199,8 +199,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		{
 			Boolean:                   WillingExpensive,
 			Name:                      "WillingExpensive",
-			MultiplePeopleDescription: "We would be willing to stay in nicer, more expensive (+~$50/night) housing that is ~300 yards away from the main common room.",
-			SinglePersonDescription:   "I would be willing to stay in nicer, more expensive (+~$50/night) housing that is ~300 yards away from the main common room.",
+			MultiplePeopleDescription: "We would be willing to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
+			SinglePersonDescription:   "I would be willing to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
 			ReportDescription:         "Expensive Housing Okay",
 			Bit:                       128,
 			PreferenceType:            Acceptable,
@@ -208,8 +208,8 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 		{
 			Boolean:                   PreferExpensive,
 			Name:                      "PreferExpensive",
-			MultiplePeopleDescription: "We would prefer to stay in nicer, more expensive (+~$50/night) housing that is ~300 yards away from the main common room.",
-			SinglePersonDescription:   "I would prefer to stay in nicer, more expensive (+~$50/night) housing that is ~300 yards away from the main common room.",
+			MultiplePeopleDescription: "We would prefer to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
+			SinglePersonDescription:   "I would prefer to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
 			ReportDescription:         "Expensive Housing Preferred",
 			Bit:                       256,
 			PreferenceType:            Desired,
