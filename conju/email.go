@@ -99,7 +99,14 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		handleListMail(ctx, wr)
 		return
 	}
-	emailTemplate := emailTemplates[0]
+	handleMailPage(ctx, wr, emailTemplates[0], "sendEmail.html")
+}
+
+func handleViewMyInvitation(ctx context.Context, wr WrappedRequest) {
+	handleMailPage(ctx, wr, "initial_invitation", "viewMyInvitation.html")
+}
+
+func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlTemplate string) {
 	// TODO: What data do we send this?
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
@@ -134,13 +141,13 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		"HTMLBody":        template.HTML(html),
 		"AllDistributors": AllDistributors,
 	})
-	tpl, err := template.ParseFiles("templates/main.html", "templates/sendEmail.html")
+	tpl, err := template.ParseFiles("templates/main.html", "templates/"+htmlTemplate)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Parsing files: %v", err),
 			http.StatusInternalServerError)
 		return
 	}
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "sendEmail.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(wr.ResponseWriter, htmlTemplate, data); err != nil {
 		http.Error(wr.ResponseWriter,
 			fmt.Sprintf("Rendering HTML display: %v", err),
 			http.StatusInternalServerError)

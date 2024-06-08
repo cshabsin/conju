@@ -1,0 +1,7 @@
+{{template "main.html" .}}
+{{define "body"}}
+<div id="email">
+  <div id="headerEmail"><b>Subject:</b> {{.Subject}}</div>
+  <div id="htmlEmail">{{.HTMLBody}}</div>
+</div>
+{{end}}
