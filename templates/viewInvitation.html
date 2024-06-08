@@ -41,6 +41,11 @@
     return status.shortDescription == "ThuFriSat";
   }
 
+  function threeNights(val) {
+    var status = allStatuses[val];
+    return status.shortDescription == "FriSatSun";
+  }
+
   function anyoneMeetsCriteria(criteriaChecker) {
     return $(".rsvpStatus").map((index, status, statuses) => {
        var val = $(status).val();
@@ -329,23 +334,18 @@ function validate(form) {
     <ul>
       <li>Be vaccinated and boosted against COVID if possible.</li>
       <li>Take a rapid COVID test before arriving, and every day before leaving their room.</li>
-      <li>Notify us in the event of a positive COVID test, and either go home or work with us to
-          maintain isolation onsite.</li>
+      <li>Notify us in the event of a positive COVID test.
+        <ul>
+          <li>If the positive test is ambiguous (very faint result) or unexpected (asymptomatic/no exposures) we will provide a PCR-equivalent test (such as <a href="https://www.lucirabypfizer.com/">Lucira</a>).  If the 2nd test is clear, attendees may remain.</li>
+          <li>If a test is unambiguously positive, we will work with you to get home or isolate on-site.</li>
+        </ul>
+      </li>
     </ul>
 
-    COVID mitigations we will provide:
+    We will:
     <ul>
-      <li>One of our buildings will be designated as COVID-cautious housing. People in the 
-          COVID-cautious housing will communicate with each other in advance of the event to
-          determine a mutually agreed-upon set of additional precautions to take in the common areas
-          of that building.</li>
-      <li>We will keep common room windows open as much as is feasible.</li>
-      <li>We will provide air filters for the common rooms.</li>
-      <li>We will have outdoor seating available for meals.</li>
-      <li>For group meals, we will reserve the first fifteen minutes of each meal for the most
-          COVID-cautious people (as self-identified) to serve themselves. During this time, anyone
-          in the dining room should stay masked. We will ask the kitchen staff to mask during this
-          time, and will provide masks for them, but cannot guarantee that they will comply.</li>
+      <li>Attempt to source cheap Covid tests in bulk.  If we succeed we can provide them for you for a small increase in the cost of the weekend.  We think we can probably get it down to $12-$15/person for 4 days of rapid tests plus a share of a few more accurate tests.</li>
+      <li>Provide outdoor seating for meals.</li>
     </ul>
 
     <p>Note that we will <strong>not</strong> be requiring masking in the two large common rooms, or
@@ -398,8 +398,8 @@ function validate(form) {
 
   <div class="storylandFormContainer hidden">
   <h4>Story Land Preferences</h4>
-  Chris, Dana, Max and Lydia are going up for an extra day on Thursday and visiting Story Land. Wanna go?
   <input type="checkbox" class="storylandPreference" id="id_storyland_preference" name="storylandPreference" value="yes"{{if ($Invitation.Storyland)}} checked{{end}}>
+   I/we would like to be kept in the loop about a Friday Story Land plan.
   </div>
 
 
