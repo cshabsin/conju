@@ -21,6 +21,8 @@ type MailHeaderInfo struct {
 	Cc      []string
 	Bcc     []string
 	Subject string
+
+	BccSelf bool
 }
 
 // Renders the named mail template and returns the filled text, filled
@@ -180,6 +182,7 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 			http.StatusBadRequest)
 		return
 	}
+	bccSelf := wr.Request.PostForm.Get("bccSelf") == "1"
 	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
 		p := emailData["Person"].(*person.Person)
 		if _, ok := emailData["LoginLink"]; !ok {
@@ -199,6 +202,7 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 			}
 		}
 		emailData["Unreserved"] = unreserved
+		headerData.BccSelf = bccSelf
 		return sendMail(wr, emailTemplate, emailData, headerData)
 	}
 	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
@@ -254,7 +258,9 @@ func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
 		return err
 	}
 	bccPers := mail.NewPersonalization()
-	bccPers.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
+	if headerData.BccSelf {
+		bccPers.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
+	}
 
 	// TODO(cshabsin): get string name from somewhere environmental?
 	message := &mail.SGMailV3{

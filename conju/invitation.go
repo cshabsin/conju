@@ -806,6 +806,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	header := MailHeaderInfo{
 		To:      []string{wr.GetSenderAddress()},
 		Subject: subject,
+		BccSelf: false,
 	}
 
 	sendMail(wr, "rsvpconfirmation", data, header)

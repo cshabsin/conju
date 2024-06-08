@@ -36,6 +36,7 @@
   <div id="htmlEmail">{{.HTMLBody}}</div>
 </div>
 
+<div>
 Select a distribution:
 
 <form action="doSendMail" method="POST" onsubmit="return validate(this)">
@@ -45,7 +46,12 @@ Select a distribution:
 	<option value="{{$name}}">{{$name}}</option>
 	{{end}}
   </select>
+
+  <input type="checkbox" name="bccSelf" id="bccSelf" value="1" checked />
+  <label for="bccSelf">BCC self</label>
+
   <input type="submit" value="Send"/>
 </form>
+</div>
 
 {{end}}

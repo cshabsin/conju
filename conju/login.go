@@ -229,7 +229,8 @@ func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
 			"LoginLink": loginUrl,
 		}
 		header := MailHeaderInfo{
-			To: []string{people[0].Email},
+			To:      []string{people[0].Email},
+			BccSelf: false,
 		}
 		sendMail(wr, "resendInvitation", data, header)
 	}
