@@ -106,7 +106,7 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 	}
 
 	sort.Slice(allNoRsvp, func(a, b int) bool { return person.SortByLastFirstName(allNoRsvp[a][0], allNoRsvp[b][0]) })
-	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe, invitation.No}
+	statusOrder := []invitation.RsvpStatus{invitation.FriSatSun, invitation.FriSat, invitation.SatSun, invitation.Maybe, invitation.No}
 
 	for _, booking := range bookings {
 
