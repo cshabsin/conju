@@ -103,7 +103,7 @@ func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 		log.Printf("fetching invitations: %v", err)
 	}
 
-	statusOrder := []invitation.RsvpStatus{invitation.FriSatSun, invitation.FriSat, invitation.SatSun, invitation.Maybe}
+	statusOrder := []invitation.RsvpStatus{invitation.ThuFriSat, invitation.FriSat, invitation.Maybe}
 	adultPreferenceMask := GetAdultPreferenceMask()
 	rsvpToGroupsMap := make(map[invitation.RsvpStatus][][]person.Person)
 	var noRsvps [][]person.Person
