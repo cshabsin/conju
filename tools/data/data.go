@@ -6,31 +6,10 @@ import (
 	"log"
 	"os"
 	"sort"
-	"time"
 
 	"cloud.google.com/go/datastore"
-	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/tools/data/legacy"
 )
-
-type Event struct {
-	Key                   *datastore.Key
-	EventId               int // this can get deleted after all the data is imported
-	venueKey              *datastore.Key
-	Venue                 *datastore.Key // only set after LoadVenue called.
-	Name                  string
-	ShortName             string
-	StartDate             time.Time
-	EndDate               time.Time
-	RsvpStatuses          []invitation.RsvpStatus
-	Rooms                 []*datastore.Key // TODO: replace with room
-	Activities            []*datastore.Key // TODO: replace with activity
-	InvitationClosingText string
-	Current               bool
-}
-
-func (e Event) String() string {
-	return fmt.Sprintf("[%02d:%s] %s", e.EventId, e.ShortName, e.Name)
-}
 
 func realMain(ctx context.Context) error {
 	project := "useful-art-199822"
@@ -38,7 +17,7 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	var events []*Event
+	var events []*legacy.Event
 	if _, err := datastoreClient.GetAll(ctx, datastore.NewQuery("Event"), &events); err != nil {
 		return err
 	}
