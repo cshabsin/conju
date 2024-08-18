@@ -1,0 +1,70 @@
+{{define "please_rsvp_subject"}}
+  Please RSVP for the Purity Spring Weekend (August 30th-September 2nd)
+{{end}}
+
+{{define "please_rsvp_text"}}Dear {{CollectiveAddressFirstNames .Invitation.InviteePeople 0}},
+
+A reminder: We need RSVPs for the Purity Spring weekend.  The release
+date for our room block is coming up soon!  After June 28th, we will
+do our best, but we can't guarantee that we'll be able to accommodate
+you.
+
+* If you're planning on attending but don't have time to fill out the
+  full form right now, a positive response is still useful data.
+
+* If you're definitely not coming, and just haven't told us, that would
+  be useful to know.
+
+* If you're still waffling, submitting a "maybe" RSVP and letting us
+  know how likely you are to attend would also be helpful.
+
+If you have any questions about the weekend, we're happy to answer them.
+You can also check out your original invitation email, which has more
+information.
+
+
+Let us know if you can join us.  To RSVP, go to
+
+  {{.LoginLink}}
+
+
+We hope you can make it!
+
+Chris, Dana, Lydia & Max
+{{end}}
+
+
+{{define "please_rsvp_html"}}
+
+<div style="width:40em">
+<p>Dear {{CollectiveAddressFirstNames .Invitation.InviteePeople 0}},</p>
+
+<p>
+  A reminder: We need RSVPs for the Purity Spring weekend.  The release date for our room block is coming up soon!  After June 28th, we will do our best, but we can't guarantee that we'll be able to accommodate you.
+</p>
+
+<p>
+  <ul>
+    <li>If you're planning on attending but don't have time to fill out the full form right now, a positive response is still useful data.
+
+    <li>If you're definitely not coming, and just haven't told us, that would be useful to know.
+  
+    <li>If you're still waffling, submitting a "maybe" RSVP and letting us know how likely you are to attend would also be helpful.
+  </ul>
+</p>
+
+<p>
+  If you have any questions about the weekend, we're happy to answer them. You can also check out your original invitation email, which has more information.
+</p>
+
+
+<p>Let us know if you can join us. To RSVP, go to</p>
+
+<p><a href="{{.LoginLink}}">{{.LoginLink}}</a></p>
+
+<p>We hope you can make it!</p>
+
+<p style="margin-top:30px">Chris, Dana, Lydia & Max</p>
+</div>
+{{end}}
+

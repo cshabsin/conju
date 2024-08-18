@@ -1,0 +1,125 @@
+{{define "august10_subject"}}
+[ACTION REQUIRED] The Purity Spring Weekend is approaching
+{{end}}
+
+{{define "august10_text"}}Hi {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}}!
+
+Our Purity Spring weekend is coming up fast (yikes!) and we're a little behind.
+
+{{template "roomingInfo_text" .RoomingInfo}}
+
+{{if .RoomingInfo.InviteeBookings.IsKingPine}}Upper King Pine is the more expensive housing option.
+{{end}}If your room or your roommates need to change, let us know ASAP.
+
+We need some more information from you!  Take a look at
+    https://tinyurl.com/PSR2024-logistics.
+
+* Please sign up for resort meals on the "ANSWER ME! (Meals/Rooms)" tab on
+  the logistics spreadsheet.  You can check out the menus in the "PSR meal
+  menus" tab.  We need to give the resort a count so they can order the food,
+  so please fill this out by Wednesday 8/14.  That's in 3 days! (Sorry, it's
+  been a busy summer.)
+
+* A few families are coming up Thursday night.  Some people are going to
+  Story Land on Friday, and some people are just hanging out at the resort.
+  If you would like your room reserved Thursday night, there is a column on
+  the right side of the ANSWER ME tab to let us know that.
+
+* We have so many covid tests.  We found them for $2.56/test!  You get one
+  test/family member/night you are staying.  We will attempt to distribute
+  tests for the first day in advance when possible.  In the ANSWER ME tab of
+  the spreadsheet, list how many tests we have given you so far.
+
+* Sign up for Friday dinner on the "Friday pizza dinner" tab on the logistics
+  spreadsheet to put in an order (group on individual) from White Lake Pizza
+  (https://www.whitelakepizza.com/).
+
+  If you don't want Friday dinner, put your name on the spreadsheet and order
+  nothing. Please fill this out by Thursday, 8/29.
+
+* Check out the "Help!," "Snacks," "Board Games," and "Events" tabs and
+  contribute if you wish.  Since we'll be at Story Land Friday, it would be
+  particularly helpful if someone could figure out what pizzas to get and
+  call in the order Friday afternoon, and if someone coming from the south
+  could pick up the order on their way in.  (White Lake Pizza is south of
+  the resort, but Story Land is north.)
+
+* New this year: we are welcome to participate in events at the resort!
+  There will be other guests there who are not part of our party:
+  https://www.purityspring.com/events-page/
+
+* Come join us on Discord!  We'll use it for some prep but mostly for on-site
+  coordination.  Claim some roles to let people know you're coming and to get
+  notified when activities happen.  {{.Env.DISCORD_URL}}
+
+  Please check in on the #i-am-going channel's pinned messages to set roles
+  and pronouns when you join.  Thanks!
+
+We're getting excited!  We can't wait to see you in a few weeks!
+
+
+Dana & Chris
+{{end}}
+
+
+{{define "august10_html"}}
+<p>Hi {{CollectiveAddressFirstNames .Invitation.GetPeopleComing 0}}!</p>
+
+<p>Our Purity Spring weekend is coming up fast (yikes!) and we're a little behind.</p>
+
+{{template "roomingInfo_html" .RoomingInfo}}
+
+<p>{{if .RoomingInfo.InviteeBookings.IsKingPine}}Upper King Pine is the more expensive housing option.
+{{end}}If your room or your roommates need to change, let us know ASAP.</p>
+
+<p>We need some more information from you!  Take a look at <a href="https://tinyurl.com/PSR2024-logistics">the logistics spreadsheet</a>.
+
+<ul>
+<li><p>Please sign up for resort meals on the "ANSWER ME! (Meals/Rooms)" tab on
+  the logistics spreadsheet.  You can check out the menus in the <a href="https://tinyurl.com/PSR2024-logistics#gid=1956373456">PSR meal
+  menus" tab</a>.  We need to give the resort a count so they can order the food,
+  so please fill this out by Wednesday 8/14.  That's in 3 days! (Sorry, it's
+  been a busy summer.)</p></li>
+
+<li><p>A few families are coming up Thursday night.  Some people are going to
+  Story Land on Friday, and some people are just hanging out at the resort.
+  If you would like your room reserved Thursday night, there is a column on
+  the right side of the ANSWER ME tab to let us know that.</p></li>
+
+<li><p>We have so many covid tests.  We found them for $2.56/test!  You get one
+  test/family member/night you are staying.  We will attempt to distribute
+  tests for the first day in advance when possible.  In the ANSWER ME tab of
+  the spreadsheet, list how many tests we have given you so far.</p></li>
+
+<li><p>Sign up for Friday dinner on the <a href="https://tinyurl.com/PSR2024-logistics#gid=833875089">Friday pizza dinner</a> tab on the logistics
+  spreadsheet to put in an order (group on individual) from White Lake Pizza
+  (https://www.whitelakepizza.com/).
+  If you don't want Friday dinner, put your name on the spreadsheet and order
+  nothing. Please fill this out by Thursday, 8/29.</p></li>
+
+<li><p>Check out the "Help!," "Snacks," "Board Games," and "Events" tabs and
+  contribute if you wish.  Since we'll be at Story Land Friday, it would be
+  particularly helpful if someone could figure out what pizzas to get and
+  call in the order Friday afternoon, and if someone coming from the south
+  could pick up the order on their way in.  (White Lake Pizza is south of
+  the resort, but Story Land is north.)</p></li>
+
+<li><p>New this year: we are welcome to participate in events at the resort!
+  There will be other guests there who are not part of our party:
+  https://www.purityspring.com/events-page/</p></li>
+
+<li><p>Come join us on <a href="{{.Env.DISCORD_URL}}">Discord</a>!  We'll use it for some prep but mostly for on-site
+  coordination.  Claim some roles to let people know you're coming and to get
+  notified when activities happen.
+
+  Please check in on the #i-am-going channel's pinned messages to set roles
+  and pronouns when you join.  Thanks!</p></li>
+</ul>
+
+<p>We're getting excited!  We can't wait to see you in a few weeks!</p>
+
+
+<p>Dana & Chris</p>
+{{end}}
+
+
