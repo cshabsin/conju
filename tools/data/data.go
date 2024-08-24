@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 
 	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/tools/data/keyutil"
 	"github.com/cshabsin/conju/tools/data/legacy"
 )
 
@@ -17,21 +17,20 @@ func realMain(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	// events, err := db.GetAll[*legacy.Event](ctx, datastoreClient, "Event")
 	var events []*legacy.Event
-	if _, err := datastoreClient.GetAll(ctx, datastore.NewQuery("Event"), &events); err != nil {
+	keys, err := datastoreClient.GetAll(ctx, datastore.NewQuery("Event"), &events)
+	if err != nil {
 		return err
 	}
-	sort.Slice(events, func(i, j int) bool {
-		return events[i].StartDate.Before(events[j].StartDate)
-	})
-	for _, e := range events {
+	eventMap := keyutil.ToMap(keys, events)
+	for _, e := range eventMap {
 		fmt.Println(e)
 	}
 	return nil
 }
 
 func main() {
-	fmt.Println("yo")
 	if err := realMain(context.Background()); err != nil {
 		// In case of an auth error, try gcloud auth application-default login
 		log.Fatal(err)

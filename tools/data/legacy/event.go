@@ -24,6 +24,10 @@ type Event struct {
 	Current               bool
 }
 
-func (e Event) String() string {
+func (e *Event) String() string {
 	return fmt.Sprintf("[%02d:%s] %s", e.EventId, e.ShortName, e.Name)
+}
+
+func (e *Event) Kind() string {
+	return "Event"
 }
