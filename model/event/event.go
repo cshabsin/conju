@@ -7,9 +7,11 @@ import (
 	"log"
 	"time"
 
+	"cloud.google.com/go/datastore"
+
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/venue"
-	"google.golang.org/appengine/datastore"
 )
 
 // TODO: add object that's a map of string names to values and attach one to every event
@@ -107,7 +109,7 @@ func eventFromDB(ctx context.Context, key *datastore.Key, ev *eventDB) (*Event, 
 
 func GetEvent(ctx context.Context, key *datastore.Key) (*Event, error) {
 	var ev eventDB
-	err := datastore.Get(ctx, key, &ev)
+	err := dsclient.FromContext(ctx).Get(ctx, key, &ev)
 	if err != nil {
 		return nil, err
 	}
@@ -116,16 +118,16 @@ func GetEvent(ctx context.Context, key *datastore.Key) (*Event, error) {
 
 func PutEvent(ctx context.Context, ev *Event) error {
 	if ev.Key == nil {
-		ev.Key = datastore.NewIncompleteKey(ctx, "Event", nil)
+		ev.Key = datastore.IncompleteKey("Event", nil)
 	}
-	_, err := datastore.Put(ctx, ev.Key, ev.ToDB())
+	_, err := dsclient.FromContext(ctx).Put(ctx, ev.Key, ev.ToDB())
 	return err
 }
 
 func GetAllEvents(ctx context.Context) ([]*Event, error) {
 	q := datastore.NewQuery("Event").Order("-StartDate")
 	var allEventDBs []*eventDB
-	eventKeys, err := q.GetAll(ctx, &allEventDBs)
+	eventKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &allEventDBs)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +148,8 @@ func GetAllEvents(ctx context.Context) ([]*Event, error) {
 func GetCurrentEvent(ctx context.Context) (*Event, error) {
 	var keys []*datastore.Key
 	var events []*eventDB
-	q := datastore.NewQuery("Event").Filter("Current =", true)
-	keys, err := q.GetAll(ctx, &events)
+	q := datastore.NewQuery("Event").FilterField("Current", "=", true)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &events)
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +175,8 @@ func GetEventForHost(ctx context.Context, host string, e **Event, key **datastor
 
 	var keys []*datastore.Key
 	var eventDBs []*eventDB
-	q := datastore.NewQuery("Event").Filter("ShortName =", shortname)
-	keys, err := q.GetAll(ctx, &eventDBs)
+	q := datastore.NewQuery("Event").FilterField("ShortName", "=", shortname)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &eventDBs)
 	if err != nil {
 		log.Printf("Error querying for %s(url) event: %v", shortname, err)
 		return false, nil

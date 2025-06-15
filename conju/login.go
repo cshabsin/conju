@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	"cloud.google.com/go/datastore"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/user"
 )
 
@@ -46,7 +46,8 @@ func handleLoginInner(ctx context.Context, wr WrappedRequest, urlTarget string) 
 		return
 	}
 	var people []person.Person
-	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", lc[0]).GetAll(ctx, &people)
+	q := datastore.NewQuery("Person").FilterField("LoginCode", "=", lc[0])
+	peopleKeys, err := wr.DatastoreClient.GetAll(ctx, q, &people)
 	if err != nil {
 		http.Redirect(wr.ResponseWriter, wr.Request,
 			fmt.Sprintf("%s?message=DB error looking you up: %v", loginErrorPage, err),
@@ -83,7 +84,7 @@ func getPersonFromEncodedKey(ctx context.Context, wr *WrappedRequest) (*datastor
 		return nil, nil, err
 	}
 	pers := person.Person{}
-	err = datastore.Get(ctx, personKey, &pers)
+	err = wr.DatastoreClient.Get(ctx, personKey, &pers)
 	if err != nil {
 		log.Printf("person get error: %v", err)
 		return nil, nil, err
@@ -98,7 +99,8 @@ func getPersonFromLoggedInUser(ctx context.Context, wr *WrappedRequest) (*datast
 		return nil, nil, errors.New("not logged in")
 	}
 	var people []*person.Person
-	peopleKeys, err := datastore.NewQuery("Person").Filter("Email =", wr.User.Email).GetAll(ctx, &people)
+	q := datastore.NewQuery("Person").FilterField("Email", "=", wr.User.Email)
+	peopleKeys, err := wr.DatastoreClient.GetAll(ctx, q, &people)
 	if err != nil {
 		log.Printf("person lookup by email (%v) error: %v", wr.User.Email, err)
 		return nil, nil, err
@@ -119,7 +121,8 @@ func getPersonFromInvitationCode(ctx context.Context, wr *WrappedRequest) (*data
 		return nil, nil, errors.New("invitation code not set")
 	}
 	var people []*person.Person
-	peopleKeys, err := datastore.NewQuery("Person").Filter("LoginCode =", code).GetAll(ctx, &people)
+	q := datastore.NewQuery("Person").FilterField("LoginCode", "=", code)
+	peopleKeys, err := wr.DatastoreClient.GetAll(ctx, q, &people)
 	if err != nil {
 		log.Printf("person lookup by login code (%v) error: %v", code, err)
 		return nil, nil, err
@@ -200,10 +203,10 @@ func InvitationGetter(ctx context.Context, wr *WrappedRequest) error {
 		return RedirectError{loginErrorPage + "?message=Please use the link from your invitation email to log in."}
 	}
 	var invitations []Invitation
-	invitationKeys, err := datastore.NewQuery("Invitation").
-		Filter("Invitees =", wr.LoginInfo.PersonKey).
-		Filter("Event =", wr.EventKey).
-		GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").
+		FilterField("Invitees", "=", wr.LoginInfo.PersonKey).
+		FilterField("Event", "=", wr.EventKey)
+	invitationKeys, err := wr.DatastoreClient.GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -261,9 +264,9 @@ func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
 			loginErrorPage+"?message=Bad form input.", http.StatusFound)
 		return
 	}
-	q := datastore.NewQuery("Person").Filter("Email =", emailAddresses[0])
+	q := datastore.NewQuery("Person").FilterField("Email", "=", emailAddresses[0])
 	var people []person.Person
-	_, err := q.GetAll(ctx, &people)
+	_, err := wr.DatastoreClient.GetAll(ctx, q, &people)
 	if err != nil {
 		log.Printf("%v", err)
 		http.Redirect(wr.ResponseWriter, wr.Request,

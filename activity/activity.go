@@ -3,7 +3,8 @@ package activity
 import (
 	"context"
 
-	"google.golang.org/appengine/datastore"
+	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/conju/dsclient"
 )
 
 type Activity struct {
@@ -20,7 +21,7 @@ type ActivityWithKey struct {
 func QueryAll(ctx context.Context) ([]ActivityWithKey, error) {
 	var activities []Activity
 	q := datastore.NewQuery("Activity").Order("Keyword")
-	activityKeys, err := q.GetAll(ctx, &activities)
+	activityKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &activities)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func QueryAll(ctx context.Context) ([]ActivityWithKey, error) {
 
 func Realize(ctx context.Context, activityKeys []*datastore.Key) ([]*Activity, error) {
 	activities := make([]*Activity, len(activityKeys))
-	if err := datastore.GetMulti(ctx, activityKeys, activities); err != nil {
+	if err := dsclient.FromContext(ctx).GetMulti(ctx, activityKeys, activities); err != nil {
 		return nil, err
 	}
 	return activities, nil

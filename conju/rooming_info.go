@@ -5,10 +5,11 @@ import (
 	"log"
 	"math"
 
+	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 )
 
 // Booking holds the booking info and is kept in the datastore.
@@ -93,7 +94,7 @@ func (r RoomingAndCostInfo) ThuFriSat() bool {
 func getRoomingInfo(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
 	// Load the invitation.
 	var invitation Invitation
-	err := datastore.Get(ctx, invitationKey, &invitation)
+	err := dsclient.FromContext(ctx).Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("Error retrieving invitation: %v", err)
 	}
@@ -107,7 +108,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
 	for _, person := range inv.Invitees {
-		if bookingID, ok := bookingInfo.PersonToBookingMap[person.IntID()]; ok {
+		if bookingID, ok := bookingInfo.PersonToBookingMap[person.ID]; ok {
 			bookingSet[bookingID] = true
 		}
 	}
@@ -125,7 +126,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	}
 
 	rooms := make([]*housing.Room, len(roomKeys))
-	err := datastore.GetMulti(ctx, roomKeys, rooms)
+	err := dsclient.FromContext(ctx).GetMulti(ctx, roomKeys, rooms)
 	if err != nil {
 		log.Printf("fetching rooms: %v", err)
 	}
@@ -133,7 +134,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	// Map room ID -> Room
 	roomsMap := make(map[int64]*housing.Room)
 	for i, room := range rooms {
-		roomsMap[roomKeys[i].IntID()] = room
+		roomsMap[roomKeys[i].ID] = room
 	}
 
 	var peopleToLookUp []*datastore.Key
@@ -143,18 +144,18 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 
 	personMap := make(map[int64]*person.Person)
 	people := make([]*person.Person, len(peopleToLookUp))
-	err = datastore.GetMulti(ctx, peopleToLookUp, people)
+	err = dsclient.FromContext(ctx).GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
 		log.Printf("fetching people: %v", err)
 	}
 
 	for i, person := range people {
-		personMap[peopleToLookUp[i].IntID()] = person
+		personMap[peopleToLookUp[i].ID] = person
 	}
 
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -163,10 +164,10 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	personToInvitationMap := make(map[int64]int64)
 	invitationMap := make(map[int64]*Invitation)
 	for i, inv := range invitations {
-		invitationMap[invitationKeys[i].IntID()] = inv
+		invitationMap[invitationKeys[i].ID] = inv
 		for person, rsvp := range inv.RsvpMap {
-			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
-			personToRsvp[person.IntID()] = rsvp
+			personToInvitationMap[person.ID] = invitationKeys[i].ID
+			personToRsvp[person.ID] = rsvp
 		}
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
@@ -177,15 +178,15 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	personToCost := make(map[*person.Person]float64)
 	isThuFriSat := false
 	for _, booking := range bookingsForInvitation {
-		room := roomsMap[booking.Room.IntID()]
-		buildingID := booking.Room.Parent().IntID()
+		room := roomsMap[booking.Room.ID]
+		buildingID := booking.Room.Parent.ID
 		building := buildingsMap[buildingID]
 		buildingRoom := BuildingRoom{room, building}
 
 		// Figure out if anyone's invitation signals need for a double bed.
 		doubleBedNeeded := false
 		for _, person := range booking.Roommates {
-			invitation, ok := invitationMap[personToInvitationMap[person.IntID()]]
+			invitation, ok := invitationMap[personToInvitationMap[person.ID]]
 			if !ok {
 				log.Printf("no invitation for person %v", person)
 				break
@@ -210,9 +211,9 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 
 		for i, per := range booking.Roommates {
 
-			roommateInvitation := personToInvitationMap[per.IntID()]
-			rsvpStatus := personToRsvp[per.IntID()]
-			p := personMap[per.IntID()]
+			roommateInvitation := personToInvitationMap[per.ID]
+			rsvpStatus := personToRsvp[per.ID]
+			p := personMap[per.ID]
 
 			if !p.IsBabyAtTime(wr.Event.StartDate) {
 				if rsvpStatus == invitation.FriSat {
@@ -236,8 +237,8 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 				roommates := make([]*person.Person, 0)
 				roomSharers := make([]*person.Person, 0)
 				for _, maybeRoommate := range booking.Roommates {
-					maybeRoommatePerson := personMap[maybeRoommate.IntID()]
-					if personToInvitationMap[maybeRoommate.IntID()] == roommateInvitation {
+					maybeRoommatePerson := personMap[maybeRoommate.ID]
+					if personToInvitationMap[maybeRoommate.ID] == roommateInvitation {
 						roommates = append(roommates, maybeRoommatePerson)
 					} else {
 						roomSharers = append(roomSharers, maybeRoommatePerson)
@@ -256,7 +257,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 
 		for i, person := range booking.Roommates {
 
-			p := personMap[person.IntID()]
+			p := personMap[person.ID]
 			if p.IsBabyAtTime(wr.Event.StartDate) {
 				personToCost[p] = 0
 				continue
@@ -279,7 +280,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	var orderedInvitees []*person.Person
 	var totalCost float64
 	for _, invitee := range inv.Invitees {
-		person := personMap[invitee.IntID()]
+		person := personMap[invitee.ID]
 		if person == nil {
 			continue
 		}
@@ -290,7 +291,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 
 	return &RoomingAndCostInfo{
 		Invitation:      inv,
-		InviteeBookings: allInviteeBookings[invitationKey.IntID()],
+		InviteeBookings: allInviteeBookings[invitationKey.ID],
 		Attendees:       personMap,
 		OrderedInvitees: orderedInvitees,
 		PersonToCost:    inviteePersonToCost,

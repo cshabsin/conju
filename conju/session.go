@@ -8,13 +8,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cshabsin/conju/model/event"
+	"cloud.google.com/go/datastore"
 	"github.com/gorilla/sessions"
 	"github.com/sendgrid/sendgrid-go"
-
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/user"
+
+	"github.com/cshabsin/conju/conju/dsclient"
+	"github.com/cshabsin/conju/model/event"
 )
 
 // TODO(cshabsin): Figure out how to store the secret in the datastore
@@ -22,6 +22,9 @@ import (
 var store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
 
 type WrappedRequest struct {
+	EmailClient     *sendgrid.Client
+	DatastoreClient *datastore.Client
+
 	ResponseWriter WrappedResponseWriter
 	*http.Request
 	*sessions.Session
@@ -34,7 +37,6 @@ type WrappedRequest struct {
 	SenderAddress *string
 	BccAddress    *string
 	ErrorAddress  *string
-	EmailClient   *sendgrid.Client
 	*BookingInfo
 }
 
@@ -62,11 +64,15 @@ func (dpe DoneProcessingError) Error() string {
 	return "Done processing, do not continue."
 }
 
-func AddSessionHandler(url string, f func(context.Context, WrappedRequest)) *Getters {
+type Sessionizer struct {
+	Client *datastore.Client
+}
+
+func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, WrappedRequest)) *Getters {
 	var getters Getters
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-		ctx := appengine.NewContext(r)
+		ctx := dsclient.WrapContext(r.Context(), s.Client)
 		log.Printf("Handling request %v", r.URL.Path)
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
@@ -85,6 +91,7 @@ func AddSessionHandler(url string, f func(context.Context, WrappedRequest)) *Get
 			TemplateData: map[string]interface{}{
 				"User": u,
 			},
+			DatastoreClient: s.Client,
 		}
 		if u != nil {
 			logoutUrl, err := user.LogoutURL(ctx, wr.URL.RequestURI())
@@ -259,13 +266,18 @@ type BookingInfo struct {
 }
 
 func (wr *WrappedRequest) GetBookingInfo(ctx context.Context) *BookingInfo {
+	client := dsclient.FromContext(ctx)
+	if client == nil {
+		log.Println("GetBookingInfo called with nil client")
+		return nil
+	}
 	if wr.BookingInfo != nil {
 		return wr.BookingInfo
 	}
 	// Load all bookings for the event.
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	allBookingKeys, err := q.GetAll(ctx, &bookings)
+	allBookingKeys, err := client.GetAll(ctx, q, &bookings)
 	if err != nil {
 		log.Printf("Error reading all booking keys: %v", err)
 		return nil
@@ -275,9 +287,9 @@ func (wr *WrappedRequest) GetBookingInfo(ctx context.Context) *BookingInfo {
 	bookingKeyToBookingMap := make(map[int64]Booking)
 	personToBookingMap := make(map[int64]int64)
 	for b, booking := range bookings {
-		bookingKeyToBookingMap[allBookingKeys[b].IntID()] = booking
+		bookingKeyToBookingMap[allBookingKeys[b].ID] = booking
 		for _, person := range booking.Roommates {
-			personToBookingMap[person.IntID()] = allBookingKeys[b].IntID()
+			personToBookingMap[person.ID] = allBookingKeys[b].ID
 		}
 	}
 	wr.BookingInfo = &BookingInfo{bookingKeyToBookingMap, personToBookingMap}
