@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
-	"google.golang.org/appengine"
+	"google.golang.org/appengine/v2"
 
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/login"

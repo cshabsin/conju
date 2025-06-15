@@ -13,7 +13,7 @@
 // - html version of the message template
 package message
 
-import "google.golang.org/appengine/datastore"
+import "cloud.google.com/go/datastore"
 
 type Message struct {
 	Event     *datastore.Key // the event id this message is associated with

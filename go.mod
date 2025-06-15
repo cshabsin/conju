@@ -11,6 +11,7 @@ require (
 	github.com/sendgrid/sendgrid-go v3.10.5+incompatible
 	google.golang.org/api v0.214.0
 	google.golang.org/appengine v1.6.8
+	google.golang.org/appengine/v2 v2.0.6
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697
 )
 

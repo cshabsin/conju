@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 
 	"cloud.google.com/go/datastore"
+	"google.golang.org/appengine/v2"
+
 	"github.com/cshabsin/conju/conju"
 )
 
@@ -27,14 +28,5 @@ func main() {
 	conju.Register(datastoreClient)
 	// poll.Register(datastoreClient)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-		log.Printf("Defaulting to port %s", port)
-	}
-
-	log.Printf("Starting server on port %s", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+	appengine.Main()
 }

@@ -11,7 +11,8 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/gorilla/sessions"
 	"github.com/sendgrid/sendgrid-go"
-	"google.golang.org/appengine/user"
+	"google.golang.org/appengine/v2"
+	"google.golang.org/appengine/v2/user"
 
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/model/event"
@@ -72,7 +73,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, Wrapp
 	var getters Getters
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-		ctx := dsclient.WrapContext(r.Context(), s.Client)
+		ctx := dsclient.WrapContext(appengine.NewContext(r), s.Client)
 		log.Printf("Handling request %v", r.URL.Path)
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
@@ -83,6 +84,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, Wrapp
 			return
 		}
 		u := user.Current(ctx)
+		log.Printf("User: %v", u)
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
