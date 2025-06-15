@@ -10,7 +10,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/user"
+	"google.golang.org/appengine/v2/user"
 )
 
 type LoginInfo struct {
