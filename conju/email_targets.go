@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
-	"google.golang.org/appengine/datastore"
 )
 
 // This file defines a set of EmailDistributors, which the
@@ -32,6 +33,10 @@ var AllDistributors = map[string]EmailDistributorEntry{
 }
 
 func SelfOnlyDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+	client := dsclient.FromContext(ctx)
+	if client == nil {
+		return fmt.Errorf("datastore client is nil")
+	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
@@ -51,9 +56,9 @@ func AllInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -86,9 +91,9 @@ func AllInviteesDistributor(ctx context.Context, wr WrappedRequest, sender Email
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -121,9 +126,9 @@ func AttendeesListDistributor(ctx context.Context, wr WrappedRequest, sender Ema
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -138,7 +143,7 @@ func AttendeesListDistributor(ctx context.Context, wr WrappedRequest, sender Ema
 			if p.Person.Email == "" {
 				continue
 			}
-			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.IntID()]; !found {
+			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
 				continue
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
@@ -151,9 +156,9 @@ func AttendeesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender E
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -168,7 +173,7 @@ func AttendeesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender E
 			if p.Person.Email == "" {
 				continue
 			}
-			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.IntID()]; !found {
+			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
 				continue
 			}
 			emailData := map[string]interface{}{
@@ -192,9 +197,9 @@ func AttendeesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSe
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -209,7 +214,7 @@ func AttendeesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSe
 			if p.Person.Email == "" {
 				continue
 			}
-			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.IntID()]; !found {
+			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
 				continue
 			}
 			emailData := map[string]interface{}{
@@ -236,9 +241,9 @@ func QualifiedInviteesListDistributor(ctx context.Context, wr WrappedRequest, se
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -265,9 +270,9 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, 
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}
@@ -305,9 +310,9 @@ func QualifiedInviteesDistributor(ctx context.Context, wr WrappedRequest, sender
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		return err
 	}

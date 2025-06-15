@@ -4,7 +4,8 @@ import (
 	"context"
 	"log"
 
-	"google.golang.org/appengine/datastore"
+	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/conju/dsclient"
 )
 
 type venueDB struct {
@@ -29,7 +30,7 @@ type Venue struct {
 func fromDB(ctx context.Context, key *datastore.Key, v *venueDB) (*Venue, error) {
 	if v == nil {
 		v = new(venueDB)
-		err := datastore.Get(ctx, key, v)
+		err := dsclient.FromContext(ctx).Get(ctx, key, v)
 		if err != nil {
 			log.Printf("error loading venue from db for key %v: %v", key.Encode(), err)
 			return nil, err
@@ -53,7 +54,7 @@ func FromKey(ctx context.Context, key *datastore.Key) (*Venue, error) {
 func AllVenues(ctx context.Context) ([]*Venue, error) {
 	var venueData []*venueDB
 	q := datastore.NewQuery("Venue")
-	keys, err := q.GetAll(ctx, &venueData)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &venueData)
 	if err != nil {
 		return nil, err
 	}

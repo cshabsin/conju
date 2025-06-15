@@ -9,12 +9,13 @@ import (
 	"net/http"
 	text_template "text/template"
 
+	"cloud.google.com/go/datastore"
+
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
-
-	"google.golang.org/appengine/datastore"
 )
 
 type RenderedMail struct {
@@ -141,13 +142,13 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 	// Cribbed heavily from handleRoomingReport
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	_, err := q.GetAll(ctx, &bookings)
+	_, err := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
 	if err != nil {
 		log.Printf("fetching bookings: %v", err)
 	}
 
 	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
-	err = datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
+	err = dsclient.FromContext(ctx).GetMulti(ctx, wr.Event.Rooms, rooms)
 	if err != nil {
 		log.Printf("fetching rooms: %v", err)
 	}
@@ -155,7 +156,7 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 	// Map room ID -> Room
 	roomsMap := make(map[int64]*housing.Room)
 	for i, room := range rooms {
-		roomsMap[wr.Event.Rooms[i].IntID()] = room
+		roomsMap[wr.Event.Rooms[i].ID] = room
 	}
 
 	var peopleToLookUp []*datastore.Key
@@ -165,18 +166,18 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 
 	personMap := make(map[int64]*person.Person)
 	var people = make([]*person.Person, len(peopleToLookUp))
-	err = datastore.GetMulti(ctx, peopleToLookUp, people)
+	err = dsclient.FromContext(ctx).GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
 		log.Printf("fetching people: %v", err)
 	}
 
 	for i, person := range people {
-		personMap[peopleToLookUp[i].IntID()] = person
+		personMap[peopleToLookUp[i].ID] = person
 	}
 
 	var invitations []*Invitation
-	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	q = datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -184,9 +185,9 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 	personToInvitationMap := make(map[int64]int64)
 	invitationMap := make(map[int64]*Invitation)
 	for i, inv := range invitations {
-		invitationMap[invitationKeys[i].IntID()] = inv
+		invitationMap[invitationKeys[i].ID] = inv
 		for _, person := range inv.Invitees {
-			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
+			personToInvitationMap[person.ID] = invitationKeys[i].ID
 		}
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
@@ -209,15 +210,15 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
 	allInviteeBookings := make(map[int64]InviteeBookings)
 	for _, booking := range bookings {
-		room := roomsMap[booking.Room.IntID()]
-		buildingId := booking.Room.Parent().IntID()
+		room := roomsMap[booking.Room.ID]
+		buildingId := booking.Room.Parent.ID
 		building := buildingsMap[buildingId]
 		buildingRoom := BuildingRoom{room, building}
 
 		// Figure out if anyone's invitation signals need for a double bed.
 		doubleBedNeeded := false
 		for _, person := range booking.Roommates {
-			invitation := invitationMap[personToInvitationMap[person.IntID()]]
+			invitation := invitationMap[personToInvitationMap[person.ID]]
 			doubleBedNeeded = doubleBedNeeded || (invitation.HousingPreferenceBooleans&shareBedBit == shareBedBit)
 		}
 
@@ -234,7 +235,7 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 		}
 
 		for _, per := range booking.Roommates {
-			invitation := personToInvitationMap[per.IntID()]
+			invitation := personToInvitationMap[per.ID]
 
 			inviteeBookings, found := allInviteeBookings[invitation]
 			if !found {
@@ -246,8 +247,8 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 				roommates := make([]*person.Person, 0)
 				roomSharers := make([]*person.Person, 0)
 				for _, maybeRoommate := range booking.Roommates {
-					maybeRoommatePerson := personMap[maybeRoommate.IntID()]
-					if personToInvitationMap[maybeRoommate.IntID()] == invitation {
+					maybeRoommatePerson := personMap[maybeRoommate.ID]
+					if personToInvitationMap[maybeRoommate.ID] == invitation {
 						roommates = append(roommates, maybeRoommatePerson)
 					} else {
 						roomSharers = append(roomSharers, maybeRoommatePerson)
@@ -287,7 +288,7 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 	rendered_mail := make(map[int64]RenderedMail, 0)
 	for inv, bookings := range allInviteeBookings {
 		// invitation is ID from key.
-		ri := makeRealizedInvitation(ctx, datastore.NewKey(ctx, "Invitation", "", inv, nil), invitationMap[inv])
+		ri := makeRealizedInvitation(ctx, datastore.IDKey("Invitation", inv, nil), invitationMap[inv])
 		var unreserved []BuildingRoom
 		for _, booking := range bookings {
 			if !booking.ReservationMade {
@@ -333,7 +334,7 @@ func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) 
 			if err := text_tpl.ExecuteTemplate(&subject, emailName+"_subject", data); err != nil {
 				log.Printf("%v", err)
 			}
-			rendered_mail[p.DatastoreKey.IntID()] = RenderedMail{p, text.String(), htmlBuf.String(), subject.String()}
+			rendered_mail[p.DatastoreKey.ID] = RenderedMail{p, text.String(), htmlBuf.String(), subject.String()}
 		}
 	}
 	return rendered_mail, nil

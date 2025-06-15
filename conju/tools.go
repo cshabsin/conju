@@ -8,16 +8,18 @@ import (
 	"sort"
 	"strconv"
 
+	"cloud.google.com/go/datastore"
+
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 )
 
 func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	bookingKeys, _ := q.GetAll(ctx, &bookings)
+	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
 
 	type BookingInfo struct {
 		Booking    Booking
@@ -38,12 +40,12 @@ func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 
 	for _, room := range wr.Event.Rooms {
 		var rm housing.Room
-		if err := datastore.Get(ctx, room, &rm); err != nil {
+		if err := dsclient.FromContext(ctx).Get(ctx, room, &rm); err != nil {
 			log.Printf("Reading room (id %s): %v", room.Encode(), err)
 			continue
 		}
-		buildingKey := room.Parent()
-		building, ok := buildingsMap[buildingKey.IntID()]
+		buildingKey := room.Parent
+		building, ok := buildingsMap[buildingKey.ID]
 		if !ok {
 			log.Printf("building not found in buildingsMap for building %v", buildingKey)
 			continue
@@ -74,7 +76,7 @@ func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 		}
 		realRoom := &housing.RealRoom{
 			Room:       rm,
-			Building:   *buildingsMap[buildingKey.IntID()],
+			Building:   *buildingsMap[buildingKey.ID],
 			BedsString: bedstring,
 		}
 
@@ -86,19 +88,19 @@ func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 		if rm.Partition != "" {
 			roomStr += "_" + rm.Partition
 		}
-		roomStringMap[room.IntID()] = roomStr
+		roomStringMap[room.ID] = roomStr
 	}
 
 	for i, booking := range bookings {
-		bookingInfos[i] = BookingInfo{Booking: booking, RoomString: roomStringMap[booking.Room.IntID()]}
+		bookingInfos[i] = BookingInfo{Booking: booking, RoomString: roomStringMap[booking.Room.ID]}
 		for _, roommate := range booking.Roommates {
-			personToBooking[roommate.IntID()] = bookingKeys[i].IntID()
+			personToBooking[roommate.ID] = bookingKeys[i].ID
 		}
 	}
 
 	var invitations []*Invitation
-	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	_, err := q.GetAll(ctx, &invitations)
+	q = datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	_, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -130,7 +132,7 @@ func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 					}
 					peopleToProperties[person.DatastoreKey] = hpb
 
-					bookingId := personToBooking[person.DatastoreKey.IntID()]
+					bookingId := personToBooking[person.DatastoreKey.ID]
 					if i == 0 {
 						initialBookingId = bookingId
 					} else {
@@ -179,10 +181,10 @@ func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey).KeysOnly()
-	bookingKeys, _ := q.GetAll(ctx, nil)
+	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, nil)
 	// TODO: don't unilaterally delete all old bookings -- look for changes.
 	// (Will matter when saving booked state.)
-	datastore.DeleteMulti(ctx, bookingKeys)
+	dsclient.FromContext(ctx).DeleteMulti(ctx, bookingKeys)
 
 	wr.Event.LoadVenue(ctx)
 	buildingMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
@@ -190,10 +192,10 @@ func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 	roomMap := make(map[string]*datastore.Key)
 	roomingMap := make(map[string][]*datastore.Key)
 	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
-	datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
+	dsclient.FromContext(ctx).GetMulti(ctx, wr.Event.Rooms, rooms)
 
 	for i, room := range rooms {
-		str := buildingMap[room.Building.IntID()].Code + "_" + strconv.Itoa(room.RoomNumber)
+		str := buildingMap[room.Building.ID].Code + "_" + strconv.Itoa(room.RoomNumber)
 		if room.Partition != "" {
 			str += "_" + room.Partition
 		}
@@ -213,8 +215,8 @@ func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 	}
 
 	var invitations []*Invitation
-	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	q = datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -224,19 +226,19 @@ func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 	invitationMap := make(map[int64]Invitation)
 	var peopleToLookUp []*datastore.Key
 	for i, inv := range invitations {
-		invitationMap[invitationKeys[i].IntID()] = *inv
+		invitationMap[invitationKeys[i].ID] = *inv
 		for p, person := range inv.Invitees {
 			peopleToLookUp = append(peopleToLookUp, person)
-			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
-			personToInvitationIndexMap[person.IntID()] = p
+			personToInvitationMap[person.ID] = invitationKeys[i].ID
+			personToInvitationIndexMap[person.ID] = p
 		}
 
 	}
 	var people = make([]*person.Person, len(peopleToLookUp))
-	datastore.GetMulti(ctx, peopleToLookUp, people)
+	dsclient.FromContext(ctx).GetMulti(ctx, peopleToLookUp, people)
 	personMap := make(map[int64]person.Person)
 	for i, person := range people {
-		personMap[peopleToLookUp[i].IntID()] = *person
+		personMap[peopleToLookUp[i].ID] = *person
 	}
 
 	for rmStr, people := range roomingMap {
@@ -247,15 +249,15 @@ func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 		countByInvitation := make(map[int64]int)
 		peopleForRoom := make(map[int64]bool)
 		for _, person := range people {
-			countByInvitation[personToInvitationMap[person.IntID()]]++
-			peopleForRoom[person.IntID()] = true
+			countByInvitation[personToInvitationMap[person.ID]]++
+			peopleForRoom[person.ID] = true
 		}
 
 		sort.Slice(people, func(a, b int) bool {
-			invA := personToInvitationMap[people[a].IntID()]
-			invB := personToInvitationMap[people[b].IntID()]
+			invA := personToInvitationMap[people[a].ID]
+			invB := personToInvitationMap[people[b].ID]
 			if invA == invB {
-				return personToInvitationIndexMap[people[a].IntID()] < personToInvitationIndexMap[people[b].IntID()]
+				return personToInvitationIndexMap[people[a].ID] < personToInvitationIndexMap[people[b].ID]
 			}
 			invCountA := countByInvitation[invA]
 			invCountB := countByInvitation[invB]
@@ -263,11 +265,11 @@ func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
 				return invCountA > invCountB
 			}
 			// really we want to sort by first person on each invitation, close enough for now.
-			return person.SortByLastFirstName(personMap[people[a].IntID()], personMap[people[b].IntID()])
+			return person.SortByLastFirstName(personMap[people[a].ID], personMap[people[b].ID])
 		})
 
 		booking := Booking{Event: wr.EventKey, Room: roomMap[rmStr], Roommates: people}
-		datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Booking", wr.EventKey), &booking)
+		dsclient.FromContext(ctx).Put(ctx, datastore.IncompleteKey("Booking", wr.EventKey), &booking)
 	}
 
 	http.Redirect(wr.ResponseWriter, wr.Request, "rooming", http.StatusSeeOther)
@@ -277,13 +279,13 @@ func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[in
 	buildingsMap := make(map[int64]*housing.Building)
 	var buildings []*housing.Building
 	q := datastore.NewQuery("Building").Ancestor(venueKey)
-	keys, err := q.GetAll(ctx, &buildings)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &buildings)
 
 	if err != nil {
 		log.Printf("%v", err)
 	}
 	for i, buildingKey := range keys {
-		buildingsMap[buildingKey.IntID()] = buildings[i]
+		buildingsMap[buildingKey.ID] = buildings[i]
 	}
 	return buildingsMap
 }

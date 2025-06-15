@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"google.golang.org/appengine/user"
+	"google.golang.org/appengine/v2/user"
 )
 
 // TODO(cshabsin): Replace error pages with templates.
@@ -14,7 +14,11 @@ func AdminGetter(ctx context.Context, wr *WrappedRequest) error {
 	}
 	u := wr.User
 	if u == nil {
-		url, _ := user.LoginURL(ctx, wr.URL.RequestURI())
+		url, err := user.LoginURL(ctx, wr.URL.RequestURI())
+		if err != nil {
+			fmt.Fprintf(wr.ResponseWriter, "Error generating login URL: %v\n", err)
+			return err
+		}
 		wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprintf(wr.ResponseWriter, `This page requires administrator access. Please <a href="%s">Sign in</a>.`, url)
 		return DoneProcessingError{}

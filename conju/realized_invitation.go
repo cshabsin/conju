@@ -5,11 +5,13 @@ import (
 	"log"
 	"time"
 
+	"cloud.google.com/go/datastore"
+
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 )
 
 type RealizedInvitation struct {
@@ -60,7 +62,10 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 	var invitees []person.PersonWithKey
 	for _, personKey := range personKeys {
 		var pers person.Person
-		datastore.Get(ctx, personKey, &pers)
+		if err := dsclient.FromContext(ctx).Get(ctx, personKey, &pers); err != nil {
+			log.Printf("Error retrieving person %v: %v", personKey, err)
+			continue
+		}
 		pers.DatastoreKey = personKey
 		personWithKey := person.PersonWithKey{
 			Person: pers,
@@ -73,7 +78,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 
 	var pers person.Person
 	var lastUpdatedPerson person.PersonWithKey
-	err := datastore.Get(ctx, inv.LastUpdatedPerson, &pers)
+	err := dsclient.FromContext(ctx).Get(ctx, inv.LastUpdatedPerson, &pers)
 	if err != nil {
 		//log.Printf( "%v", err)
 	} else {
@@ -105,7 +110,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 			log.Printf("nil activityKey in event %v (index %d) (list %v)", event, i, event.Activities)
 		}
 		var act activity.Activity
-		datastore.Get(ctx, activityKey, &act)
+		dsclient.FromContext(ctx).Get(ctx, activityKey, &act)
 		encodedKey := activityKey.Encode()
 		activities = append(activities, activity.ActivityWithKey{Activity: act, EncodedKey: encodedKey})
 	}

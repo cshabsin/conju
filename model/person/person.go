@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cshabsin/conju/conju/login"
 	"github.com/cshabsin/conju/conju/util"
-	"google.golang.org/appengine/datastore"
+
+	"cloud.google.com/go/datastore"
 )
 
 type Person struct {
@@ -68,19 +68,19 @@ func MakePersonUpdateFormInfo(key *datastore.Key, person Person, index int, high
 // TODO: define map of int -> string for pronoun enum --> display string
 
 func PersonKey(ctx context.Context) *datastore.Key {
-	return datastore.NewIncompleteKey(ctx, "Person", nil)
+	return datastore.IncompleteKey("Person", nil)
 }
 
-func CreatePerson(ctx context.Context, first, last string) error {
-	p := Person{
-		FirstName: first,
-		LastName:  last,
-		LoginCode: login.RandomLoginCodeString(),
-	}
+// func CreatePerson(ctx context.Context, first, last string) error {
+// 	p := Person{
+// 		FirstName: first,
+// 		LastName:  last,
+// 		LoginCode: login.RandomLoginCodeString(),
+// 	}
 
-	_, err := datastore.Put(ctx, PersonKey(ctx), &p)
-	return err
-}
+// 	_, err := datastore.Put(ctx, PersonKey(ctx), &p)
+// 	return err
+// }
 
 type NameFormality int
 

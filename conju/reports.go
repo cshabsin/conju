@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"sort"
 
+	"cloud.google.com/go/datastore"
+
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 )
 
 // func handleReports(wr WrappedRequest) {
@@ -27,8 +29,8 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", currentEventKey)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -54,8 +56,8 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 	personToExtraInfoMap := make(map[int64]*ExtraInvitationInfo)
 
 	var bookings []Booking
-	b := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	_, _ = b.GetAll(ctx, &bookings)
+	q = datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	_, _ = dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
 
 	personToCost := make(map[int64]float64)
 	personToRsvpStatus := make(map[int64]invitation.RsvpStatus)
@@ -84,8 +86,8 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 
 		for r, p := range rsvpMap {
 			for _, personForStatus := range p {
-				personToRsvpStatus[personForStatus.DatastoreKey.IntID()] = r
-				personIdToPerson[personForStatus.DatastoreKey.IntID()] = personForStatus
+				personToRsvpStatus[personForStatus.DatastoreKey.ID] = r
+				personIdToPerson[personForStatus.DatastoreKey.ID] = personForStatus
 			}
 			listOfLists := allRsvpMap[r]
 			if listOfLists == nil {
@@ -93,7 +95,7 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 			}
 			listOfLists = append(listOfLists, p)
 			allRsvpMap[r] = listOfLists
-			personToExtraInfoMap[p[0].DatastoreKey.IntID()] = &ExtraInfo
+			personToExtraInfoMap[p[0].DatastoreKey.ID] = &ExtraInfo
 
 		}
 		if len(noRsvp) > 0 {
@@ -115,8 +117,8 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 		addThurs := make([]bool, len(booking.Roommates))
 
 		for i, person := range booking.Roommates {
-			rsvpStatus := personToRsvpStatus[person.IntID()]
-			if personIdToPerson[person.IntID()].IsBabyAtTime(wr.Event.StartDate) {
+			rsvpStatus := personToRsvpStatus[person.ID]
+			if personIdToPerson[person.ID].IsBabyAtTime(wr.Event.StartDate) {
 				continue
 			}
 			if rsvpStatus == invitation.FriSat {
@@ -130,8 +132,8 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 		}
 
 		for i, person := range booking.Roommates {
-			if personIdToPerson[person.IntID()].IsBabyAtTime(wr.Event.StartDate) {
-				personToCost[person.IntID()] = 0
+			if personIdToPerson[person.ID].IsBabyAtTime(wr.Event.StartDate) {
+				personToCost[person.ID] = 0
 				continue
 			}
 			costForPerson := float64(0)
@@ -143,7 +145,7 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 				costForPerson += invitation.GetAllRsvpStatuses()[invitation.ThuFriSat].AddOnCost[PlusThursday]
 			}
 			costForPerson = math.Floor(costForPerson*100) / 100
-			personToCost[person.IntID()] = costForPerson
+			personToCost[person.ID] = costForPerson
 		}
 	}
 
@@ -154,9 +156,9 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 		for _, personList := range personLists {
 			totalCost := float64(0)
 			for _, person := range personList {
-				totalCost += personToCost[person.DatastoreKey.IntID()]
+				totalCost += personToCost[person.DatastoreKey.ID]
 			}
-			personToExtraInfoMap[personList[0].DatastoreKey.IntID()].TotalCost = math.Floor(totalCost*100) / 100
+			personToExtraInfoMap[personList[0].DatastoreKey.ID].TotalCost = math.Floor(totalCost*100) / 100
 		}
 
 	}
@@ -184,8 +186,8 @@ func handleActivitiesReport(ctx context.Context, wr WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	_, err := q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", currentEventKey)
+	_, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -268,7 +270,7 @@ func handleActivitiesReport(ctx context.Context, wr WrappedRequest) {
 	}
 
 	var people = make([]*person.Person, len(allPeopleToLookUp))
-	err = datastore.GetMulti(ctx, allPeopleToLookUp, people)
+	err = dsclient.FromContext(ctx).GetMulti(ctx, allPeopleToLookUp, people)
 	if err != nil {
 		log.Printf("fetching people: %v", err)
 	}
@@ -294,22 +296,22 @@ func handleActivitiesReport(ctx context.Context, wr WrappedRequest) {
 func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	bookingKeys, _ := q.GetAll(ctx, &bookings)
+	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
 
 	roomsMap := make(map[int64]housing.Room)
 	var rooms = make([]*housing.Room, len(wr.Event.Rooms))
-	err := datastore.GetMulti(ctx, wr.Event.Rooms, rooms)
+	err := dsclient.FromContext(ctx).GetMulti(ctx, wr.Event.Rooms, rooms)
 	if err != nil {
 		log.Printf("%v", err)
 	}
 
 	for i, room := range rooms {
-		roomsMap[wr.Event.Rooms[i].IntID()] = *room
+		roomsMap[wr.Event.Rooms[i].ID] = *room
 	}
 
 	var buildingOrderMap = make(map[int64]int)
 	for _, room := range wr.Event.Rooms {
-		buildingKeyId := room.Parent().IntID()
+		buildingKeyId := room.Parent.ID
 		if _, present := buildingOrderMap[buildingKeyId]; !present {
 			buildingOrderMap[buildingKeyId] = len(buildingOrderMap)
 		}
@@ -322,18 +324,18 @@ func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 
 	personMap := make(map[int64]person.Person)
 	var people = make([]*person.Person, len(peopleToLookUp))
-	err = datastore.GetMulti(ctx, peopleToLookUp, people)
+	err = dsclient.FromContext(ctx).GetMulti(ctx, peopleToLookUp, people)
 	if err != nil {
 		log.Printf("%v", err)
 	}
 
 	for i, person := range people {
-		personMap[peopleToLookUp[i].IntID()] = *person
+		personMap[peopleToLookUp[i].ID] = *person
 	}
 
 	var invitations []*Invitation
-	q = datastore.NewQuery("Invitation").Filter("Event =", wr.EventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	q = datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -342,14 +344,14 @@ func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 	invitationMap := make(map[int64]Invitation)
 	personToRsvpStatus := make(map[int64]invitation.RsvpStatus)
 	for i, inv := range invitations {
-		invitationMap[invitationKeys[i].IntID()] = *inv
+		invitationMap[invitationKeys[i].ID] = *inv
 		if inv.RsvpMap != nil {
 			for p, r := range inv.RsvpMap {
-				personToRsvpStatus[(*p).IntID()] = r
+				personToRsvpStatus[(*p).ID] = r
 			}
 		}
 		for _, person := range inv.Invitees {
-			personToInvitationMap[person.IntID()] = invitationKeys[i].IntID()
+			personToInvitationMap[person.ID] = invitationKeys[i].ID
 		}
 	}
 
@@ -382,10 +384,10 @@ func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 		doubleBedNeeded := false // for now don't deal with more than one double needed
 
 		for i, person := range booking.Roommates {
-			people[i] = personMap[person.IntID()]
-			inv := invitationMap[personToInvitationMap[person.IntID()]]
+			people[i] = personMap[person.ID]
+			inv := invitationMap[personToInvitationMap[person.ID]]
 			doubleBedNeeded = doubleBedNeeded || (inv.HousingPreferenceBooleans&shareBedBit == shareBedBit)
-			rsvpStatus := personToRsvpStatus[person.IntID()]
+			rsvpStatus := personToRsvpStatus[person.ID]
 			if people[i].IsBabyAtTime(wr.Event.StartDate) {
 				continue
 			}
@@ -400,8 +402,8 @@ func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 
 		}
 
-		room := roomsMap[booking.Room.IntID()]
-		buildingId := booking.Room.Parent().IntID()
+		room := roomsMap[booking.Room.ID]
+		buildingId := booking.Room.Parent.ID
 		building := buildingsMap[buildingId]
 		// for now? ignore case where they want a double bed and aren't getting it
 		showConvertToDouble := doubleBedNeeded
@@ -444,7 +446,7 @@ func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 
 		realBooking := RealBooking{
 			KeyString:           bookingKeys[i].Encode(),
-			Room:                roomsMap[booking.Room.IntID()],
+			Room:                roomsMap[booking.Room.ID],
 			Building:            building,
 			Roommates:           people,
 			FriSat:              FridaySaturday,
@@ -493,23 +495,23 @@ func handleSaveReservations(ctx context.Context, wr WrappedRequest) {
 		}
 		if k[0:8] == "booking_" {
 			bookingKey, _ := datastore.DecodeKey(string(k[8:]))
-			bookingToBooked[bookingKey.IntID()] = true
+			bookingToBooked[bookingKey.ID] = true
 		}
 	}
 
 	var bookings []*Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
-	bookingKeys, _ := q.GetAll(ctx, &bookings)
+	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
 
 	for i, booking := range bookings {
-		if _, present := bookingToBooked[bookingKeys[i].IntID()]; present {
+		if _, present := bookingToBooked[bookingKeys[i].ID]; present {
 			booking.Reserved = true
 		} else {
 			booking.Reserved = false
 		}
 	}
 
-	datastore.PutMulti(ctx, bookingKeys, bookings)
+	dsclient.FromContext(ctx).PutMulti(ctx, bookingKeys, bookings)
 
 	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }
@@ -525,8 +527,8 @@ func handleFoodReport(ctx context.Context, wr WrappedRequest) {
 	var people []person.Person
 
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	_, err := q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", currentEventKey)
+	_, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -538,14 +540,14 @@ func handleFoodReport(ctx context.Context, wr WrappedRequest) {
 			status := allRsvpStatuses[s]
 			if status.Attending {
 				var per person.Person
-				datastore.Get(ctx, p, &per)
+				dsclient.FromContext(ctx).Get(ctx, p, &per)
 				people = append(people, per)
 				restrictionsForPerson := make([]bool, totalRestrictions)
 				for _, restriction := range per.FoodRestrictions {
 					counts[restriction]++
 					restrictionsForPerson[restriction] = true
 				}
-				personToRestrictions[p.IntID()] = restrictionsForPerson
+				personToRestrictions[p.ID] = restrictionsForPerson
 			}
 		}
 
@@ -590,8 +592,8 @@ func handleRidesReport(ctx context.Context, wr WrappedRequest) {
 	var FridayIndependent []CarRequest
 
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	_, err := q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", currentEventKey)
+	_, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
 	}
@@ -616,7 +618,7 @@ func handleRidesReport(ctx context.Context, wr WrappedRequest) {
 		}
 
 		var people = make([]*person.Person, len(personKeys))
-		err = datastore.GetMulti(ctx, personKeys, people)
+		err = dsclient.FromContext(ctx).GetMulti(ctx, personKeys, people)
 		if err != nil {
 			log.Printf("fetching people: %v", err)
 		}
