@@ -12,12 +12,14 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/datastore"
+
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/venue"
-	"google.golang.org/appengine/datastore"
 )
 
 type CurrentEvent struct {
@@ -103,20 +105,20 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 	buildingKeyMap := make(map[int64]*housing.Building)
 	if len(allVenues) == 1 {
 		q := datastore.NewQuery("Building").Ancestor(allVenues[0].Key).Order("Name")
-		buildingKeys, _ := q.GetAll(ctx, &buildings)
+		buildingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &buildings)
 
 		for i, building := range buildings {
-			buildingOrder = append(buildingOrder, buildingKeys[i].IntID())
-			buildingKeyMap[buildingKeys[i].IntID()] = building
+			buildingOrder = append(buildingOrder, buildingKeys[i].ID)
+			buildingKeyMap[buildingKeys[i].ID] = building
 		}
 
 		// whoops this query doesn't use venue
 		q = datastore.NewQuery("Room").Order("RoomNumber").Order("Partition")
-		roomKeys, _ := q.GetAll(ctx, &rooms)
+		roomKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &rooms)
 
 		for j, room := range rooms {
-			buildingRoomMap[room.Building.IntID()] = append(buildingRoomMap[room.Building.IntID()], room)
-			roomMap[roomKeys[j].IntID()] = room
+			buildingRoomMap[room.Building.ID] = append(buildingRoomMap[room.Building.ID], room)
+			roomMap[roomKeys[j].ID] = room
 		}
 	}
 
@@ -154,8 +156,8 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 			log.Printf("Get event: %v", err)
 		}
 		for _, roomKey := range editEvent.Rooms {
-			room := roomMap[roomKey.IntID()]
-			building := buildingKeyMap[room.Building.IntID()]
+			room := roomMap[roomKey.ID]
+			building := buildingKeyMap[room.Building.ID]
 			eventRoomMap[building.Code+"_"+strconv.Itoa(room.RoomNumber)+"_"+room.Partition] = true
 		}
 		for _, status := range editEvent.RsvpStatuses {
@@ -253,8 +255,8 @@ func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 
 		components := strings.Split(room, "_")
 		//log.Printf( "found room in building "+components[0]+" with number "+components[1])
-		q := datastore.NewQuery("Building").Filter("Code =", components[0]).KeysOnly()
-		buildingKeys, err := q.GetAll(ctx, nil)
+		q := datastore.NewQuery("Building").FilterField("Code", "=", components[0]).KeysOnly()
+		buildingKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, nil)
 		if err != nil {
 			log.Printf("Getting buildings by code %q: %v", components[0], err)
 		}
@@ -264,8 +266,10 @@ func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 			log.Printf("Parsing value %q: %v", components[1], err)
 		}
 		//log.Printf( "Room number: %v", roomNumber)
-		q = datastore.NewQuery("Room").Filter("Building =", buildingKeys[0]).Filter("RoomNumber =", roomNumber).Filter("Partition =", components[2]).KeysOnly()
-		roomKeys, err := q.GetAll(ctx, nil)
+		q = datastore.NewQuery("Room").FilterField("Building", "=", buildingKeys[0]).
+			FilterField("RoomNumber", "=", roomNumber).
+			FilterField("Partition", "=", components[2]).KeysOnly()
+		roomKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, nil)
 		if err != nil {
 			log.Printf("Reading room: %v", err)
 		}
@@ -292,7 +296,7 @@ func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
 
 		for _, event := range allEvents {
 			event.Current = false
-			_, err := datastore.Put(ctx, event.Key, event)
+			_, err := dsclient.FromContext(ctx).Put(ctx, event.Key, event)
 			if err != nil {
 				log.Printf("Updating event: %v", err)
 			}

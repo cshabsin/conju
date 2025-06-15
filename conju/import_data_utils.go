@@ -14,17 +14,19 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/datastore"
+
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/login"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/cshabsin/conju/model/venue"
-	"google.golang.org/appengine/datastore"
 )
 
-//const Import_Data_Directory = "test_import_data"
+// const Import_Data_Directory = "test_import_data"
 const Import_Data_Directory = "real_import_data"
 
 const Guest_Data_File_Name = "Guests_to_Import.tsv"
@@ -91,7 +93,7 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 				NeedsLeader: needsLeader,
 			}
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Activity", nil), &activity)
+			_, err := dsclient.FromContext(ctx).Put(ctx, datastore.IncompleteKey("Activity", nil), &activity)
 			if err != nil {
 				log.Printf("%v", err)
 			}
@@ -124,7 +126,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	venuesMap := make(map[string]datastore.Key)
 	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
-	keys, err := q.GetAll(ctx, &venues)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &venues)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
 	}
@@ -135,7 +137,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	buildingsMap := make(map[string]datastore.Key)
 	var buildings []housing.Building
 	q = datastore.NewQuery("Building")
-	keys, err = q.GetAll(ctx, &buildings)
+	keys, err = dsclient.FromContext(ctx).GetAll(ctx, q, &buildings)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
 	}
@@ -152,7 +154,7 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 	activityMap := make(map[string]*datastore.Key)
 	var activities []activity.Activity
 	q = datastore.NewQuery("Activity")
-	keys, err = q.GetAll(ctx, &activities)
+	keys, err = dsclient.FromContext(ctx).GetAll(ctx, q, &activities)
 	for i, activityKey := range keys {
 		activityMap[(activities[i]).Keyword] = activityKey
 	}
@@ -227,7 +229,7 @@ func getRoomsFromString(roomsString string, ctx context.Context, buildingsMap ma
 		buildingKey := (buildingsMap[parts[0]])
 		if len(parts) == 1 {
 			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).KeysOnly()
-			roomKeys, err := q.GetAll(ctx, nil)
+			roomKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, nil)
 			if err != nil {
 				log.Printf("fetching rooms for building %s: %v", parts[0], err)
 			}
@@ -236,7 +238,7 @@ func getRoomsFromString(roomsString string, ctx context.Context, buildingsMap ma
 		if len(parts) == 2 {
 			roomNumber, _ := strconv.Atoi(parts[1])
 			q := datastore.NewQuery("Room").Filter("Building =", &buildingKey).Filter("RoomNumber =", roomNumber).KeysOnly()
-			roomKeys, err := q.GetAll(ctx, nil)
+			roomKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, nil)
 			if err != nil {
 				log.Printf("fetching room %v %v: %v", parts[0], parts[1], err)
 			}
@@ -354,7 +356,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 	}
 
 	w.Write([]byte(fmt.Sprintf("Adding person: %s\n", p.FullName())))
-	key, err2 := datastore.Put(ctx, person.PersonKey(ctx), &p)
+	key, err2 := dsclient.FromContext(ctx).Put(ctx, person.PersonKey(ctx), &p)
 	if err2 != nil {
 		log.Printf("%v", err2)
 	}
@@ -408,7 +410,7 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 					continue
 				}
 				var p person.Person
-				datastore.Get(ctx, personKey, &p)
+				dsclient.FromContext(ctx).Get(ctx, personKey, &p)
 				personKeys = append(personKeys, personKey)
 
 				rsvpChar := rsvps[i]
@@ -423,9 +425,9 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 			invitation.Invitees = personKeys
 			invitation.RsvpMap = rsvpMap
 
-			invitationKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+			invitationKey := datastore.IncompleteKey("Invitation", nil)
 
-			invitationKey, err = datastore.Put(ctx, invitationKey, &invitation)
+			invitationKey, err = dsclient.FromContext(ctx).Put(ctx, invitationKey, &invitation)
 			if err != nil {
 				log.Printf("RSVPs: %v -- %s", err, rsvpRow)
 			}
@@ -560,7 +562,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 
 			personKey := guestMap[guestIdInt]
 			var p person.Person
-			err := datastore.Get(ctx, personKey, &p)
+			err := dsclient.FromContext(ctx).Get(ctx, personKey, &p)
 			if err != nil {
 				log.Printf("%v: %v - %s", err, personKey.Encode(), foodRow)
 			}
@@ -572,7 +574,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 			p.FoodNotes = foodNotes
 
 			w.Write([]byte(fmt.Sprintf("Restrictions for %s: %s %s\n", name, foodIssues, foodNotes)))
-			_, err = datastore.Put(ctx, personKey, &p)
+			_, err = dsclient.FromContext(ctx).Put(ctx, personKey, &p)
 			if err != nil {
 				log.Printf("%v", err)
 			}
@@ -610,7 +612,7 @@ func ReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
 	venuesMap := make(map[string]*datastore.Key)
 	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
-	keys, err := q.GetAll(ctx, &venues)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &venues)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
 	}
@@ -621,7 +623,7 @@ func ReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
 	buildingsMap := make(map[string]datastore.Key)
 	var buildings []housing.Building
 	q = datastore.NewQuery("Building")
-	keys, err = q.GetAll(ctx, &buildings)
+	keys, err = dsclient.FromContext(ctx).GetAll(ctx, q, &buildings)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
 	}
@@ -699,7 +701,7 @@ func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 				Website:       website,
 			}
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Venue", nil), &venue)
+			_, err := dsclient.FromContext(ctx).Put(ctx, datastore.IncompleteKey("Venue", nil), &venue)
 			if err != nil {
 				log.Printf("%v", err)
 			}
@@ -720,7 +722,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 	venuesMap := make(map[string]*datastore.Key)
 	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
-	keys, err := q.GetAll(ctx, &venues)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &venues)
 	for i, venueKey := range keys {
 		venuesMap[(venues[i]).ShortName] = venueKey
 	}
@@ -758,7 +760,7 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 				Properties:        properties,
 			}
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Building", venue), &building)
+			_, err := dsclient.FromContext(ctx).Put(ctx, datastore.IncompleteKey("Building", venue), &building)
 			if err != nil {
 				log.Printf("%v", err)
 			}
@@ -779,7 +781,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 	buildingsMap := make(map[string]*datastore.Key)
 	var buildings []housing.Building
 	q := datastore.NewQuery("Building")
-	keys, err := q.GetAll(ctx, &buildings)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &buildings)
 	for i, buildingKey := range keys {
 		buildingsMap[(buildings[i]).Code] = buildingKey
 	}
@@ -837,7 +839,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 				ImageHeight: height,
 			}
 
-			_, err := datastore.Put(ctx, datastore.NewIncompleteKey(ctx, "Room", building), &room)
+			_, err := dsclient.FromContext(ctx).Put(ctx, datastore.IncompleteKey("Room", building), &room)
 			if err != nil {
 				log.Printf("%v", err)
 			}

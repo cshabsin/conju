@@ -4,92 +4,84 @@ import (
 	"context"
 	"html/template"
 	"log"
-	"math/rand"
-	"net/http"
-	"time"
 
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
+	"cloud.google.com/go/datastore"
 )
 
-func Register() {
-	http.HandleFunc("/_ah/start", func(w http.ResponseWriter, r *http.Request) {
-		datastore.EnableKeyConversion(appengine.NewContext(r))
-	})
-
-	AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
-	AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
+func Register(client *datastore.Client) {
+	s := Sessionizer{
+		Client: client,
+	}
+	s.AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
+	s.AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
 	//AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
-	AddSessionHandler("/repairData", RepairData).Needs(AdminGetter)
+	s.AddSessionHandler("/repairData", RepairData).Needs(AdminGetter)
 
-	AddSessionHandler("/reloadHousingSetup", AskReloadHousingSetup).Needs(AdminGetter)
-	AddSessionHandler("/doReloadHousingSetup", ReloadHousingSetup).Needs(AdminGetter)
+	s.AddSessionHandler("/reloadHousingSetup", AskReloadHousingSetup).Needs(AdminGetter)
+	s.AddSessionHandler("/doReloadHousingSetup", ReloadHousingSetup).Needs(AdminGetter)
 	//	AddSessionHandler("/clearHousingSetup", ClearAllHousingSetup).Needs(AdminGetter)
 
-	AddSessionHandler("/login", handleLogin("/rsvp"))
-	AddSessionHandler(loginErrorPage, handleLoginError)
-	AddSessionHandler("/logout", handleLogout)
-	AddSessionHandler("/resendInvitation", handleResendInvitation)
-	AddSessionHandler(resentInvitationPage, handleResentInvitation)
+	s.AddSessionHandler("/login", handleLogin("/rsvp"))
+	s.AddSessionHandler(loginErrorPage, handleLoginError)
+	s.AddSessionHandler("/logout", handleLogout)
+	s.AddSessionHandler("/resendInvitation", handleResendInvitation)
+	s.AddSessionHandler(resentInvitationPage, handleResentInvitation)
 
-	AddSessionHandler("/admin", handleAdmin).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/admin", handleAdmin).Needs(PersonGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/listPeople", handleListPeople).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/updatePersonForm", handleUpdatePersonForm).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/saveUpdatePerson", handleSaveUpdatePerson).Needs(PersonGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/invitations", handleInvitations).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/receivePay", handleReceivePay).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/doReceivePay", handleDoReceivePay).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/addInvitation", handleAddInvitation).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/deleteInvitation", handleDeleteInvitation).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/viewInvitation", handleViewInvitationAdmin).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(InvitationGetter)
+	s.AddSessionHandler("/invitations", handleInvitations).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/receivePay", handleReceivePay).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/doReceivePay", handleDoReceivePay).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/copyInvitations", handleCopyInvitations).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/addInvitation", handleAddInvitation).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/deleteInvitation", handleDeleteInvitation).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/viewInvitation", handleViewInvitationAdmin).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/saveInvitation", handleSaveInvitation).Needs(InvitationGetter)
 
-	AddSessionHandler("/events", handleEvents).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/createUpdateEvent", handleCreateUpdateEvent).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/events", handleEvents).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/createUpdateEvent", handleCreateUpdateEvent).Needs(PersonGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(InvitationGetter)
+	s.AddSessionHandler("/rsvp", handleViewInvitationUser).Needs(InvitationGetter)
 
-	AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/activitiesReport", handleActivitiesReport).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/roomingReport", handleRoomingReport).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/handleSaveReservations", handleSaveReservations).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/foodReport", handleFoodReport).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/ridesReport", handleRidesReport).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/rsvpReport", handleRsvpReport).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/activitiesReport", handleActivitiesReport).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/roomingReport", handleRoomingReport).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/handleSaveReservations", handleSaveReservations).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/foodReport", handleFoodReport).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/ridesReport", handleRidesReport).Needs(PersonGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
-	AddSessionHandler("/saveRooming", handleSaveRooming).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/rooming", handleRoomingTool).Needs(PersonGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/saveRooming", handleSaveRooming).Needs(PersonGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/viewMyInvitation", handleViewMyInvitation).Needs(InvitationGetter)
+	s.AddSessionHandler("/viewMyInvitation", handleViewMyInvitation).Needs(InvitationGetter)
 
-	AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
-	AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
 
-	AddSessionHandler("/testRoomingMail", handleTestSendRoomingEmail).Needs(AdminGetter)
-	AddSessionHandler("/sendRoomingMail", handleAskSendRoomingEmail).Needs(AdminGetter)
-	AddSessionHandler("/doSendTestRoomingEmail", handleSendTestRoomingEmail).Needs(AdminGetter)
-	AddSessionHandler("/doSendRealRoomingEmail", handleSendRealRoomingEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/testRoomingMail", handleTestSendRoomingEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/sendRoomingMail", handleAskSendRoomingEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/doSendTestRoomingEmail", handleSendTestRoomingEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/doSendRealRoomingEmail", handleSendRealRoomingEmail).Needs(AdminGetter)
 
-	AddSessionHandler("/testUpdatesMail", handleTestSendUpdatesEmail).Needs(AdminGetter)
-	AddSessionHandler("/sendUpdatesMail", handleAskSendUpdatesEmail).Needs(AdminGetter)
-	AddSessionHandler("/doSendTestUpdatesEmail", handleSendTestUpdatesEmail).Needs(AdminGetter)
-	AddSessionHandler("/doSendRealUpdatesEmail", handleSendRealUpdatesEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/testUpdatesMail", handleTestSendUpdatesEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/sendUpdatesMail", handleAskSendUpdatesEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/doSendTestUpdatesEmail", handleSendTestUpdatesEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/doSendRealUpdatesEmail", handleSendRealUpdatesEmail).Needs(AdminGetter)
 
-	AddSessionHandler("/testFinalEmail", handleTestSendFinalEmail).Needs(AdminGetter)
+	s.AddSessionHandler("/testFinalEmail", handleTestSendFinalEmail).Needs(AdminGetter)
 
-	AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
+	s.AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
-	AddSessionHandler("/", handleIndex).Needs(PersonGetter)
+	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
-
-	rand.Seed(time.Now().UnixNano())
-
 }
 
 func handleIndex(ctx context.Context, wr WrappedRequest) {
-	eventName := "PSR2021"
+	eventName := "PSR2025"
 	if wr.Event != nil {
 		eventName = wr.Event.ShortName
 	}

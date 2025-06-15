@@ -1,7 +1,7 @@
 package housing
 
 import (
-	"google.golang.org/appengine/datastore"
+	"cloud.google.com/go/datastore"
 )
 
 type Building struct {

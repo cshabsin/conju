@@ -11,10 +11,12 @@ import (
 	"strconv"
 	"time"
 
+	"cloud.google.com/go/datastore"
+	"google.golang.org/appengine"
+
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/login"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 )
 
 func handleListPeople(ctx context.Context, wr WrappedRequest) {
@@ -22,7 +24,7 @@ func handleListPeople(ctx context.Context, wr WrappedRequest) {
 	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
 
 	var allPeople []*person.Person
-	keys, err := q.GetAll(ctx, &allPeople)
+	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &allPeople)
 	if err != nil {
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
 		log.Printf("GetAll: %v", err)
@@ -60,7 +62,7 @@ func fetchPerson(wr WrappedRequest, encodedKey string) (*person.Person, error) {
 	}
 
 	var person person.Person
-	e = datastore.Get(ctx, key, &person)
+	e = dsclient.FromContext(ctx).Get(ctx, key, &person)
 	person.DatastoreKey = key
 
 	if e != nil {
@@ -188,7 +190,7 @@ func savePeople(wr WrappedRequest) error {
 			p.PrivateComments = form["PrivateComments"][i]
 		}
 
-		_, err = datastore.Put(ctx, key, p)
+		_, err = dsclient.FromContext(ctx).Put(ctx, key, p)
 		if err != nil {
 			log.Printf("------ %v", err)
 		}

@@ -9,8 +9,10 @@ import (
 	"strconv"
 	"time"
 
+	"cloud.google.com/go/datastore"
+
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 )
 
 func handleReceivePay(ctx context.Context, wr WrappedRequest) {
@@ -24,7 +26,7 @@ func handleReceivePay(ctx context.Context, wr WrappedRequest) {
 	}
 
 	var invitation Invitation
-	err = datastore.Get(ctx, invitationKey, &invitation)
+	err = dsclient.FromContext(ctx).Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("error getting invitation: %v", err)
 	}
@@ -75,14 +77,14 @@ func handleDoReceivePay(ctx context.Context, wr WrappedRequest) {
 	}
 
 	var invitation Invitation
-	err = datastore.Get(ctx, invitationKey, &invitation)
+	err = dsclient.FromContext(ctx).Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("error getting invitation: %v", err)
 	}
 	invitation.ReceivedPay = float64(pay)
 	invitation.ReceivedPayDate = payDate
 	invitation.ReceivedPayMethod = wr.Request.Form.Get("pay_method")
-	_, err = datastore.Put(ctx, invitationKey, &invitation)
+	_, err = dsclient.FromContext(ctx).Put(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("error saving invitation: %v", err)
 	}

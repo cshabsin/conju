@@ -8,17 +8,18 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"cloud.google.com/go/datastore"
+
 	"github.com/cshabsin/conju/activity"
+	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/person"
-	"google.golang.org/appengine/datastore"
 )
 
 type Invitation struct {
@@ -242,22 +243,22 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 
 	for _, invitee := range inv.Invitees {
 		inviteeProp := datastore.Property{
-			Name:     "Invitees",
-			Value:    invitee,
-			Multiple: true,
+			Name:  "Invitees",
+			Value: invitee,
+			// Multiple: true, // TODO: is this safe?
 		}
 		props = append(props, inviteeProp)
 	}
 
 	rsvpMap := inv.RsvpMap
 	for k, v := range rsvpMap {
-		encodedKey := (*k).Encode()
+		encodedKey := k.Encode()
 		props = append(props, datastore.Property{Name: "RsvpMap." + encodedKey, Value: int64(v)})
 	}
 
 	activityMap := inv.ActivityMap
 	for p, m := range activityMap {
-		personEncodedKey := (*p).Encode()
+		personEncodedKey := p.Encode()
 		partialName := "ActivityMap." + personEncodedKey
 		for a, v := range m {
 			totalKey := partialName + delimiter + (*a).Encode()
@@ -266,7 +267,7 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 	}
 	activityLeaderMap := inv.ActivityLeaderMap
 	for p, m := range activityLeaderMap {
-		personEncodedKey := (*p).Encode()
+		personEncodedKey := p.Encode()
 		partialName := "ActivityLeaderMap." + personEncodedKey
 		for a, v := range m {
 			totalKey := partialName + delimiter + (*a).Encode()
@@ -323,7 +324,7 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 
 	for _, personKey := range inv.Invitees {
 		var person person.Person
-		datastore.Get(ctx, personKey, &person)
+		dsclient.FromContext(ctx).Get(ctx, personKey, &person)
 		if person.IsNonAdultAtTime(event.StartDate) {
 			return true
 		}
@@ -338,7 +339,7 @@ func handleInvitations(ctx context.Context, wr WrappedRequest) {
 	var notInvitedSet = make(map[datastore.Key]person.PersonWithKey)
 	personQuery := datastore.NewQuery("Person")
 	var people []*person.Person
-	personKeys, _ := personQuery.GetAll(ctx, &people)
+	personKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, personQuery, &people)
 
 	for i := 0; i < len(personKeys); i++ {
 		personWithKey := person.PersonWithKey{Key: personKeys[i].Encode(), Person: *people[i]}
@@ -347,8 +348,8 @@ func handleInvitations(ctx context.Context, wr WrappedRequest) {
 
 	var invitations []*Invitation
 
-	q := datastore.NewQuery("Invitation").Filter("Event =", currentEventKey)
-	invitationKeys, err := q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", currentEventKey)
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf(
 			"fetching invitations: %v", err)
@@ -457,8 +458,8 @@ func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
 		log.Printf("error decoding event key: %v", err)
 	}
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").Filter("Event =", baseEventKey)
-	q.GetAll(ctx, &invitations)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", baseEventKey)
+	dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 
 	log.Printf("Found %d invitations from copied event", len(invitations))
 	var newInvitations []Invitation
@@ -468,11 +469,11 @@ func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
 			Event:    currentEventKey,
 			Invitees: invitation.Invitees,
 		})
-		newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+		newKey := datastore.IncompleteKey("Invitation", nil)
 		newInvitationKeys = append(newInvitationKeys, newKey)
 	}
 
-	_, error := datastore.PutMulti(ctx, newInvitationKeys, newInvitations)
+	_, error := dsclient.FromContext(ctx).PutMulti(ctx, newInvitationKeys, newInvitations)
 	if error != nil {
 		log.Printf("Error in putmulti: %v", error)
 	}
@@ -500,21 +501,21 @@ func handleAddInvitation(ctx context.Context, wr WrappedRequest) {
 
 	if invitationKeyEncoded == "" {
 		log.Printf("no invitation selected, creating new one...")
-		newKey := datastore.NewIncompleteKey(ctx, "Invitation", nil)
+		newKey := datastore.IncompleteKey("Invitation", nil)
 		var newInvitation Invitation
 		newInvitation.Event = currentEventKey
 		newInvitation.Invitees = newPeople
 
-		_, err := datastore.Put(ctx, newKey, &newInvitation)
+		_, err := dsclient.FromContext(ctx).Put(ctx, newKey, &newInvitation)
 		if err != nil {
 			log.Printf("%v", err)
 		}
 	} else {
 		existingInvitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 		var existingInvitation Invitation
-		datastore.Get(ctx, existingInvitationKey, &existingInvitation)
+		dsclient.FromContext(ctx).Get(ctx, existingInvitationKey, &existingInvitation)
 		existingInvitation.Invitees = append(existingInvitation.Invitees, newPeople...)
-		_, err := datastore.Put(ctx, existingInvitationKey, &existingInvitation)
+		_, err := dsclient.FromContext(ctx).Put(ctx, existingInvitationKey, &existingInvitation)
 		if err != nil {
 			log.Printf("%v", err)
 		}
@@ -532,7 +533,7 @@ func handleDeleteInvitation(ctx context.Context, wr WrappedRequest) {
 		log.Printf("key decryption error: %v", err)
 	}
 
-	err = datastore.Delete(ctx, invitationKey)
+	err = dsclient.FromContext(ctx).Delete(ctx, invitationKey)
 	if err != nil {
 		log.Printf("invitation deletion error: %v", err)
 	}
@@ -573,7 +574,7 @@ var (
 
 func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) {
 	var inv Invitation
-	err := datastore.Get(ctx, invitationKey, &inv)
+	err := dsclient.FromContext(ctx).Get(ctx, invitationKey, &inv)
 	if err != nil {
 		log.Printf("error getting invitation: %v", err)
 	}
@@ -628,7 +629,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	}
 
 	var inv Invitation
-	datastore.Get(ctx, invitationKey, &inv)
+	dsclient.FromContext(ctx).Get(ctx, invitationKey, &inv)
 
 	people := wr.Request.Form["person"]
 	rsvps := wr.Request.Form["rsvp"]
@@ -639,7 +640,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	for i, personKey := range people {
 		key, _ := datastore.DecodeKey(personKey)
 		var person person.Person
-		datastore.Get(ctx, key, &person)
+		dsclient.FromContext(ctx).Get(ctx, key, &person)
 		newPeople = append(newPeople, key)
 		rsvp, _ := strconv.Atoi(rsvps[i])
 		if rsvp >= 0 {
@@ -734,7 +735,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 
 	inv.LastUpdatedTimestamp = time.Now()
 
-	_, err = datastore.Put(ctx, invitationKey, &inv)
+	_, err = dsclient.FromContext(ctx).Put(ctx, invitationKey, &inv)
 	if err != nil {
 		log.Printf("%v", err)
 	}
@@ -742,7 +743,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	var invitees []person.Person
 	for _, personKey := range inv.Invitees {
 		var person person.Person
-		datastore.Get(ctx, personKey, &person)
+		dsclient.FromContext(ctx).Get(ctx, personKey, &person)
 		invitees = append(invitees, person)
 	}
 
@@ -840,7 +841,7 @@ func (inv *Invitation) ClusterByRsvp(ctx context.Context) (map[invitation.RsvpSt
 
 	for _, invitee := range inv.Invitees {
 		var per person.Person
-		datastore.Get(ctx, invitee, &per)
+		dsclient.FromContext(ctx).Get(ctx, invitee, &per)
 		per.DatastoreKey = invitee
 
 		if rsvp, present := personKeyToRsvp[*invitee]; present {
