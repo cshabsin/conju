@@ -9,6 +9,7 @@ import (
 	"google.golang.org/appengine/v2"
 
 	"github.com/cshabsin/conju/conju"
+	"github.com/cshabsin/conju/view/poll"
 )
 
 func main() {
@@ -25,8 +26,12 @@ func main() {
 	}
 	defer datastoreClient.Close()
 
-	conju.Register(datastoreClient)
-	// poll.Register(datastoreClient)
+	s := conju.Sessionizer{
+		Client: datastoreClient,
+	}
+
+	conju.Register(s)
+	poll.Register(s)
 
 	appengine.Main()
 }
