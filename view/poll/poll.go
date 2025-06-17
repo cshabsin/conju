@@ -10,8 +10,8 @@ import (
 	"github.com/cshabsin/conju/model/poll"
 )
 
-func Register() {
-	conju.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
+func Register(s conju.Sessionizer) {
+	s.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
 }
 
 func HandlePoll(ctx context.Context, wr conju.WrappedRequest) {

@@ -4,14 +4,9 @@ import (
 	"context"
 	"html/template"
 	"log"
-
-	"cloud.google.com/go/datastore"
 )
 
-func Register(client *datastore.Client) {
-	s := Sessionizer{
-		Client: client,
-	}
+func Register(s Sessionizer) {
 	s.AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
 	s.AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
 	//AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)
