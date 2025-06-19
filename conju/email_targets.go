@@ -12,6 +12,16 @@ import (
 // This file defines a set of EmailDistributors, which the
 // handleSendMail function uses to
 
+// MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
+type MailHeaderInfo struct {
+	To      []string
+	Cc      []string
+	Bcc     []string
+	Subject string
+
+	BccSelf bool
+}
+
 type EmailSender func(context.Context, map[string]interface{}, MailHeaderInfo) error
 
 type EmailDistributor func(context.Context, WrappedRequest, EmailSender) error
