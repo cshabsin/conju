@@ -7,23 +7,11 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"path/filepath"
-	"strings"
-	text_template "text/template"
 
+	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
-
-// MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
-type MailHeaderInfo struct {
-	To      []string
-	Cc      []string
-	Bcc     []string
-	Subject string
-
-	BccSelf bool
-}
 
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
@@ -35,39 +23,16 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		"SharerName":                  MakeSharerName,
 		"DerefPeople":                 DerefPeople,
 	}
-	tpl, err := template.New("").Funcs(functionMap).ParseGlob("templates/email/*.html")
+	htmlTpl, textTpl, err := message.GetTemplates(wr.Context(), wr.Event.Key, functionMap)
 	if err != nil {
-		return "", "", "", err
-	}
-
-	tpl, err = tpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
-	if err != nil {
-		return "", "", "", fmt.Errorf("parsing templates %s: %v", "templates/"+wr.Event.ShortName+"/email/*.html", err)
+		return "", "", "", fmt.Errorf("error getting templates: %w", err)
 	}
 
 	// Hard-code that we want the roomingInfo template available for now.
-	tpl, err = tpl.ParseFiles("templates/roomingInfo.html")
+	htmlTpl, err = htmlTpl.ParseFiles("templates/roomingInfo.html")
 	if err != nil {
 		return "", "", "", err
 	}
-
-	textFunctionMap := text_template.FuncMap{
-		"HasHousingPreference":        RealInvHasHousingPreference,
-		"PronounString":               person.GetPronouns,
-		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
-		"SharerName":                  MakeSharerName,
-		"DerefPeople":                 DerefPeople,
-	}
-	textTpl, err := text_template.New("").Funcs(textFunctionMap).ParseGlob("templates/email/*.html")
-	if err != nil {
-		return "", "", "", err
-	}
-	textTpl, err = textTpl.ParseGlob("templates/" + wr.Event.ShortName + "/email/*.html")
-	if err != nil {
-		return "", "", "", err
-	}
-
-	// Hard-code that we want the roomingInfo template available for now.
 	textTpl, err = textTpl.ParseFiles("templates/roomingInfo.html")
 	if err != nil {
 		return "", "", "", err
@@ -78,7 +43,7 @@ func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, need
 		return "", "", "", err
 	}
 	var htmlBuf bytes.Buffer
-	if err := tpl.ExecuteTemplate(&htmlBuf, templatePrefix+"_html", data); err != nil {
+	if err := htmlTpl.ExecuteTemplate(&htmlBuf, templatePrefix+"_html", data); err != nil {
 		return text.String(), "", "", err
 	}
 	if needSubject {
@@ -212,29 +177,18 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 }
 
 func handleListMail(ctx context.Context, wr WrappedRequest) {
-	templateNames, err := filepath.Glob("templates/email/*.html")
+	templates, err := message.ListTemplates(ctx, wr.Event.Key)
 	if err != nil {
-		log.Printf("Error globbing email templates: %v", err)
-	}
-	for i := range templateNames {
-		templateNames[i] = strings.TrimPrefix(templateNames[i], "templates/email/")
-		templateNames[i] = strings.TrimSuffix(templateNames[i], ".html")
-	}
-	eventTemplateNames, err := filepath.Glob("templates/" + wr.Event.ShortName + "/email/*.html")
-	if err != nil {
-		log.Printf("Error globbing event email templates: %v", err)
-	}
-	for i := range eventTemplateNames {
-		eventTemplateNames[i] = strings.TrimPrefix(eventTemplateNames[i], "templates/"+wr.Event.ShortName+"/email/")
-		eventTemplateNames[i] = strings.TrimSuffix(eventTemplateNames[i], ".html")
+		log.Printf("Error listing templates: %v", err)
+		fmt.Fprintf(wr.ResponseWriter, "Error listing templates: %v", err)
+		return
 	}
 
-	templateNames = append(templateNames, eventTemplateNames...)
 	functionMap := template.FuncMap{
 		"makeSendMailLink": makeSendMailLink,
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{"Templates": templateNames})
+	data := wr.MakeTemplateData(map[string]any{"Templates": templates})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listEmail.html", data); err != nil {
 		log.Println(err)
 	}
