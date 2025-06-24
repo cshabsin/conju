@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/cshabsin/conju/conju/dsclient"
+	"google.golang.org/api/iterator"
 )
 
 type MessageType int
@@ -43,9 +44,9 @@ type Message struct {
 	ShortName string         // the short name of the message, used to identify it
 
 	Type      MessageType // the type of message (individual, invitee, attendee, admin)
-	Subject   string      // subject template for the message
-	Plaintext string      // plaintext version of the message template
-	HTML      string      // HTML version of the message template
+	Subject   string      `datastore:",noindex"` // subject template for the message
+	Plaintext string      `datastore:",noindex"` // plaintext version of the message template
+	HTML      string      `datastore:",noindex"` // HTML version of the message template
 
 	// Whether this message can be selected by users for sending.
 	// If false, it just contains utility templates that are used by other messages.
@@ -73,7 +74,8 @@ func forEvent(ctx context.Context, eventKey *datastore.Key) ([]*Message, error) 
 
 func global(ctx context.Context) ([]*Message, error) {
 	client := dsclient.FromContext(ctx)
-	q := datastore.NewQuery("Message").FilterField("Event", "=", nil).Order("ShortName")
+	var noEvent *datastore.Key // nil key indicates global messages
+	q := datastore.NewQuery("Message").FilterField("Event", "=", noEvent).Order("ShortName")
 	var globalMessages []*Message
 	_, err := client.GetAll(ctx, q, &globalMessages)
 	if err != nil {
@@ -101,6 +103,20 @@ func ListTemplates(ctx context.Context, eventKey *datastore.Key) ([]string, erro
 	return names, nil
 }
 
+func FetchTemplateSource(ctx context.Context, eventKey *datastore.Key, name string) (*Message, error) {
+	client := dsclient.FromContext(ctx)
+	q := datastore.NewQuery("Message").FilterField("Event", "=", eventKey).FilterField("ShortName", "=", name)
+
+	it := client.Run(ctx, q)
+
+	var msg Message
+	_, err := it.Next(&msg)
+	if err == iterator.Done {
+		return nil, fmt.Errorf("message %q not found", name)
+	}
+	return &msg, nil
+}
+
 func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_template.FuncMap) (*html_template.Template, *text_template.Template, error) {
 	msgs, err := global(ctx)
 	if err != nil {
@@ -126,14 +142,14 @@ func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_tem
 
 func htmlContents(m *Message) string {
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("{{define %s_subject}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
-	content.WriteString(fmt.Sprintf("{{define %s_html}}\n%s\n{{end}}\n", m.ShortName, m.HTML))
+	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
+	content.WriteString(fmt.Sprintf("{{define \"%s_html\"}}\n%s\n{{end}}\n", m.ShortName, m.HTML))
 	return content.String()
 }
 
 func textContents(m *Message) string {
 	var content strings.Builder
-	content.WriteString(fmt.Sprintf("{{define %s_subject}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
-	content.WriteString(fmt.Sprintf("{{define %s_text}}\n%s\n{{end}}\n", m.ShortName, m.Plaintext))
+	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
+	content.WriteString(fmt.Sprintf("{{define \"%s_text\"}}\n%s\n{{end}}\n", m.ShortName, m.Plaintext))
 	return content.String()
 }
