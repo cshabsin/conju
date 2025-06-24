@@ -55,7 +55,9 @@ func Register(s Sessionizer) {
 	s.AddSessionHandler("/viewMyInvitation", handleViewMyInvitation).Needs(InvitationGetter)
 
 	s.AddSessionHandler("/sendMail", handleSendMail).Needs(InvitationGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/editMail", handleEditMail).Needs(InvitationGetter).Needs(AdminGetter)
 	s.AddSessionHandler("/doSendMail", handleDoSendMail).Needs(InvitationGetter).Needs(AdminGetter)
+	s.AddSessionHandler("/fetchMailTemplate", handleFetchMailTemplate).Needs(AdminGetter)
 
 	s.AddSessionHandler("/testRoomingMail", handleTestSendRoomingEmail).Needs(AdminGetter)
 	s.AddSessionHandler("/sendRoomingMail", handleAskSendRoomingEmail).Needs(AdminGetter)
@@ -72,6 +74,7 @@ func Register(s Sessionizer) {
 	s.AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
 	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
+
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 }
 

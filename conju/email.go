@@ -13,17 +13,18 @@ import (
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
+var emailFunctionMap = template.FuncMap{
+	"HasHousingPreference":        RealInvHasHousingPreference,
+	"PronounString":               person.GetPronouns,
+	"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
+	"SharerName":                  MakeSharerName,
+	"DerefPeople":                 DerefPeople,
+}
+
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
-func renderMail(wr WrappedRequest, templatePrefix string, data interface{}, needSubject bool) (string, string, string, error) {
-	functionMap := template.FuncMap{
-		"HasHousingPreference":        RealInvHasHousingPreference,
-		"PronounString":               person.GetPronouns,
-		"CollectiveAddressFirstNames": person.CollectiveAddressFirstNames,
-		"SharerName":                  MakeSharerName,
-		"DerefPeople":                 DerefPeople,
-	}
-	htmlTpl, textTpl, err := message.GetTemplates(wr.Context(), wr.Event.Key, functionMap)
+func renderMail(ctx context.Context, wr WrappedRequest, templatePrefix string, data any, needSubject bool) (string, string, string, error) {
+	htmlTpl, textTpl, err := message.GetTemplates(ctx, wr.Event.Key, emailFunctionMap)
 	if err != nil {
 		return "", "", "", fmt.Errorf("error getting templates: %w", err)
 	}
@@ -69,6 +70,48 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 	handleMailPage(ctx, wr, emailTemplates[0], "sendEmail.html")
 }
 
+func handleEditMail(ctx context.Context, wr WrappedRequest) {
+	wr.Request.ParseForm()
+	if wr.Request.Form["new"] != nil {
+		// handleCreateMail(ctx, wr)
+		fmt.Fprintf(wr.ResponseWriter, "Creating new email templates is not yet supported.")
+		return
+	}
+	// emailTemplate=value or new=true
+	emailTemplates, ok := wr.Request.Form["emailTemplate"]
+	if !ok || len(emailTemplates) == 0 {
+		emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
+	}
+	if !ok || len(emailTemplates) == 0 {
+		handleListMail(ctx, wr)
+		return
+	}
+	emailTemplate := emailTemplates[0]
+	msg, err := message.FetchTemplateSource(ctx, wr.Event.Key, emailTemplate)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", emailTemplate, err),
+			http.StatusInternalServerError)
+		return
+	}
+	data := wr.MakeTemplateData(map[string]any{
+		"EmailTemplate": emailTemplate,
+		"TextBody":      msg.Plaintext,
+		"HTMLBody":      msg.HTML,
+		"Subject":       msg.Subject,
+	})
+	tplFiles := []string{"templates/main.html", "templates/editEmail.html"}
+	webTpl := template.Must(template.ParseFiles(tplFiles...))
+	if err := webTpl.ExecuteTemplate(wr.ResponseWriter, "editEmail.html", data); err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error rendering edit mail page: %v", err),
+			http.StatusInternalServerError)
+		return
+	}
+}
+
+func handleFetchMailTemplate(ctx context.Context, wr WrappedRequest) {
+
+}
+
 func handleViewMyInvitation(ctx context.Context, wr WrappedRequest) {
 	handleMailPage(ctx, wr, "initial_invitation", "viewMyInvitation.html")
 }
@@ -86,7 +129,7 @@ func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlT
 			}
 		}
 	}
-	emailData := map[string]interface{}{
+	emailData := map[string]any{
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
 		"Person":      wr.LoginInfo.Person,
@@ -95,13 +138,13 @@ func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlT
 		"Env":         wr.GetEnvForTemplates(),
 		"Unreserved":  unreserved,
 	}
-	text, html, subject, err := renderMail(wr, emailTemplate, emailData, true)
+	text, html, subject, err := renderMail(ctx, wr, emailTemplate, emailData, true)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
 		return
 	}
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"TemplateName":    emailTemplate,
 		"Subject":         subject,
 		"Body":            text,
@@ -148,7 +191,7 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 		return
 	}
 	bccSelf := wr.Request.PostForm.Get("bccSelf") == "1"
-	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]interface{}, headerData MailHeaderInfo) error {
+	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]any, headerData MailHeaderInfo) error {
 		p := emailData["Person"].(*person.Person)
 		if _, ok := emailData["LoginLink"]; !ok {
 			emailData["LoginLink"] = makeLoginUrl(p, true)
@@ -168,7 +211,7 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 		}
 		emailData["Unreserved"] = unreserved
 		headerData.BccSelf = bccSelf
-		return sendMail(wr, emailTemplate, emailData, headerData)
+		return sendMail(ctx, wr, emailTemplate, emailData, headerData)
 	}
 	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
@@ -185,7 +228,12 @@ func handleListMail(ctx context.Context, wr WrappedRequest) {
 	}
 
 	functionMap := template.FuncMap{
-		"makeSendMailLink": makeSendMailLink,
+		"makeSendMailLink": func(templateName string) string {
+			return "/sendMail?emailTemplate=" + templateName
+		},
+		"makeEditMailLink": func(templateName string) string {
+			return "/editMail?emailTemplate=" + templateName
+		},
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
 	data := wr.MakeTemplateData(map[string]any{"Templates": templates})
@@ -194,15 +242,11 @@ func handleListMail(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func makeSendMailLink(templateName string) string {
-	return "/sendMail?emailTemplate=" + templateName
-}
-
 const senders = "Dana Scott and Chris Shabsin"
 
-func sendMail(wr WrappedRequest, templatePrefix string, data interface{},
+func sendMail(ctx context.Context, wr WrappedRequest, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
-	text, html, subject, err := renderMail(wr, templatePrefix, data,
+	text, html, subject, err := renderMail(ctx, wr, templatePrefix, data,
 		/* needSubject = */ headerData.Subject == "")
 	if headerData.Subject != "" {
 		subject = headerData.Subject
