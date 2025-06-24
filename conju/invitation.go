@@ -810,7 +810,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 		BccSelf: false,
 	}
 
-	sendMail(wr, "rsvpconfirmation", data, header)
+	sendMail(ctx, wr, "rsvpconfirmation", data, header)
 
 	if !wr.IsAdminUser() {
 

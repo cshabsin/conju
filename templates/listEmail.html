@@ -7,9 +7,14 @@
   {{range .Templates}}
   <tr>
     <td>{{.}}</td>
-    <td><a href="{{makeSendMailLink .}}">Send</a></td>
+    <td>
+      <a href="{{makeSendMailLink .}}">Send</a> 
+      <a href="{{makeEditMailLink .}}">Edit</a>
+    </td>
   </tr>
   {{end}}
 </table>
+
+<a href="/editMail?new=true">Create new email template</a>
 
 {{end}}

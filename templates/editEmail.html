@@ -1,0 +1,220 @@
+{{template "main.html" .}}
+{{define "body"}}
+
+<h1>
+  {{if .IsNew}}
+    Create New Email Template
+  {{else}}
+    Edit Email Template: {{.Filename}}
+  {{end}}
+</h1>
+
+<form method="POST" action="/saveMail"> {{/* Adjust action URL as needed */}}
+  {{if .IsNew}}
+    <input type="hidden" name="isNew" value="true">
+    <p>
+      <label for="nameInput">Template name (e.g., initialInvitation):</label><br>
+      <input type="text" id="nameInput" name="name" value="{{.TemplateName}}" required size="50">
+    </p>
+  {{else}}
+    <input type="hidden" name="filename" value="{{.TemplateName}}">
+  {{end}}
+
+  <p>
+    <label for="subject">Email Subject:</label><br>
+    <input type="text" id="subject" name="subject" value="{{.Subject}}" required size="80">
+  </p>
+
+  <hr>
+
+  <div class="editor-section">
+    <h2>HTML Version</h2>
+    <div class="edit-preview-container">
+      <div class="edit-pane">
+        <textarea name="htmlBody" id="htmlBody" rows="25">{{.EmailTemplate.HTML}}</textarea>
+      </div>
+      <div class="preview-pane">
+        <h3>Preview</h3>
+        <iframe id="htmlPreview"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="editor-section">
+    <h2>Text Version</h2>
+    <div class="edit-preview-container">
+      <div class="edit-pane">
+        <textarea name="textBody" id="textBody" rows="25">{{.EmailTemplate.Plaintext}}</textarea>
+      </div>
+      <div class="preview-pane">
+        <h3>Preview</h3>
+        <pre id="textPreview"></pre>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <p>
+    <input type="submit" value="Save Template" class="button">
+    <a href="/listMail" class="button-link">Cancel</a>
+  </p>
+</form>
+
+<style>
+  .editor-section {
+    margin-bottom: 20px;
+  }
+  .edit-preview-container {
+    display: flex;
+    flex-direction: row;
+    gap: 15px; /* Space between editor and preview */
+    min-height: 400px; /* Minimum height for the editor/preview areas */
+    margin-bottom: 15px;
+  }
+  .edit-pane {
+    flex: 1; /* Takes up half the space */
+    display: flex;
+    flex-direction: column;
+  }
+  .edit-pane textarea {
+    flex-grow: 1; /* Textarea fills available vertical space */
+    width: 100%;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .preview-pane {
+    flex: 1; /* Takes up half the space */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Important for iframe/pre to respect flex sizing */
+  }
+  .preview-pane h3 {
+    margin: 0;
+    padding: 8px 12px;
+    background-color: #eee;
+    border-bottom: 1px solid #ccc;
+    font-size: 1em;
+    font-weight: bold;
+    border-top-left-radius: 3px; /* Match parent's border-radius */
+    border-top-right-radius: 3px;
+  }
+  .preview-pane iframe, .preview-pane pre {
+    flex-grow: 1; /* Content fills available vertical space */
+    width: 100%;
+    border: none;
+    margin: 0;
+    box-sizing: border-box;
+  }
+  .preview-pane pre {
+    padding: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-y: auto; /* Allow scrolling for long text content */
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  label {
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 5px;
+  }
+  input[type="text"] {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+  }
+  .button, input[type="submit"] { /* General button styling */
+    padding: 10px 15px;
+    margin-right: 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1em;
+  }
+  input[type="submit"].button {
+    background-color: #4CAF50; /* Green */
+    color: white;
+  }
+  input[type="submit"].button:hover {
+    background-color: #45a049;
+  }
+  a.button-link {
+    display: inline-block; /* To apply padding correctly */
+    background-color: #f0f0f0;
+    color: black;
+    border: 1px solid #ccc;
+  }
+  a.button-link:hover {
+    background-color: #e0e0e0;
+  }
+  hr {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    border: 0;
+    border-top: 1px solid #eee;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const htmlBodyTextarea = document.getElementById('htmlBody');
+    const htmlPreviewFrame = document.getElementById('htmlPreview');
+    const textBodyTextarea = document.getElementById('textBody');
+    const textPreviewPre = document.getElementById('textPreview');
+
+    // Debounce function to limit the rate of preview updates
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    function updateHtmlPreview() {
+      if (htmlBodyTextarea && htmlPreviewFrame) {
+        const content = htmlBodyTextarea.value;
+        const previewDoc = htmlPreviewFrame.contentDocument || htmlPreviewFrame.contentWindow.document;
+        previewDoc.open();
+        previewDoc.write(content);
+        previewDoc.close();
+      }
+    }
+
+    function updateTextPreview() {
+      if (textBodyTextarea && textPreviewPre) {
+        textPreviewPre.textContent = textBodyTextarea.value;
+      }
+    }
+
+    const debouncedUpdateHtmlPreview = debounce(updateHtmlPreview, 250);
+    const debouncedUpdateTextPreview = debounce(updateTextPreview, 250);
+
+    if (htmlBodyTextarea) {
+      htmlBodyTextarea.addEventListener('input', debouncedUpdateHtmlPreview);
+      updateHtmlPreview(); // Initial preview on page load
+    }
+
+    if (textBodyTextarea) {
+      textBodyTextarea.addEventListener('input', debouncedUpdateTextPreview);
+      updateTextPreview(); // Initial preview on page load
+    }
+  });
+</script>
+
+{{end}}

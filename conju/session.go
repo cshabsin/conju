@@ -175,8 +175,11 @@ func (w WrappedRequest) IsAdminUser() bool {
 	return w.User.Admin
 }
 
-func (w WrappedRequest) MakeTemplateData(extraVals map[string]interface{}) map[string]interface{} {
-	vals := w.TemplateData
+func (w WrappedRequest) MakeTemplateData(extraVals map[string]any) map[string]interface{} {
+	vals := map[string]any{}
+	for k, v := range w.TemplateData {
+		vals[k] = v
+	}
 	for k, v := range extraVals {
 		vals[k] = v
 	}
