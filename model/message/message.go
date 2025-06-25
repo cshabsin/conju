@@ -55,9 +55,6 @@ type Message struct {
 
 // Key returns the datastore key for the message.
 func (m *Message) Key() *datastore.Key {
-	if m.Event == nil {
-		return nil
-	}
 	return datastore.NameKey("Message", m.ShortName, m.Event)
 }
 
@@ -115,6 +112,17 @@ func FetchTemplateSource(ctx context.Context, eventKey *datastore.Key, name stri
 		return nil, fmt.Errorf("message %q not found", name)
 	}
 	return &msg, nil
+}
+
+func SaveTemplate(ctx context.Context, msg *Message) error {
+	if msg.ShortName == "" {
+		return fmt.Errorf("message must have a short name")
+	}
+	client := dsclient.FromContext(ctx)
+	if _, err := client.Put(ctx, msg.Key(), msg); err != nil {
+		return fmt.Errorf("error saving message %q: %w", msg.ShortName, err)
+	}
+	return nil
 }
 
 func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_template.FuncMap) (*html_template.Template, *text_template.Template, error) {
