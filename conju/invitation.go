@@ -754,7 +754,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 		invitees = append(invitees, person)
 	}
 
-	savePeople(wr)
+	savePeople(ctx, wr)
 
 	type NewPersonInfo struct {
 		Name        string
