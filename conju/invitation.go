@@ -150,6 +150,11 @@ func (inv *Invitation) Load(ps []datastore.Property) error {
 }
 
 func (inv *Invitation) Save() ([]datastore.Property, error) {
+	var inviteesAny []any
+	for _, invitee := range inv.Invitees {
+		inviteesAny = append(inviteesAny, invitee)
+	}
+
 	props := []datastore.Property{
 		{
 			Name:  "Event",
@@ -239,15 +244,10 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 			Name:  "Storyland",
 			Value: inv.Storyland,
 		},
-	}
-
-	for _, invitee := range inv.Invitees {
-		inviteeProp := datastore.Property{
+		{
 			Name:  "Invitees",
-			Value: invitee,
-			// Multiple: true, // TODO: is this safe?
-		}
-		props = append(props, inviteeProp)
+			Value: inviteesAny,
+		},
 	}
 
 	rsvpMap := inv.RsvpMap
@@ -473,9 +473,16 @@ func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
 		newInvitationKeys = append(newInvitationKeys, newKey)
 	}
 
-	_, error := dsclient.FromContext(ctx).PutMulti(ctx, newInvitationKeys, newInvitations)
-	if error != nil {
-		log.Printf("Error in putmulti: %v", error)
+	if _, err := dsclient.FromContext(ctx).PutMulti(ctx, newInvitationKeys, newInvitations); err != nil {
+		if multiErr, ok := err.(datastore.MultiError); ok {
+			for i, err := range multiErr {
+				if err != nil {
+					fmt.Fprintf(wr.ResponseWriter, "Error in putmulti for key %s: %v\n", newInvitationKeys[i].Encode(), err)
+				}
+			}
+		}
+		log.Printf("Error in putmulti: %v", err)
+		return
 	}
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 
