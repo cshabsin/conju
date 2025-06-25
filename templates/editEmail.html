@@ -14,10 +14,10 @@
     <input type="hidden" name="isNew" value="true">
     <p>
       <label for="nameInput">Template name (e.g., initialInvitation):</label><br>
-      <input type="text" id="nameInput" name="name" value="{{.TemplateName}}" required size="50">
+      <input type="text" id="nameInput" name="emailTemplate" value="{{.EmailTemplate}}" required size="50">
     </p>
   {{else}}
-    <input type="hidden" name="filename" value="{{.TemplateName}}">
+    <input type="hidden" name="emailTemplate" value="{{.EmailTemplate}}">
   {{end}}
 
   <p>
@@ -31,7 +31,7 @@
     <h2>HTML Version</h2>
     <div class="edit-preview-container">
       <div class="edit-pane">
-        <textarea name="htmlBody" id="htmlBody" rows="25">{{.EmailTemplate.HTML}}</textarea>
+        <textarea name="htmlBody" id="htmlBody" rows="25">{{.HTMLBody}}</textarea>
       </div>
       <div class="preview-pane">
         <h3>Preview</h3>
@@ -46,7 +46,7 @@
     <h2>Text Version</h2>
     <div class="edit-preview-container">
       <div class="edit-pane">
-        <textarea name="textBody" id="textBody" rows="25">{{.EmailTemplate.Plaintext}}</textarea>
+        <textarea name="textBody" id="textBody" rows="25">{{.TextBody}}</textarea>
       </div>
       <div class="preview-pane">
         <h3>Preview</h3>
@@ -188,7 +188,7 @@
 
     function updateHtmlPreview() {
       if (htmlBodyTextarea && htmlPreviewFrame) {
-        const content = htmlBodyTextarea.value;
+        const content = htmlBodyTextarea.value;  // TODO: call /previewMailTemplate endpoint to get the rendered sample HTML content
         const previewDoc = htmlPreviewFrame.contentDocument || htmlPreviewFrame.contentWindow.document;
         previewDoc.open();
         previewDoc.write(content);
@@ -198,7 +198,7 @@
 
     function updateTextPreview() {
       if (textBodyTextarea && textPreviewPre) {
-        textPreviewPre.textContent = textBodyTextarea.value;
+        textPreviewPre.textContent = textBodyTextarea.value;  // TODO: call /previewMailTemplate endpoint to get the rendered sample Text content
       }
     }
 
