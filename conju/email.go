@@ -11,6 +11,7 @@ import (
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"golang.org/x/text/encoding/charmap"
 )
 
 var emailFunctionMap = template.FuncMap{
@@ -72,35 +73,44 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 
 func handleEditMail(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
+	isNew := false
+	emailTemplate := ""
+	textBody := ""
+	htmlBody := ""
+	subject := ""
 	if wr.Request.Form["new"] != nil {
-		// handleCreateMail(ctx, wr)
-		fmt.Fprintf(wr.ResponseWriter, "Creating new email templates is not yet supported.")
-		return
-	}
-	// emailTemplate=value or new=true
-	emailTemplates, ok := wr.Request.Form["emailTemplate"]
-	if !ok || len(emailTemplates) == 0 {
-		emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
-	}
-	if !ok || len(emailTemplates) == 0 {
-		handleListMail(ctx, wr)
-		return
-	}
-	emailTemplate := emailTemplates[0]
-	msg, err := message.FetchTemplateSource(ctx, wr.Event.Key, emailTemplate)
-	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
-		return
+		isNew = true
+	} else {
+		// emailTemplate=value or new=true
+		emailTemplates, ok := wr.Request.Form["emailTemplate"]
+		if !ok || len(emailTemplates) == 0 {
+			emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
+		}
+		if !ok || len(emailTemplates) == 0 {
+			handleListMail(ctx, wr)
+			return
+		}
+		emailTemplate = emailTemplates[0]
+		msg, err := message.FetchTemplateSource(ctx, wr.Event.Key, emailTemplate)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", emailTemplate, err),
+				http.StatusInternalServerError)
+			return
+		}
+		textBody = msg.Plaintext // TODO: convert to ISO-8859-1?
+		htmlBody = msg.HTML
+		subject = msg.Subject
 	}
 	data := wr.MakeTemplateData(map[string]any{
+		"IsNew":         isNew,
 		"EmailTemplate": emailTemplate,
-		"TextBody":      msg.Plaintext,
-		"HTMLBody":      msg.HTML,
-		"Subject":       msg.Subject,
+		"TextBody":      textBody,
+		"HTMLBody":      htmlBody,
+		"Subject":       subject,
 	})
 	tplFiles := []string{"templates/main.html", "templates/editEmail.html"}
 	webTpl := template.Must(template.ParseFiles(tplFiles...))
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	if err := webTpl.ExecuteTemplate(wr.ResponseWriter, "editEmail.html", data); err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Error rendering edit mail page: %v", err),
 			http.StatusInternalServerError)
@@ -108,7 +118,54 @@ func handleEditMail(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleFetchMailTemplate(ctx context.Context, wr WrappedRequest) {
+func handleSaveMail(ctx context.Context, wr WrappedRequest) {
+	wr.Request.ParseForm()
+	emailTemplates, ok := wr.Request.PostForm["emailTemplate"]
+	if !ok || len(emailTemplates) == 0 {
+		http.Error(wr.ResponseWriter,
+			fmt.Sprintf("%s issued without emailTemplate?", wr.URL.Path),
+			http.StatusBadRequest)
+		return
+	}
+	emailTemplate := emailTemplates[0]
+	textBody := wr.Request.PostForm.Get("textBody")
+	htmlBody := wr.Request.PostForm.Get("htmlBody")
+	subject := wr.Request.PostForm.Get("subject")
+	if textBody == "" || htmlBody == "" || subject == "" {
+		http.Error(wr.ResponseWriter, "Missing textBody, htmlBody, or subject",
+			http.StatusBadRequest)
+		return
+	}
+	decoder := charmap.ISO8859_1.NewDecoder()
+	textBody, err := decoder.String(textBody)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding plaintext for template %s: %v", emailTemplate, err),
+			http.StatusInternalServerError)
+		return
+	}
+	htmlBody, err = decoder.String(htmlBody)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding HTML for template %s: %v", emailTemplate, err),
+			http.StatusInternalServerError)
+		return
+	}
+	msg := &message.Message{
+		Event:      wr.Event.Key,
+		ShortName:  emailTemplate,
+		Plaintext:  textBody,
+		HTML:       htmlBody,
+		Subject:    subject,
+		Selectable: true,
+	}
+	if err := message.SaveTemplate(ctx, msg); err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error saving template %s: %v", emailTemplate, err),
+			http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(wr.ResponseWriter, "Saved template %s", emailTemplate)
+}
+
+func handlePreviewMailTemplate(ctx context.Context, wr WrappedRequest) {
 
 }
 
