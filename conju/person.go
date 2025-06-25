@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
-	"google.golang.org/appengine/v2"
 
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/login"
@@ -52,9 +51,7 @@ func handleListPeople(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func fetchPerson(wr WrappedRequest, encodedKey string) (*person.Person, error) {
-	ctx := appengine.NewContext(wr.Request)
-
+func fetchPerson(ctx context.Context, wr WrappedRequest, encodedKey string) (*person.Person, error) {
 	key, e := datastore.DecodeKey(encodedKey)
 	if e != nil {
 		log.Printf("%v", e)
@@ -84,7 +81,7 @@ func handleUpdatePersonForm(ctx context.Context, wr WrappedRequest) {
 
 	if queryMap["key"] != nil && queryMap["key"][0] != "" {
 		keyForUpdatePerson := queryMap["key"][0]
-		pers, err = fetchPerson(wr, keyForUpdatePerson)
+		pers, err = fetchPerson(ctx, wr, keyForUpdatePerson)
 		if err != nil {
 			log.Printf("%v", err)
 			http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
@@ -109,14 +106,12 @@ func handleUpdatePersonForm(ctx context.Context, wr WrappedRequest) {
 }
 
 func handleSaveUpdatePerson(ctx context.Context, wr WrappedRequest) {
-	savePeople(wr)
+	savePeople(ctx, wr)
 	// Where to go from here will depend on who's logged in and what they're doing
 	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
 }
 
-func savePeople(wr WrappedRequest) error {
-	ctx := appengine.NewContext(wr.Request)
-
+func savePeople(ctx context.Context, wr WrappedRequest) error {
 	wr.Request.ParseForm()
 	form := wr.Request.Form
 
@@ -128,7 +123,7 @@ func savePeople(wr WrappedRequest) error {
 
 		var key *datastore.Key
 		if encodedKey != "" {
-			p, err = fetchPerson(wr, encodedKey)
+			p, err = fetchPerson(ctx, wr, encodedKey)
 			if err != nil {
 				log.Printf("%v", err)
 			}
