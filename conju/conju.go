@@ -4,6 +4,11 @@ import (
 	"context"
 	"html/template"
 	"log"
+	"net/http"
+	"strings"
+
+	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/conju/dsclient"
 )
 
 func Register(s Sessionizer) {
@@ -76,6 +81,8 @@ func Register(s Sessionizer) {
 
 	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 
+	s.AddSessionHandler("/dbmedia", handleDBMedia)
+
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 }
 
@@ -95,4 +102,37 @@ func handleAdmin(ctx context.Context, wr WrappedRequest) {
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "admin.html", wr.TemplateData); err != nil {
 		log.Println(err)
 	}
+}
+
+func handleDBMedia(ctx context.Context, wr WrappedRequest) {
+	client := dsclient.FromContext(ctx)
+	if client == nil {
+		log.Println("Datastore client is not available in context")
+		http.Error(wr.ResponseWriter, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	path := strings.TrimPrefix(wr.URL.Path, "/dbmedia/")
+	key := datastore.NameKey("Media", path, nil)
+	var media DBMedia
+	if err := client.Get(ctx, key, &media); err != nil {
+		log.Printf("Error retrieving media %s: %v", path, err)
+		http.Error(wr.ResponseWriter, "Media not found", http.StatusNotFound)
+		return
+	}
+	contentType := "text/html; charset=utf-8"
+	if strings.HasSuffix(path, ".js") {
+		contentType = "application/javascript"
+	} else if strings.HasSuffix(path, ".css") {
+		contentType = "text/css"
+	} else if strings.HasSuffix(path, ".png") {
+		contentType = "image/png"
+	} else if strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".jpeg") {
+		contentType = "image/jpeg"
+	}
+	wr.ResponseWriter.Header().Set("Content-Type", contentType)
+}
+
+type DBMedia struct {
+	Name  string `datastore:"name"`
+	Value string `datastore:"value,noindex"`
 }
