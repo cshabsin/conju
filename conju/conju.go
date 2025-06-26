@@ -79,11 +79,11 @@ func Register(s Sessionizer) {
 
 	s.AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
-	s.AddSessionHandler("/dbmedia", handleDBMedia)
-
-	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
+	s.AddSessionHandler("/dbmedia/", handleDBMedia).Needs(PersonGetter)
 
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
+
+	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 }
 
 func handleIndex(ctx context.Context, wr WrappedRequest) {
@@ -105,6 +105,7 @@ func handleAdmin(ctx context.Context, wr WrappedRequest) {
 }
 
 func handleDBMedia(ctx context.Context, wr WrappedRequest) {
+	log.Printf("handleDBMedia: %s", wr.URL.Path)
 	client := dsclient.FromContext(ctx)
 	if client == nil {
 		log.Println("Datastore client is not available in context")
@@ -130,6 +131,7 @@ func handleDBMedia(ctx context.Context, wr WrappedRequest) {
 		contentType = "image/jpeg"
 	}
 	wr.ResponseWriter.Header().Set("Content-Type", contentType)
+	wr.ResponseWriter.Write([]byte(media.Value))
 }
 
 type DBMedia struct {
