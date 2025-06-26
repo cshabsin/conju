@@ -79,9 +79,9 @@ func Register(s Sessionizer) {
 
 	s.AddSessionHandler("/info", handleInfo).Needs(PersonGetter)
 
-	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
-
 	s.AddSessionHandler("/dbmedia", handleDBMedia)
+
+	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 
 	//AddSessionHandler("/map", handleLoadMap).Needs(PersonGetter)
 }
