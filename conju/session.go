@@ -84,7 +84,6 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, Wrapp
 			return
 		}
 		u := user.Current(ctx)
-		log.Printf("User: %v", u)
 		wr := WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
