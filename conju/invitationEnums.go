@@ -67,8 +67,8 @@ func GetAllHousingPreferences() []HousingPreferenceInfo {
 
 	toReturn = append(toReturn, HousingPreferenceInfo{
 		Preference:                HousingNotSet,
-		SinglePersonDescription:   "-- Select your rooming preference --",
-		MultiplePeopleDescription: "-- Select your rooming preference --",
+		SinglePersonDescription:   "-- Select your room sharing preference --",
+		MultiplePeopleDescription: "-- Select your room sharing preference --",
 		ReportDescription:         "not set",
 	})
 	toReturn = append(toReturn, HousingPreferenceInfo{
@@ -113,6 +113,9 @@ const (
 	PreferExpensive
 	WillingCOVIDCautious
 	PreferCOVIDCautious
+	PreferMainBuilding
+	PreferCheaperFartherBuilding
+	PreferExpensiveCarrigain
 )
 
 type HousingPreferenceBooleanType int
@@ -135,10 +138,41 @@ type HousingPreferenceBooleanInfo struct {
 	Bit                       int
 	PreferenceType            HousingPreferenceBooleanType
 	Hidden                    bool
+	HeaderString              string // used for grouping preferences in the UI
 }
 
 func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 	toReturn := []HousingPreferenceBooleanInfo{
+		{
+			Boolean:                   PreferMainBuilding,
+			Name:                      "PreferMainBuilding",
+			MultiplePeopleDescription: "We would like to stay in one of the main buildings, close to the common rooms and activities (Osceola or Tecumseh).",
+			SinglePersonDescription:   "I would like to stay in one of the main buildings, close to the common rooms and activities (Osceola or Tecumseh).",
+			ReportDescription:         "Prefer Osceola or Tecumseh",
+			Bit:                       2048,
+			PreferenceType:            Desired,
+			// SupplementalInfo:          "The main buildings are near the main common room and most of the social activities.",
+		},
+		{
+			Boolean:                   PreferCheaperFartherBuilding,
+			Name:                      "PreferCheaperFartherBuilding",
+			MultiplePeopleDescription: "-$45/night: We would like to pay less to stay in a room that is a 5-10 minute walk or a very short drive away from the main buildings (King Pine).",
+			SinglePersonDescription:   "-$45/night: I would like to pay less to stay in a room that is a 5-10 minute walk or a very short drive away from the main buildings (King Pine).",
+			ReportDescription:         "Prefer Cheaper King Pine",
+			Bit:                       4096,
+			PreferenceType:            Desired,
+			// SupplementalInfo:          "(-$45/night)",
+		},
+		{
+			Boolean:                   PreferExpensiveCarrigain,
+			Name:                      "PreferExpensiveCarrigain",
+			MultiplePeopleDescription: "+$35/night: We would like to pay more to stay in a room that is a short walk away from the main buildings. The rooms are nicer than the rooms in the main building, and the building has its own living room and kitchen (Carrigain).",
+			SinglePersonDescription:   "+$35/night: I would like to pay more to stay in a room that is a short walk away from the main buildings. The rooms are nicer than the rooms in the main building, and the building has its own living room and kitchen (Carrigain).",
+			Bit:                       8192,
+			PreferenceType:            Desired,
+			ReportDescription:         "Prefer Expensive Carrigain",
+			// SupplementalInfo:          "(+$35/night)",
+		},
 		{
 			Boolean:                   MonitorRange,
 			Name:                      "MonitorRange",
@@ -146,74 +180,75 @@ func GetAllHousingPreferenceBooleans() []HousingPreferenceBooleanInfo {
 			ReportDescription:         "Monitor Range",
 			ForChildren:               true,
 			Bit:                       64,
+			HeaderString:              "&nbsp;",
 			PreferenceType:            Desired,
 		},
-		{
-			Boolean:                   CloseBuilding,
-			Name:                      "CloseBuilding",
-			MultiplePeopleDescription: "We can stay in a building that is not within baby-monitor range of the main common room, but is very close by.",
-			ReportDescription:         "Close Building",
-			ForChildren:               true,
-			Bit:                       32,
-			PreferenceType:            Acceptable,
-		},
-		{
-			Boolean:                   FarBuilding,
-			Name:                      "FarBuilding",
-			MultiplePeopleDescription: "We can stay in a building that is ~100 yards away from the main common room.",
-			ReportDescription:         "Far Building",
-			ForChildren:               true,
-			Bit:                       16,
-			PreferenceType:            Acceptable,
-		},
-		{
-			Boolean:                   CanCrossRoad,
-			Name:                      "CanCrossRoad",
-			MultiplePeopleDescription: "Everyone in our party can cross a (low-traffic) road, alone, safely, even at night.",
-			ReportDescription:         "Across Road",
-			ForChildren:               true,
-			Bit:                       8,
-			PreferenceType:            Acceptable,
-			Hidden:                    true,
-		},
-		{
-			Boolean:                   PreferFar,
-			Name:                      "PreferFar",
-			MultiplePeopleDescription: "We would prefer to be housed far from the main common room.",
-			SinglePersonDescription:   "I would prefer to be housed far from the main common room.",
-			ReportDescription:         "Prefer Farther",
-			Bit:                       4,
-			PreferenceType:            Desired,
-		},
-		{
-			Boolean:                   FartherBuilding,
-			Name:                      "FartherBuilding",
-			MultiplePeopleDescription: "In case of overflow, we would be willing to be housed in a building that is outside of our main cluster of buildings.",
-			SinglePersonDescription:   "In case of overflow, I would be willing to be housed in a building that is outside of our main cluster of buildings.",
-			SupplementalInfo:          "Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about half a mile).",
-			ReportDescription:         "Farther Building Okay",
-			Bit:                       1,
-			PreferenceType:            Acceptable,
-			Hidden:                    true,
-		},
-		{
-			Boolean:                   WillingExpensive,
-			Name:                      "WillingExpensive",
-			MultiplePeopleDescription: "We would be willing to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
-			SinglePersonDescription:   "I would be willing to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
-			ReportDescription:         "Expensive Housing Okay",
-			Bit:                       128,
-			PreferenceType:            Acceptable,
-		},
-		{
-			Boolean:                   PreferExpensive,
-			Name:                      "PreferExpensive",
-			MultiplePeopleDescription: "We would prefer to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
-			SinglePersonDescription:   "I would prefer to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
-			ReportDescription:         "Expensive Housing Preferred",
-			Bit:                       256,
-			PreferenceType:            Desired,
-		},
+		// {
+		// 	Boolean:                   CloseBuilding,
+		// 	Name:                      "CloseBuilding",
+		// 	MultiplePeopleDescription: "We can stay in a building that is not within baby-monitor range of the main common room, but is very close by.",
+		// 	ReportDescription:         "Close Building",
+		// 	ForChildren:               true,
+		// 	Bit:                       32,
+		// 	PreferenceType:            Acceptable,
+		// },
+		// {
+		// 	Boolean:                   FarBuilding,
+		// 	Name:                      "FarBuilding",
+		// 	MultiplePeopleDescription: "We can stay in a building that is ~100 yards away from the main common room.",
+		// 	ReportDescription:         "Far Building",
+		// 	ForChildren:               true,
+		// 	Bit:                       16,
+		// 	PreferenceType:            Acceptable,
+		// },
+		// {
+		// 	Boolean:                   CanCrossRoad,
+		// 	Name:                      "CanCrossRoad",
+		// 	MultiplePeopleDescription: "Everyone in our party can cross a (low-traffic) road, alone, safely, even at night.",
+		// 	ReportDescription:         "Across Road",
+		// 	ForChildren:               true,
+		// 	Bit:                       8,
+		// 	PreferenceType:            Acceptable,
+		// 	Hidden:                    true,
+		// },
+		// {
+		// 	Boolean:                   PreferFar,
+		// 	Name:                      "PreferFar",
+		// 	MultiplePeopleDescription: "We would prefer to be housed far from the main common room.",
+		// 	SinglePersonDescription:   "I would prefer to be housed far from the main common room.",
+		// 	ReportDescription:         "Prefer Farther",
+		// 	Bit:                       4,
+		// 	PreferenceType:            Desired,
+		// },
+		// {
+		// 	Boolean:                   FartherBuilding,
+		// 	Name:                      "FartherBuilding",
+		// 	MultiplePeopleDescription: "In case of overflow, we would be willing to be housed in a building that is outside of our main cluster of buildings.",
+		// 	SinglePersonDescription:   "In case of overflow, I would be willing to be housed in a building that is outside of our main cluster of buildings.",
+		// 	SupplementalInfo:          "Other buildings are more expensive, but are correspondingly nicer, and you may want a car to get back and forth (about half a mile).",
+		// 	ReportDescription:         "Farther Building Okay",
+		// 	Bit:                       1,
+		// 	PreferenceType:            Acceptable,
+		// 	Hidden:                    true,
+		// },
+		// {
+		// 	Boolean:                   WillingExpensive,
+		// 	Name:                      "WillingExpensive",
+		// 	MultiplePeopleDescription: "We would be willing to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
+		// 	SinglePersonDescription:   "I would be willing to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
+		// 	ReportDescription:         "Expensive Housing Okay",
+		// 	Bit:                       128,
+		// 	PreferenceType:            Acceptable,
+		// },
+		// {
+		// 	Boolean:                   PreferExpensive,
+		// 	Name:                      "PreferExpensive",
+		// 	MultiplePeopleDescription: "We would prefer to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
+		// 	SinglePersonDescription:   "I would prefer to stay in nicer, more expensive (+~$90/night) housing that is ~300 yards away from the main common room.",
+		// 	ReportDescription:         "Expensive Housing Preferred",
+		// 	Bit:                       256,
+		// 	PreferenceType:            Desired,
+		// },
 		{
 			Boolean:                   ShareBed,
 			Name:                      "ShareBed",

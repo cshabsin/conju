@@ -344,7 +344,7 @@ function validate(form) {
 
     We will:
     <ul>
-      <li>Attempt to source cheap Covid tests in bulk.  If we succeed we can provide them for you for a small increase in the cost of the weekend.  We think we can probably get it down to $12-$15/person for 4 days of rapid tests plus a share of a few more accurate tests.</li>
+      <li>Cover the cost of enough COVID tests for all attendees.</li>
       <li>Provide outdoor seating for meals.</li>
     </ul>
 
@@ -371,6 +371,11 @@ function validate(form) {
   {{$InvitationHasChildren := .InvitationHasChildren}}
   <table class="formTable">
   {{range $i, $pref := .AllHousingPreferenceBooleans}}
+    {{if and (not $pref.Hidden) (ne $pref.HeaderString "")}}
+    </table>
+    <br>
+    <table class="formTable">
+    {{end}}
     {{if and (not $pref.Hidden) (or (or (and $pref.ForChildren $InvitationHasChildren) (and $pref.ForMultiples (not $single))) (and (not $pref.ForChildren) (not $pref.ForMultiples)))}}
       <tr><td><input type="checkbox" name="housingPreferenceBooleans" onchange="computeCost()" value="{{$i}}"{{if (HasPreference $Invitation.HousingPreferenceBooleans $pref.Bit)}} checked{{end}}></td>
       <td>
@@ -384,7 +389,7 @@ function validate(form) {
           {{end}}
         {{end}}
         {{if ne $pref.SupplementalInfo ""}}
-          <div style="font-size:smaller; padding-left:26px;font-style:italic">{{$pref.SupplementalInfo}}</div>
+          <div style="padding-left:26px;">{{$pref.SupplementalInfo}}</div>
         {{end}}
       </td></tr>
     {{end}}
