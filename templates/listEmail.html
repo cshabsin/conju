@@ -3,10 +3,11 @@
 
 <h1>Email Templates</h1>
 <table class="listTable">
-  <tr><th>Template filename</th><th>Links</th></tr>
+  <tr><th>Event</th><th>Template filename</th><th>Links</th></tr>
   {{range .Templates}}
   <tr>
-    <td>{{.}}</td>
+    <td>{{eventName .EventKey}}</td>
+    <td>{{.ShortName}}</td>
     <td>
       <a href="{{makeSendMailLink .}}">Send</a> 
       <a href="{{makeEditMailLink .}}">Edit</a>

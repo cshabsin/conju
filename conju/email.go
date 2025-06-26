@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 
+	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -68,20 +70,33 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 		handleListMail(ctx, wr)
 		return
 	}
-	handleMailPage(ctx, wr, emailTemplates[0], "sendEmail.html")
+	key, err := datastore.DecodeKey(emailTemplates[0])
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding email template key %s: %v", emailTemplates[0], err),
+			http.StatusBadRequest)
+		return
+	}
+	msg, err := message.Get(ctx, key)
+	if err != nil {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting email template %s: %v", emailTemplates[0], err),
+			http.StatusInternalServerError)
+		return
+	}
+	handleMailPage(ctx, wr, msg.ShortName, "sendEmail.html")
 }
 
 func handleEditMail(ctx context.Context, wr WrappedRequest) {
 	wr.Request.ParseForm()
 	isNew := false
-	emailTemplate := ""
+	templateKey := ""
+	shortName := ""
 	textBody := ""
 	htmlBody := ""
 	subject := ""
+	isGlobal := false
 	if wr.Request.Form["new"] != nil {
 		isNew = true
 	} else {
-		// emailTemplate=value or new=true
 		emailTemplates, ok := wr.Request.Form["emailTemplate"]
 		if !ok || len(emailTemplates) == 0 {
 			emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
@@ -90,23 +105,32 @@ func handleEditMail(ctx context.Context, wr WrappedRequest) {
 			handleListMail(ctx, wr)
 			return
 		}
-		emailTemplate = emailTemplates[0]
-		msg, err := message.FetchTemplateSource(ctx, wr.Event.Key, emailTemplate)
+		templateKey = emailTemplates[0]
+		key, err := datastore.DecodeKey(templateKey)
 		if err != nil {
-			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", emailTemplate, err),
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding email template key %s: %v", templateKey, err),
+				http.StatusBadRequest)
+			return
+		}
+		msg, err := message.Get(ctx, key)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", templateKey, err),
 				http.StatusInternalServerError)
 			return
 		}
 		textBody = msg.Plaintext // TODO: convert to ISO-8859-1?
 		htmlBody = msg.HTML
 		subject = msg.Subject
+		isGlobal = msg.Event == nil
 	}
 	data := wr.MakeTemplateData(map[string]any{
-		"IsNew":         isNew,
-		"EmailTemplate": emailTemplate,
-		"TextBody":      textBody,
-		"HTMLBody":      htmlBody,
-		"Subject":       subject,
+		"IsNew":       isNew,
+		"IsGlobal":    isGlobal,
+		"TemplateKey": templateKey,
+		"ShortName":   shortName,
+		"TextBody":    textBody,
+		"HTMLBody":    htmlBody,
+		"Subject":     subject,
 	})
 	tplFiles := []string{"templates/main.html", "templates/editEmail.html"}
 	webTpl := template.Must(template.ParseFiles(tplFiles...))
@@ -131,6 +155,29 @@ func handleSaveMail(ctx context.Context, wr WrappedRequest) {
 	textBody := wr.Request.PostForm.Get("textBody")
 	htmlBody := wr.Request.PostForm.Get("htmlBody")
 	subject := wr.Request.PostForm.Get("subject")
+
+	eventKey := wr.Event.Key
+	var keyForSanityCheck *datastore.Key
+	if wr.Request.PostForm.Get("isGlobal") == "1" {
+		eventKey = nil // Global templates have no event key.
+	}
+	if wr.Request.PostForm.Get("isNew") != "true" {
+		key, err := datastore.DecodeKey(wr.Request.PostForm.Get("templateKey"))
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding template key %s: %v", wr.Request.PostForm.Get("templateKey"), err),
+				http.StatusBadRequest)
+			return
+		}
+		msg, err := message.Get(ctx, key)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", emailTemplate, err),
+				http.StatusInternalServerError)
+			return
+		}
+		emailTemplate = msg.ShortName // Use the existing template name if editing.
+		eventKey = msg.Event          // Use the existing event key if editing an existing template.
+		keyForSanityCheck = msg.Key() // For sanity check.
+	}
 	if textBody == "" || htmlBody == "" || subject == "" {
 		http.Error(wr.ResponseWriter, "Missing textBody, htmlBody, or subject",
 			http.StatusBadRequest)
@@ -150,12 +197,17 @@ func handleSaveMail(ctx context.Context, wr WrappedRequest) {
 		return
 	}
 	msg := &message.Message{
-		Event:      wr.Event.Key,
+		Event:      eventKey,
 		ShortName:  emailTemplate,
 		Plaintext:  textBody,
 		HTML:       htmlBody,
 		Subject:    subject,
 		Selectable: true,
+	}
+	if keyForSanityCheck != nil && msg.Key().Encode() != keyForSanityCheck.Encode() {
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Key mismatch for template %s: %s != %s", emailTemplate, msg.Key().Encode(), keyForSanityCheck.Encode()),
+			http.StatusBadRequest)
+		return
 	}
 	if err := message.SaveTemplate(ctx, msg); err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Error saving template %s: %v", emailTemplate, err),
@@ -285,11 +337,22 @@ func handleListMail(ctx context.Context, wr WrappedRequest) {
 	}
 
 	functionMap := template.FuncMap{
-		"makeSendMailLink": func(templateName string) string {
-			return "/sendMail?emailTemplate=" + templateName
+		"eventName": func(eventKey *datastore.Key) string {
+			if eventKey == nil {
+				return "global"
+			}
+			event, err := event.GetEvent(ctx, eventKey)
+			if err != nil {
+				log.Printf("Error getting event for key %v: %v", eventKey, err)
+				return "Error getting event"
+			}
+			return event.ShortName
 		},
-		"makeEditMailLink": func(templateName string) string {
-			return "/editMail?emailTemplate=" + templateName
+		"makeSendMailLink": func(templateInfo message.MessageInfo) string {
+			return "/sendMail?emailTemplate=" + templateInfo.Key.Encode()
+		},
+		"makeEditMailLink": func(templateInfo message.MessageInfo) string {
+			return "/editMail?emailTemplate=" + templateInfo.Key.Encode()
 		},
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
