@@ -563,7 +563,6 @@ func handleViewInvitationAdmin(ctx context.Context, wr WrappedRequest) {
 
 // handleViewInvitationUser handles /rsvp URLs.
 func handleViewInvitationUser(ctx context.Context, wr WrappedRequest) {
-	log.Printf("in handleViewInvitationUser")
 	handleViewInvitation(ctx, wr, wr.InvitationKey)
 }
 
@@ -822,8 +821,9 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 	if !wr.IsAdminUser() {
 
 		data := wr.MakeTemplateData(map[string]interface{}{
-			"AnyAttending": inv.AnyAttending(),
-			"AnyUndecided": inv.AnyUndecided(),
+			"AnyAttending":             inv.AnyAttending(),
+			"AnyUndecided":             inv.AnyUndecided(),
+			"newPeopleSubjectFragment": newPeopleSubjectFragment,
 		})
 
 		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))

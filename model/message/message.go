@@ -81,20 +81,25 @@ func global(ctx context.Context) ([]*Message, error) {
 	return globalMessages, nil
 }
 
-func ListTemplates(ctx context.Context, eventKey *datastore.Key) ([]string, error) {
-	msgs, err := global(ctx)
+type MessageInfo struct {
+	Key       *datastore.Key // the datastore key of the message
+	EventKey  *datastore.Key // true if this message is associated with an event
+	ShortName string         // the short name of the message
+}
+
+func ListTemplates(ctx context.Context, eventKey *datastore.Key) ([]MessageInfo, error) {
+	client := dsclient.FromContext(ctx)
+	q := datastore.NewQuery("Message")
+	var msgs []*Message
+	keys, err := client.GetAll(ctx, q, &msgs)
 	if err != nil {
-		return nil, fmt.Errorf("error listing global templates: %w", err)
+		return nil, fmt.Errorf("error querying templates: %w", err)
 	}
-	eventMsgs, err := forEvent(ctx, eventKey)
-	if err != nil {
-		return nil, fmt.Errorf("error listing templates: %w", err)
-	}
-	msgs = append(msgs, eventMsgs...)
-	var names []string
-	for _, msg := range msgs {
+
+	var names []MessageInfo
+	for i, msg := range msgs {
 		if msg.Selectable {
-			names = append(names, msg.ShortName)
+			names = append(names, MessageInfo{Key: keys[i], EventKey: msg.Event, ShortName: msg.ShortName})
 		}
 	}
 	return names, nil
@@ -123,6 +128,15 @@ func SaveTemplate(ctx context.Context, msg *Message) error {
 		return fmt.Errorf("error saving message %q: %w", msg.ShortName, err)
 	}
 	return nil
+}
+
+func Get(ctx context.Context, key *datastore.Key) (*Message, error) {
+	client := dsclient.FromContext(ctx)
+	var msg Message
+	if err := client.Get(ctx, key, &msg); err != nil {
+		return nil, fmt.Errorf("error retrieving message %q: %w", key.Encode(), err)
+	}
+	return &msg, nil
 }
 
 func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_template.FuncMap) (*html_template.Template, *text_template.Template, error) {
