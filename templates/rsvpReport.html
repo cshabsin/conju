@@ -90,7 +90,7 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
   {{$status := .}}
   {{range (index $rsvpMap .)}}
     {{$rsvpStatus := (index $allStatuses $status).ShortDescription}}
-    {{$extraInfo := (index $PersonToExtraInfoMap (index . 0).DatastoreKey.IntID)}}
+    {{$extraInfo := (index $PersonToExtraInfoMap (index . 0).DatastoreKey.ID)}}
     <tr>
       <td>{{(index $allStatuses $status).ShortDescription}}</td>
       <td class="rsvpCell">
@@ -103,7 +103,7 @@ Friday Ice Cream: {{.FridayIceCreamCount}}<br>
       <td>{{$extraInfo.FridayLunch}}</td>
       <td>{{$extraInfo.FridayDinnerCount}}</td>
       <td>{{$extraInfo.FridayIceCreamCount}}</td> -->
-      <td>{{range .}}{{(index $personToCost .DatastoreKey.IntID)}}<br> {{end}}</td>
+      <td>{{range .}}{{(index $personToCost .DatastoreKey.ID)}}<br> {{end}}</td>
       <td>{{$extraInfo.TotalCost}}</td>
     </tr>
 

@@ -179,6 +179,7 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 	})
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
 		log.Printf("%v", err)
+		fmt.Fprintf(wr.ResponseWriter, "<p>Error generating RSVP report: %v", err)
 	}
 }
 
