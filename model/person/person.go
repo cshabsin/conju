@@ -32,6 +32,8 @@ type Person struct {
 	OldGuestId    int
 	OldInviteeId  int
 	OldInviteCode string
+
+	EmailTier int // -1 = no email, 0 = first round of email, 1 = second, etc.
 }
 
 type PersonWithKey struct {
