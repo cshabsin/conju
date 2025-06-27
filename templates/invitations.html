@@ -37,6 +37,9 @@
   <a href="viewInvitation?invitation={{.EncodedKey}}">{{ListInvitees .Invitees}}</a> 
   {{if .Invitation.ReceivedPay}}(${{.Invitation.ReceivedPay | printf "%.2f"}}){{end}}
   (<a href="receivePay?invitation={{.EncodedKey}}">Receive Pay</a>)
+  People: {{range .Invitees}}
+    <a href="updatePersonForm?key={{.Key}}">{{.Person.FirstName}}</a>
+  {{end}}
   <br>
 {{end}}
 

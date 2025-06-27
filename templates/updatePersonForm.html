@@ -48,5 +48,6 @@
 {{define "adminInfoForm"}}
         <tr><td>Approx age during current event:</td><td><input type="text" name="FallbackAge" value="{{with .ThisPerson}}{{.FallbackAge}}{{end}}"></td></tr>
         <tr><td>Need birthdate:</td><td><input type="checkbox" name="NeedBirthdate" {{if .ThisPerson.NeedBirthdate}}checked{{end}}></td></tr>
-	<tr><td>Private Comments:</td><td><textarea type="text" name="PrivateComments">{{with .ThisPerson}}{{.PrivateComments}}{{end}}</textarea></td></tr>
+        <tr><td>Email Tier:</td><td><input type="text" name="EmailTier" value="{{with .ThisPerson}}{{.EmailTier}}{{end}}"></td></tr>
+	      <tr><td>Private Comments:</td><td><textarea type="text" name="PrivateComments">{{with .ThisPerson}}{{.PrivateComments}}{{end}}</textarea></td></tr>
 {{end}}

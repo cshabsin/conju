@@ -150,6 +150,10 @@ func savePeople(ctx context.Context, wr WrappedRequest) error {
 		}
 		p.Pronouns = person.PronounFromConstant(pronounConstant)
 		p.Email = form["Email"][i]
+		p.EmailTier, err = strconv.Atoi(form["EmailTier"][i])
+		if err != nil {
+			p.EmailTier = 0
+		}
 		p.Telephone = form["Telephone"][i]
 		p.Address = form["Address"][i]
 		birthdate, dateError := time.Parse("01/02/2006", form["Birthdate"][i])
