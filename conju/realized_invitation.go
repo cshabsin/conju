@@ -56,6 +56,10 @@ func (ri RealizedInvitation) GetPeopleComing() []person.Person {
 	return peopleComing
 }
 
+func MakeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) RealizedInvitation {
+	return makeRealizedInvitation(ctx, invitationKey, inv)
+}
+
 func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) RealizedInvitation {
 	personKeys := inv.Invitees
 	var inviteePeople []person.Person

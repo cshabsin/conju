@@ -3,6 +3,7 @@ package conju
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"cloud.google.com/go/datastore"
 	"github.com/cshabsin/conju/conju/dsclient"
@@ -32,9 +33,18 @@ type EmailDistributorEntry struct {
 
 var AllDistributors = map[string]EmailDistributorEntry{
 	"SelfOnly":              {false, SelfOnlyDistributor},
-	"AllInviteesDryRun":     {false, AllInviteesDryRunDistributor},
-	"AllInvitees*REAL*":     {true, AllInviteesDistributor},
-	"AttendeesList":         {false, AttendeesListDistributor},
+	"AllInviteesDryRun0":    {false, AllInviteesDryRunDistributor(0)},
+	"AllInvitees*REAL*0":    {true, AllInviteesDistributor(0)},
+	"AllInviteesDryRun1":    {false, AllInviteesDryRunDistributor(1)},
+	"AllInvitees*REAL*1":    {true, AllInviteesDistributor(1)},
+	"AllInviteesDryRun2":    {false, AllInviteesDryRunDistributor(2)},
+	"AllInvitees*REAL*2":    {true, AllInviteesDistributor(2)},
+	"AllInviteesList0":      {false, AllInviteesListDistributor(0)},
+	"AllInviteesList1":      {false, AllInviteesListDistributor(1)},
+	"AllInviteesList2":      {false, AllInviteesListDistributor(2)},
+	"AttendeesList0":        {false, AttendeesListDistributor(0)},
+	"AttendeesList1":        {false, AttendeesListDistributor(1)},
+	"AttendeesList2":        {false, AttendeesListDistributor(2)},
 	"AttendeesDryRun":       {false, AttendeesDryRunDistributor},
 	"Attendees*REAL*":       {true, AttendeesDistributor},
 	"QualifiedInviteesList": {false, QualifiedInviteesListDistributor},
@@ -58,7 +68,13 @@ func SelfOnlyDistributor(ctx context.Context, wr WrappedRequest, sender EmailSen
 	return err
 }
 
-func AllInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func AllInviteesDryRunDistributor(tier int) EmailDistributor {
+	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+		return AllInviteesDryRunDistributorImpl(ctx, wr, sender, tier)
+	}
+}
+
+func AllInviteesDryRunDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -74,6 +90,9 @@ func AllInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender
 		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
+				continue
+			}
+			if p.Person.EmailTier != tier {
 				continue
 			}
 			emailData := map[string]interface{}{
@@ -93,7 +112,13 @@ func AllInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender
 	return nil
 }
 
-func AllInviteesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func AllInviteesDistributor(tier int) EmailDistributor {
+	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+		return AllInviteesDistributorImpl(ctx, wr, sender, tier)
+	}
+}
+
+func AllInviteesDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -109,6 +134,9 @@ func AllInviteesDistributor(ctx context.Context, wr WrappedRequest, sender Email
 		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
+				continue
+			}
+			if p.Person.EmailTier != tier {
 				continue
 			}
 			emailData := map[string]interface{}{
@@ -128,7 +156,47 @@ func AllInviteesDistributor(ctx context.Context, wr WrappedRequest, sender Email
 	return nil
 }
 
-func AttendeesListDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func AllInviteesListDistributor(tier int) EmailDistributor {
+	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+		return AllInviteesListDistributorImpl(ctx, wr, sender, tier)
+	}
+}
+
+func AllInviteesListDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
+	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	var invitations []*Invitation
+	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(invitations); i++ {
+		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
+			invitations[i])
+		for _, p := range realizedInvitation.Invitees {
+			if p.Person.Email == "" {
+				continue
+			}
+			if p.Person.EmailTier != tier {
+				fmt.Fprintf(wr.ResponseWriter, "Skipping %s (tier %d).<br>", p.Person.Email, p.Person.EmailTier)
+				continue
+			}
+			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s.<br>", p.Person.Email)
+		}
+	}
+	return nil
+}
+
+func AttendeesListDistributor(tier int) EmailDistributor {
+	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+		log.Printf("AttendeesListDistributor called with tier %d", tier)
+		return AttendeesListDistributorImpl(ctx, wr, sender, tier)
+	}
+}
+
+func AttendeesListDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
@@ -147,6 +215,9 @@ func AttendeesListDistributor(ctx context.Context, wr WrappedRequest, sender Ema
 		}
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
+				continue
+			}
+			if p.Person.EmailTier != tier {
 				continue
 			}
 			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
