@@ -88,9 +88,11 @@
     if (anyoneMeetsCriteria(attending)) {
       $(".anyAttendeesContainer").show();
       $(".storylandFormContainer").show();
+      $(".noAttendeesContainer").hide();
     } else {
       $(".anyAttendeesContainer").hide();
       $(".storylandFormContainer").hide();
+      $(".noAttendeesContainer").show();
     }
    
     if (anyoneMeetsCriteria(thursday)) {
@@ -467,13 +469,15 @@ function validate(form) {
     <p>
     We realize that this is significantly more expensive than in previous years. This is because:
     <ul>
-      <li>This is a long weekend, and the extra day adds to the cost for those staying the full weekend.</li>
+      <li>This is a long weekend &mdash; three nights instead of two.</li>
       <li>This is the high season for Purity Spring, so we're paying their summer room rates. A number of rooms cost almost double what we're used to paying.</li>
-      <li>This cost includes a COVID test for each attendee for each day, purchased at a bulk rate.</li>
     </ul>
     If you'd like more information about what makes up the cost of the weekend, please feel free to
     ask.
     </p>
+  </div>
+  <div class="noAttendeesContainer">
+    <p>Please select at least one positive RSVP to see the cost estimator.</p>
   </div>
 
   <input class="emphasizedSubmit" type="submit" value="Submit">

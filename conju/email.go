@@ -390,6 +390,7 @@ func sendMail(ctx context.Context, wr WrappedRequest, templatePrefix string, dat
 		},
 		Personalizations: []*mail.Personalization{
 			ToListPersonalization(wr, headerData.To),
+			bccPers,
 		},
 	}
 
@@ -407,7 +408,6 @@ func ToListPersonalization(wr WrappedRequest, to []string) *mail.Personalization
 	for _, to := range to {
 		mailPersonalizations.AddTos(mail.NewEmail("", to))
 	}
-	mailPersonalizations.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
 	return mailPersonalizations
 }
 
