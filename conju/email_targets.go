@@ -43,10 +43,6 @@ var AllDistributors = map[string]EmailDistributorEntry{
 }
 
 func SelfOnlyDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
-	client := dsclient.FromContext(ctx)
-	if client == nil {
-		return fmt.Errorf("datastore client is nil")
-	}
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
