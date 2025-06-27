@@ -38,7 +38,7 @@
   {{if .Invitation.ReceivedPay}}(${{.Invitation.ReceivedPay | printf "%.2f"}}){{end}}
   (<a href="receivePay?invitation={{.EncodedKey}}">Receive Pay</a>)
   People: {{range .Invitees}}
-    <a href="updatePersonForm?key={{.Key}}">{{.Person.FirstName}}</a>
+    <a href="updatePersonForm?key={{.Key}}">{{.Person.FirstName}} {{.Person.Email}} {{if ne .Person.Email ""}}({{.Person.EmailTier}}){{end}}</a>
   {{end}}
   <br>
 {{end}}

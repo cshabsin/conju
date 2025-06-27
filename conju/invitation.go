@@ -575,7 +575,7 @@ var (
 		"SharerName":                  MakeSharerName,
 	}
 
-	invitationTpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
+	invitationTpl *template.Template
 )
 
 func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) {
@@ -612,6 +612,9 @@ func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey 
 		"RoomingInfo":                  getRoomingInfo(ctx, wr, invitationKey),
 	})
 
+	if invitationTpl == nil {
+		invitationTpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
+	}
 	if err := invitationTpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
 		log.Printf("%v", err)
 	}

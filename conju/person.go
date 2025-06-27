@@ -150,9 +150,11 @@ func savePeople(ctx context.Context, wr WrappedRequest) error {
 		}
 		p.Pronouns = person.PronounFromConstant(pronounConstant)
 		p.Email = form["Email"][i]
-		p.EmailTier, err = strconv.Atoi(form["EmailTier"][i])
-		if err != nil {
-			p.EmailTier = 0
+		if len(form["EmailTier"]) > i { // saveInvitation doesn't include this
+			p.EmailTier, err = strconv.Atoi(form["EmailTier"][i])
+			if err != nil {
+				p.EmailTier = 0
+			}
 		}
 		p.Telephone = form["Telephone"][i]
 		p.Address = form["Address"][i]
