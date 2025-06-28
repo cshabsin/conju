@@ -129,7 +129,7 @@ func GetAllEvents(ctx context.Context) ([]*Event, error) {
 	var allEventDBs []*eventDB
 	eventKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &allEventDBs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetAll: %w", err)
 	}
 	var allEvents []*Event
 	for i := range allEventDBs {

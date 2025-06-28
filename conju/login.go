@@ -287,7 +287,7 @@ func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
 			To:      []string{people[0].Email},
 			BccSelf: false,
 		}
-		sendMail(ctx, wr, "resendInvitation", data, header)
+		SendMailViaSendgrid(ctx, wr, "resendInvitation", data, header)
 	}
 	// TODO: Make a resentInvitation.html template explaining that
 	// if they don't get email in a minute or two from us, they

@@ -25,7 +25,7 @@ type MailHeaderInfo struct {
 
 type EmailSender func(context.Context, map[string]interface{}, MailHeaderInfo) error
 
-type EmailDistributor func(context.Context, WrappedRequest, EmailSender) error
+type EmailDistributor func(context.Context, *WrappedRequest, EmailSender) error
 type EmailDistributorEntry struct {
 	NeedsConfirm bool
 	Distribute   EmailDistributor
@@ -52,11 +52,11 @@ var AllDistributors = map[string]EmailDistributorEntry{
 	"Qualified*REAL*":       {true, QualifiedInviteesDistributor},
 }
 
-func SelfOnlyDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func SelfOnlyDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
-	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
@@ -69,12 +69,12 @@ func SelfOnlyDistributor(ctx context.Context, wr WrappedRequest, sender EmailSen
 }
 
 func AllInviteesDryRunDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 		return AllInviteesDryRunDistributorImpl(ctx, wr, sender, tier)
 	}
 }
 
-func AllInviteesDryRunDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
+func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -87,7 +87,7 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr WrappedRequest, se
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
@@ -113,12 +113,12 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr WrappedRequest, se
 }
 
 func AllInviteesDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 		return AllInviteesDistributorImpl(ctx, wr, sender, tier)
 	}
 }
 
-func AllInviteesDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
+func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -131,7 +131,7 @@ func AllInviteesDistributorImpl(ctx context.Context, wr WrappedRequest, sender E
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
@@ -157,12 +157,12 @@ func AllInviteesDistributorImpl(ctx context.Context, wr WrappedRequest, sender E
 }
 
 func AllInviteesListDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 		return AllInviteesListDistributorImpl(ctx, wr, sender, tier)
 	}
 }
 
-func AllInviteesListDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
+func AllInviteesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -190,13 +190,13 @@ func AllInviteesListDistributorImpl(ctx context.Context, wr WrappedRequest, send
 }
 
 func AttendeesListDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 		log.Printf("AttendeesListDistributor called with tier %d", tier)
 		return AttendeesListDistributorImpl(ctx, wr, sender, tier)
 	}
 }
 
-func AttendeesListDistributorImpl(ctx context.Context, wr WrappedRequest, sender EmailSender, tier int) error {
+func AttendeesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
@@ -209,7 +209,7 @@ func AttendeesListDistributorImpl(ctx context.Context, wr WrappedRequest, sender
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
 		}
@@ -229,7 +229,7 @@ func AttendeesListDistributorImpl(ctx context.Context, wr WrappedRequest, sender
 	return nil
 }
 
-func AttendeesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
@@ -242,7 +242,7 @@ func AttendeesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender E
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
 		}
@@ -270,7 +270,7 @@ func AttendeesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender E
 	return nil
 }
 
-func AttendeesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
 
@@ -283,7 +283,7 @@ func AttendeesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSe
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
 		}
@@ -314,7 +314,7 @@ func AttendeesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSe
 // QualifiedInviteesListDistributor is an email distributor that lists all invitees
 // who have not RSVP'ed "no" to the event. If RsvpMap is nil, the invitee has not
 // submitted any RSVP at all, and the person is included.
-func QualifiedInviteesListDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func QualifiedInviteesListDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -343,7 +343,7 @@ func QualifiedInviteesListDistributor(ctx context.Context, wr WrappedRequest, se
 
 // QualifiedInviteesDryRunDistributor is an email distributor that sends the currently
 // logged in user one email for each person who has not RSVP'ed "no" to the event.
-func QualifiedInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -356,7 +356,7 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, 
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
@@ -383,7 +383,7 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr WrappedRequest, 
 
 // QualifiedInviteesDistributor is an email distributor that sends an email
 // to each person who has not RSVP'ed "no" to the event.
-func QualifiedInviteesDistributor(ctx context.Context, wr WrappedRequest, sender EmailSender) error {
+func QualifiedInviteesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
 
@@ -396,7 +396,7 @@ func QualifiedInviteesDistributor(ctx context.Context, wr WrappedRequest, sender
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr, invitations[i], invitationKeys[i])
+		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue

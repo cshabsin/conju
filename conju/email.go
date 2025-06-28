@@ -26,7 +26,7 @@ var emailFunctionMap = template.FuncMap{
 
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
-func renderMail(ctx context.Context, wr WrappedRequest, templatePrefix string, data any, needSubject bool) (string, string, string, error) {
+func RenderMail(ctx context.Context, wr WrappedRequest, templatePrefix string, data any, needSubject bool) (string, string, string, error) {
 	htmlTpl, textTpl, err := message.GetTemplates(ctx, wr.Event.Key, emailFunctionMap)
 	if err != nil {
 		return "", "", "", fmt.Errorf("error getting templates: %w", err)
@@ -229,7 +229,8 @@ func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlT
 	// TODO: What data do we send this?
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
-	roomingInfo := getRoomingInfoWithInvitation(ctx, wr, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event,
+		wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	var unreserved []BuildingRoom
 	if roomingInfo != nil {
 		for _, booking := range roomingInfo.InviteeBookings {
@@ -247,7 +248,7 @@ func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlT
 		"Env":         wr.GetEnvForTemplates(),
 		"Unreserved":  unreserved,
 	}
-	text, html, subject, err := renderMail(ctx, wr, emailTemplate, emailData, true)
+	text, html, subject, err := RenderMail(ctx, wr, emailTemplate, emailData, true)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -320,9 +321,9 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 		}
 		emailData["Unreserved"] = unreserved
 		headerData.BccSelf = bccSelf
-		return sendMail(ctx, wr, emailTemplate, emailData, headerData)
+		return SendMailViaSendgrid(ctx, wr, emailTemplate, emailData, headerData)
 	}
-	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
+	if err := distributor.Distribute(ctx, &wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
 		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
 	}
@@ -364,9 +365,9 @@ func handleListMail(ctx context.Context, wr WrappedRequest) {
 
 const senders = "Dana Scott and Chris Shabsin"
 
-func sendMail(ctx context.Context, wr WrappedRequest, templatePrefix string, data any,
+func SendMailViaSendgrid(ctx context.Context, wr WrappedRequest, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
-	text, html, subject, err := renderMail(ctx, wr, templatePrefix, data,
+	text, html, subject, err := RenderMail(ctx, wr, templatePrefix, data,
 		/* needSubject = */ headerData.Subject == "")
 	if headerData.Subject != "" {
 		subject = headerData.Subject

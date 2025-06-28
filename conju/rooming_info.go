@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/datastore"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/housing"
 	"github.com/cshabsin/conju/model/person"
 )
@@ -91,19 +92,18 @@ func (r RoomingAndCostInfo) ThuFriSat() bool {
 	// return false
 }
 
-func getRoomingInfo(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
+func getRoomingInfo(ctx context.Context, wr *WrappedRequest, invitationKey *datastore.Key) *RoomingAndCostInfo {
 	// Load the invitation.
 	var invitation Invitation
 	err := dsclient.FromContext(ctx).Get(ctx, invitationKey, &invitation)
 	if err != nil {
 		log.Printf("Error retrieving invitation: %v", err)
 	}
-	return getRoomingInfoWithInvitation(ctx, wr, &invitation, invitationKey)
+	return getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, &invitation, invitationKey)
 }
 
-func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *Invitation,
+func getRoomingInfoWithInvitation(ctx context.Context, bookingInfo *BookingInfo, ev *event.Event, inv *Invitation,
 	invitationKey *datastore.Key) *RoomingAndCostInfo {
-	bookingInfo := wr.GetBookingInfo(ctx)
 
 	// Construct set of Booking ids that contain any people in the invitation.
 	bookingSet := make(map[int64]bool)
@@ -154,7 +154,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	}
 
 	var invitations []*Invitation
-	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
+	q := datastore.NewQuery("Invitation").FilterField("Event", "=", ev.Key)
 	invitationKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &invitations)
 	if err != nil {
 		log.Printf("fetching invitations: %v", err)
@@ -172,8 +172,8 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 	}
 	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
 
-	wr.Event.LoadVenue(ctx)
-	buildingsMap := getBuildingMapForVenue(ctx, wr.Event.Venue.Key)
+	ev.LoadVenue(ctx)
+	buildingsMap := getBuildingMapForVenue(ctx, ev.Venue.Key)
 	allInviteeBookings := make(map[int64]InviteeBookingsMap)
 	personToCost := make(map[*person.Person]float64)
 	isThuFriSat := false
@@ -215,7 +215,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 			rsvpStatus := personToRsvp[per.ID]
 			p := personMap[per.ID]
 
-			if !p.IsBabyAtTime(wr.Event.StartDate) {
+			if !p.IsBabyAtTime(ev.StartDate) {
 				if rsvpStatus == invitation.FriSat {
 					FridaySaturday++
 				}
@@ -258,7 +258,7 @@ func getRoomingInfoWithInvitation(ctx context.Context, wr WrappedRequest, inv *I
 		for i, person := range booking.Roommates {
 
 			p := personMap[person.ID]
-			if p.IsBabyAtTime(wr.Event.StartDate) {
+			if p.IsBabyAtTime(ev.StartDate) {
 				personToCost[p] = 0
 				continue
 			}
