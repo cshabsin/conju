@@ -170,7 +170,13 @@ func getRoomingInfoWithInvitation(ctx context.Context, bookingInfo *BookingInfo,
 			personToRsvp[person.ID] = rsvp
 		}
 	}
-	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
+	var shareBedBit int
+	for _, prefBool := range GetAllHousingPreferenceBooleans() {
+		if prefBool.Boolean == ShareBed {
+			shareBedBit = prefBool.Bit
+			break
+		}
+	}
 
 	ev.LoadVenue(ctx)
 	buildingsMap := getBuildingMapForVenue(ctx, ev.Venue.Key)
