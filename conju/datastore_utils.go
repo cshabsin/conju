@@ -13,7 +13,7 @@ import (
 	"github.com/cshabsin/conju/model/person"
 )
 
-func ClearAllData(ctx context.Context, wr WrappedRequest, entityNames []string) {
+func ClearAllData(ctx context.Context, wr *WrappedRequest, entityNames []string) {
 	fmt.Fprintf(wr.ResponseWriter, "Disabled for now.\n")
 	wr.Values["event"] = nil
 	wr.SaveSession()
@@ -46,7 +46,7 @@ func ClearAllData(ctx context.Context, wr WrappedRequest, entityNames []string) 
 	}
 }
 
-func RepairData(ctx context.Context, wr WrappedRequest) {
+func RepairData(ctx context.Context, wr *WrappedRequest) {
 	q := datastore.NewQuery("Person")
 	var people []person.Person
 	personKeys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &people)

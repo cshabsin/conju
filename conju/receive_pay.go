@@ -15,7 +15,7 @@ import (
 	"github.com/cshabsin/conju/model/person"
 )
 
-func handleReceivePay(ctx context.Context, wr WrappedRequest) {
+func handleReceivePay(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
@@ -52,7 +52,7 @@ func handleReceivePay(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleDoReceivePay(ctx context.Context, wr WrappedRequest) {
+func handleDoReceivePay(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 
 	payStr := wr.Request.Form.Get("pay")

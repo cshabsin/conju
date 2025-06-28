@@ -333,7 +333,7 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 }
 
 // Handles /invitations, listing invitations.
-func handleInvitations(ctx context.Context, wr WrappedRequest) {
+func handleInvitations(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var notInvitedSet = make(map[datastore.Key]person.PersonWithKey)
@@ -443,7 +443,7 @@ func handleInvitations(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
+func handleCopyInvitations(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
@@ -488,7 +488,7 @@ func handleCopyInvitations(ctx context.Context, wr WrappedRequest) {
 
 }
 
-func handleAddInvitation(ctx context.Context, wr WrappedRequest) {
+func handleAddInvitation(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
@@ -531,7 +531,7 @@ func handleAddInvitation(ctx context.Context, wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
 }
 
-func handleDeleteInvitation(ctx context.Context, wr WrappedRequest) {
+func handleDeleteInvitation(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -548,7 +548,7 @@ func handleDeleteInvitation(ctx context.Context, wr WrappedRequest) {
 }
 
 // handleViewInvitationUser handles /viewInvitation URLs.
-func handleViewInvitationAdmin(ctx context.Context, wr WrappedRequest) {
+func handleViewInvitationAdmin(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -562,7 +562,7 @@ func handleViewInvitationAdmin(ctx context.Context, wr WrappedRequest) {
 }
 
 // handleViewInvitationUser handles /rsvp URLs.
-func handleViewInvitationUser(ctx context.Context, wr WrappedRequest) {
+func handleViewInvitationUser(ctx context.Context, wr *WrappedRequest) {
 	handleViewInvitation(ctx, wr, wr.InvitationKey)
 }
 
@@ -578,7 +578,7 @@ var (
 	invitationTpl *template.Template
 )
 
-func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey *datastore.Key) {
+func handleViewInvitation(ctx context.Context, wr *WrappedRequest, invitationKey *datastore.Key) {
 	var inv Invitation
 	err := dsclient.FromContext(ctx).Get(ctx, invitationKey, &inv)
 	if err != nil {
@@ -609,7 +609,7 @@ func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey 
 		"AllParkingTypes":              GetAllParkingTypes(),
 		"InvitationHasChildren":        inv.HasChildren(ctx),
 		"IsAdminUser":                  wr.IsAdminUser(),
-		"RoomingInfo":                  getRoomingInfo(ctx, &wr, invitationKey),
+		"RoomingInfo":                  getRoomingInfo(ctx, wr, invitationKey),
 	})
 
 	if invitationTpl == nil {
@@ -624,7 +624,7 @@ func HasPreference(total int, mask int) bool {
 	return (total & mask) != 0
 }
 
-func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
+func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")

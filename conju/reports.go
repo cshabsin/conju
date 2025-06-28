@@ -18,14 +18,14 @@ import (
 	"github.com/cshabsin/conju/model/person"
 )
 
-// func handleReports(wr WrappedRequest) {
+// func handleReports(wr *WrappedRequest) {
 // 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
 // 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
 // 		log.Printf( "%v", err)
 // 	}
 // }
 
-func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
+func handleRsvpReport(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
@@ -183,7 +183,7 @@ func handleRsvpReport(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleActivitiesReport(ctx context.Context, wr WrappedRequest) {
+func handleActivitiesReport(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
@@ -294,7 +294,7 @@ func handleActivitiesReport(ctx context.Context, wr WrappedRequest) {
 
 }
 
-func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
+func handleRoomingReport(ctx context.Context, wr *WrappedRequest) {
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
@@ -484,7 +484,7 @@ func handleRoomingReport(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleSaveReservations(ctx context.Context, wr WrappedRequest) {
+func handleSaveReservations(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 
 	bookingToBooked := make(map[int64]bool)
@@ -517,7 +517,7 @@ func handleSaveReservations(ctx context.Context, wr WrappedRequest) {
 	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
 }
 
-func handleFoodReport(ctx context.Context, wr WrappedRequest) {
+func handleFoodReport(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
@@ -569,7 +569,7 @@ func handleFoodReport(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleRidesReport(ctx context.Context, wr WrappedRequest) {
+func handleRidesReport(ctx context.Context, wr *WrappedRequest) {
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()

@@ -16,7 +16,7 @@ import (
 	"github.com/cshabsin/conju/model/person"
 )
 
-func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
+func handleRoomingTool(ctx context.Context, wr *WrappedRequest) {
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
@@ -177,7 +177,7 @@ func handleRoomingTool(ctx context.Context, wr WrappedRequest) {
 
 }
 
-func handleSaveRooming(ctx context.Context, wr WrappedRequest) {
+func handleSaveRooming(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey).KeysOnly()

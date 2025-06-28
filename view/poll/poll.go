@@ -14,7 +14,7 @@ func Register(s conju.Sessionizer) {
 	s.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
 }
 
-func HandlePoll(ctx context.Context, wr conju.WrappedRequest) {
+func HandlePoll(ctx context.Context, wr *conju.WrappedRequest) {
 	if wr.Invitation == nil {
 		http.Redirect(wr.ResponseWriter, wr.Request, "/login", http.StatusSeeOther)
 	}

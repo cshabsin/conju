@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func handleInfo(ctx context.Context, wr WrappedRequest) {
+func handleInfo(ctx context.Context, wr *WrappedRequest) {
 	eventName := "PSR2022"
 	if wr.Event != nil {
 		eventName = wr.Event.ShortName
