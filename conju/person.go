@@ -18,7 +18,7 @@ import (
 	"github.com/cshabsin/conju/model/person"
 )
 
-func handleListPeople(ctx context.Context, wr WrappedRequest) {
+func handleListPeople(ctx context.Context, wr *WrappedRequest) {
 	tic := time.Now()
 	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
 
@@ -51,7 +51,7 @@ func handleListPeople(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func fetchPerson(ctx context.Context, wr WrappedRequest, encodedKey string) (*person.Person, error) {
+func fetchPerson(ctx context.Context, wr *WrappedRequest, encodedKey string) (*person.Person, error) {
 	key, e := datastore.DecodeKey(encodedKey)
 	if e != nil {
 		log.Printf("%v", e)
@@ -70,7 +70,7 @@ func fetchPerson(ctx context.Context, wr WrappedRequest, encodedKey string) (*pe
 	return &person, nil
 }
 
-func handleUpdatePersonForm(ctx context.Context, wr WrappedRequest) {
+func handleUpdatePersonForm(ctx context.Context, wr *WrappedRequest) {
 	queryMap := wr.Request.URL.Query()
 
 	var err error
@@ -105,13 +105,13 @@ func handleUpdatePersonForm(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleSaveUpdatePerson(ctx context.Context, wr WrappedRequest) {
+func handleSaveUpdatePerson(ctx context.Context, wr *WrappedRequest) {
 	savePeople(ctx, wr)
 	// Where to go from here will depend on who's logged in and what they're doing
 	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
 }
 
-func savePeople(ctx context.Context, wr WrappedRequest) error {
+func savePeople(ctx context.Context, wr *WrappedRequest) error {
 	wr.Request.ParseForm()
 	form := wr.Request.Form
 

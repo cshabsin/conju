@@ -26,8 +26,8 @@ var emailFunctionMap = template.FuncMap{
 
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
-func RenderMail(ctx context.Context, wr WrappedRequest, templatePrefix string, data any, needSubject bool) (string, string, string, error) {
-	htmlTpl, textTpl, err := message.GetTemplates(ctx, wr.Event.Key, emailFunctionMap)
+func RenderMail(ctx context.Context, eventKey *datastore.Key, templatePrefix string, data any, needSubject bool) (string, string, string, error) {
+	htmlTpl, textTpl, err := message.GetTemplates(ctx, eventKey, emailFunctionMap)
 	if err != nil {
 		return "", "", "", fmt.Errorf("error getting templates: %w", err)
 	}
@@ -60,7 +60,7 @@ func RenderMail(ctx context.Context, wr WrappedRequest, templatePrefix string, d
 	return text.String(), htmlBuf.String(), "", nil
 }
 
-func handleSendMail(ctx context.Context, wr WrappedRequest) {
+func handleSendMail(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.Form["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
@@ -85,7 +85,7 @@ func handleSendMail(ctx context.Context, wr WrappedRequest) {
 	handleMailPage(ctx, wr, msg.ShortName, "sendEmail.html")
 }
 
-func handleEditMail(ctx context.Context, wr WrappedRequest) {
+func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	isNew := false
 	templateKey := ""
@@ -142,7 +142,7 @@ func handleEditMail(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleSaveMail(ctx context.Context, wr WrappedRequest) {
+func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.PostForm["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
@@ -217,15 +217,15 @@ func handleSaveMail(ctx context.Context, wr WrappedRequest) {
 	fmt.Fprintf(wr.ResponseWriter, "Saved template %s", emailTemplate)
 }
 
-func handlePreviewMailTemplate(ctx context.Context, wr WrappedRequest) {
+func handlePreviewMailTemplate(ctx context.Context, wr *WrappedRequest) {
 
 }
 
-func handleViewMyInvitation(ctx context.Context, wr WrappedRequest) {
+func handleViewMyInvitation(ctx context.Context, wr *WrappedRequest) {
 	handleMailPage(ctx, wr, "initial_invitation", "viewMyInvitation.html")
 }
 
-func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlTemplate string) {
+func handleMailPage(ctx context.Context, wr *WrappedRequest, emailTemplate, htmlTemplate string) {
 	// TODO: What data do we send this?
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
@@ -248,7 +248,7 @@ func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlT
 		"Env":         wr.GetEnvForTemplates(),
 		"Unreserved":  unreserved,
 	}
-	text, html, subject, err := RenderMail(ctx, wr, emailTemplate, emailData, true)
+	text, html, subject, err := RenderMail(ctx, wr.Event.Key, emailTemplate, emailData, true)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
 			http.StatusInternalServerError)
@@ -275,7 +275,7 @@ func handleMailPage(ctx context.Context, wr WrappedRequest, emailTemplate, htmlT
 	}
 }
 
-func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
+func handleDoSendMail(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.PostForm["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
@@ -323,13 +323,13 @@ func handleDoSendMail(ctx context.Context, wr WrappedRequest) {
 		headerData.BccSelf = bccSelf
 		return SendMailViaSendgrid(ctx, wr, emailTemplate, emailData, headerData)
 	}
-	if err := distributor.Distribute(ctx, &wr, senderFunc); err != nil {
+	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
 		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
 	}
 }
 
-func handleListMail(ctx context.Context, wr WrappedRequest) {
+func handleListMail(ctx context.Context, wr *WrappedRequest) {
 	templates, err := message.ListTemplates(ctx, wr.Event.Key)
 	if err != nil {
 		log.Printf("Error listing templates: %v", err)
@@ -365,9 +365,9 @@ func handleListMail(ctx context.Context, wr WrappedRequest) {
 
 const senders = "Dana Scott and Chris Shabsin"
 
-func SendMailViaSendgrid(ctx context.Context, wr WrappedRequest, templatePrefix string, data any,
+func SendMailViaSendgrid(ctx context.Context, wr *WrappedRequest, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
-	text, html, subject, err := RenderMail(ctx, wr, templatePrefix, data,
+	text, html, subject, err := RenderMail(ctx, wr.Event.Key, templatePrefix, data,
 		/* needSubject = */ headerData.Subject == "")
 	if headerData.Subject != "" {
 		subject = headerData.Subject
@@ -376,9 +376,14 @@ func SendMailViaSendgrid(ctx context.Context, wr WrappedRequest, templatePrefix 
 		log.Printf("Error rendering mail: %v", err)
 		return err
 	}
-	bccPers := mail.NewPersonalization()
+	personalizations := []*mail.Personalization{
+		ToListPersonalization(headerData.To),
+	}
+
 	if headerData.BccSelf {
+		bccPers := mail.NewPersonalization()
 		bccPers.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
+		personalizations = append(personalizations, bccPers)
 	}
 
 	// TODO(cshabsin): get string name from somewhere environmental?
@@ -389,10 +394,7 @@ func SendMailViaSendgrid(ctx context.Context, wr WrappedRequest, templatePrefix 
 			mail.NewContent("text/plain", text),
 			mail.NewContent("text/html", html),
 		},
-		Personalizations: []*mail.Personalization{
-			ToListPersonalization(wr, headerData.To),
-			bccPers,
-		},
+		Personalizations: personalizations,
 	}
 
 	log.Printf("sending mail to %v: %v", headerData.To, message)
@@ -404,7 +406,7 @@ func SendMailViaSendgrid(ctx context.Context, wr WrappedRequest, templatePrefix 
 	return nil
 }
 
-func ToListPersonalization(wr WrappedRequest, to []string) *mail.Personalization {
+func ToListPersonalization(to []string) *mail.Personalization {
 	mailPersonalizations := mail.NewPersonalization()
 	for _, to := range to {
 		mailPersonalizations.AddTos(mail.NewEmail("", to))
@@ -418,7 +420,7 @@ func ToPersonalization(name, addr string) *mail.Personalization {
 	return mailPersonalizations
 }
 
-func sendErrorMail(wr WrappedRequest, message string) {
+func sendErrorMail(wr *WrappedRequest, message string) {
 	mailPersonalizations := mail.NewPersonalization()
 	mailPersonalizations.AddTos(mail.NewEmail("Errors", wr.GetErrorAddress()))
 	msg := &mail.SGMailV3{

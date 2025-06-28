@@ -76,7 +76,7 @@ func EventGetter(ctx context.Context, wr *WrappedRequest) error {
 	return nil
 }
 
-func handleEvents(ctx context.Context, wr WrappedRequest) {
+func handleEvents(ctx context.Context, wr *WrappedRequest) {
 	tic := time.Now()
 
 	allEvents, err := event.GetAllEvents(ctx)
@@ -203,7 +203,7 @@ func handleEvents(ctx context.Context, wr WrappedRequest) {
 	log.Print(4)
 }
 
-func handleCreateUpdateEvent(ctx context.Context, wr WrappedRequest) {
+func handleCreateUpdateEvent(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	form := wr.Request.Form
 

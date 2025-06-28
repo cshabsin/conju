@@ -38,7 +38,7 @@ const Venues_File_Name = "venues.tsv"
 const Buildings_File_Name = "buildings.tsv"
 const Rooms_File_Name = "rooms.tsv"
 
-func ReloadData(ctx context.Context, wr WrappedRequest) {
+func ReloadData(ctx context.Context, wr *WrappedRequest) {
 	if wr.Method != "POST" {
 		http.Error(wr.ResponseWriter, "Invalid GET on reload.",
 			http.StatusBadRequest)
@@ -104,7 +104,7 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 	return err
 }
 
-func AskReloadData(ctx context.Context, wr WrappedRequest) {
+func AskReloadData(ctx context.Context, wr *WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	// fmt.Fprintf(wr.ResponseWriter, `
 	// <form method="POST" action="/doReloadData">
@@ -586,7 +586,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 	io.Copy(w, b)
 }
 
-func AskReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
+func AskReloadHousingSetup(ctx context.Context, wr *WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprintf(wr.ResponseWriter, `
 	<form method="POST" action="/doReloadHousingSetup">
@@ -596,7 +596,7 @@ func AskReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
 	//fmt.Fprintf(wr.ResponseWriter, "NO")
 }
 
-func ReloadHousingSetup(ctx context.Context, wr WrappedRequest) {
+func ReloadHousingSetup(ctx context.Context, wr *WrappedRequest) {
 	ClearAllData(ctx, wr, []string{"Venue", "Building", "Room"})
 	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	SetupVenues(wr.ResponseWriter, ctx)

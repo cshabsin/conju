@@ -86,7 +86,7 @@ func Register(s Sessionizer) {
 	s.AddSessionHandler("/", handleIndex).Needs(PersonGetter)
 }
 
-func handleIndex(ctx context.Context, wr WrappedRequest) {
+func handleIndex(ctx context.Context, wr *WrappedRequest) {
 	eventName := "PSR2025"
 	if wr.Event != nil {
 		eventName = wr.Event.ShortName
@@ -97,14 +97,14 @@ func handleIndex(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleAdmin(ctx context.Context, wr WrappedRequest) {
+func handleAdmin(ctx context.Context, wr *WrappedRequest) {
 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/admin.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "admin.html", wr.TemplateData); err != nil {
 		log.Println(err)
 	}
 }
 
-func handleDBMedia(ctx context.Context, wr WrappedRequest) {
+func handleDBMedia(ctx context.Context, wr *WrappedRequest) {
 	log.Printf("handleDBMedia: %s", wr.URL.Path)
 	client := dsclient.FromContext(ctx)
 	if client == nil {
