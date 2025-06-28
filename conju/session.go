@@ -69,7 +69,7 @@ type Sessionizer struct {
 	Client *datastore.Client
 }
 
-func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, WrappedRequest)) *Getters {
+func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *WrappedRequest)) *Getters {
 	var getters Getters
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +84,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, Wrapp
 			return
 		}
 		u := user.Current(ctx)
-		wr := WrappedRequest{
+		wr := &WrappedRequest{
 			ResponseWriter: wrw,
 			Request:        r,
 			Session:        sess,
@@ -104,7 +104,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, Wrapp
 		// TODO: make this always true once we go live.
 		wr.TemplateData["ShowRsvp"] = wr.IsAdminUser()
 		for i, getter := range getters.Getters {
-			if err = getter(ctx, &wr); err != nil {
+			if err = getter(ctx, wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
 					http.Redirect(wrw, r, redirect.Target, http.StatusFound)
 					return

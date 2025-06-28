@@ -25,19 +25,19 @@ type RenderedMail struct {
 	Subject string
 }
 
-func handleTestSendUpdatesEmail(ctx context.Context, wr WrappedRequest) {
+func handleTestSendUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
 	handleTestSendRoomingRelatedEmail(ctx, wr, "updates")
 }
 
-func handleTestSendRoomingEmail(ctx context.Context, wr WrappedRequest) {
+func handleTestSendRoomingEmail(ctx context.Context, wr *WrappedRequest) {
 	handleTestSendRoomingRelatedEmail(ctx, wr, "rooming")
 }
 
-func handleTestSendFinalEmail(ctx context.Context, wr WrappedRequest) {
+func handleTestSendFinalEmail(ctx context.Context, wr *WrappedRequest) {
 	handleTestSendRoomingRelatedEmail(ctx, wr, "final")
 }
 
-func handleTestSendRoomingRelatedEmail(ctx context.Context, wr WrappedRequest, emailName string) {
+func handleTestSendRoomingRelatedEmail(ctx context.Context, wr *WrappedRequest, emailName string) {
 	rendered_mail, err := getRoomingEmails(ctx, wr, emailName)
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
@@ -49,7 +49,7 @@ func handleTestSendRoomingRelatedEmail(ctx context.Context, wr WrappedRequest, e
 	}
 }
 
-func handleAskSendRoomingEmail(ctx context.Context, wr WrappedRequest) {
+func handleAskSendRoomingEmail(ctx context.Context, wr *WrappedRequest) {
 	rendered_mail, err := getRoomingEmails(ctx, wr, "rooming")
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
@@ -67,7 +67,7 @@ func handleAskSendRoomingEmail(ctx context.Context, wr WrappedRequest) {
 `, len(rendered_mail))
 }
 
-func handleAskSendUpdatesEmail(ctx context.Context, wr WrappedRequest) {
+func handleAskSendUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
 	rendered_mail, err := getRoomingEmails(ctx, wr, "updates")
 	if err != nil {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
@@ -85,23 +85,23 @@ func handleAskSendUpdatesEmail(ctx context.Context, wr WrappedRequest) {
 `, len(rendered_mail))
 }
 
-func handleSendTestRoomingEmail(ctx context.Context, wr WrappedRequest) {
+func handleSendTestRoomingEmail(ctx context.Context, wr *WrappedRequest) {
 	handleSendRoomingEmail(ctx, wr, "rooming", true)
 }
 
-func handleSendRealRoomingEmail(ctx context.Context, wr WrappedRequest) {
+func handleSendRealRoomingEmail(ctx context.Context, wr *WrappedRequest) {
 	handleSendRoomingEmail(ctx, wr, "rooming", false)
 }
 
-func handleSendTestUpdatesEmail(ctx context.Context, wr WrappedRequest) {
+func handleSendTestUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
 	handleSendRoomingEmail(ctx, wr, "updates", true)
 }
 
-func handleSendRealUpdatesEmail(ctx context.Context, wr WrappedRequest) {
+func handleSendRealUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
 	handleSendRoomingEmail(ctx, wr, "updates", false)
 }
 
-func handleSendRoomingEmail(ctx context.Context, wr WrappedRequest, emailName string, isTest bool) {
+func handleSendRoomingEmail(ctx context.Context, wr *WrappedRequest, emailName string, isTest bool) {
 	if wr.Method != "POST" {
 		http.Error(wr.ResponseWriter, "Invalid GET on send mail handler.",
 			http.StatusBadRequest)
@@ -138,7 +138,7 @@ func handleSendRoomingEmail(ctx context.Context, wr WrappedRequest, emailName st
 	}
 }
 
-func getRoomingEmails(ctx context.Context, wr WrappedRequest, emailName string) (map[int64]RenderedMail, error) {
+func getRoomingEmails(ctx context.Context, wr *WrappedRequest, emailName string) (map[int64]RenderedMail, error) {
 	// Cribbed heavily from handleRoomingReport
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)

@@ -23,8 +23,8 @@ type LoginInfo struct {
 const loginErrorPage = "/loginError"
 const resentInvitationPage = "/resentInvitation"
 
-func handleLogin(urlTarget string) func(ctx context.Context, wr WrappedRequest) {
-	return func(ctx context.Context, wr WrappedRequest) {
+func handleLogin(urlTarget string) func(ctx context.Context, wr *WrappedRequest) {
+	return func(ctx context.Context, wr *WrappedRequest) {
 		handleLoginInner(ctx, wr, urlTarget)
 	}
 }
@@ -34,7 +34,7 @@ func handleLogin(urlTarget string) func(ctx context.Context, wr WrappedRequest) 
 // table, and either puts the login code into the session, or writes
 // an error. On error, we display an error page with help. On success,
 // we redirect to urlTarget.
-func handleLoginInner(ctx context.Context, wr WrappedRequest, urlTarget string) {
+func handleLoginInner(ctx context.Context, wr *WrappedRequest, urlTarget string) {
 	// TODO(cshabsin): Read "message" CGI arg if present and
 	// display it. Prettify this page in general, using templates.
 	url_q := wr.URL.Query()
@@ -223,11 +223,11 @@ func InvitationGetter(ctx context.Context, wr *WrappedRequest) error {
 
 // Simple URL handler that prints out the invitation retrieved by
 // LoginGetter, for testing.
-func CheckLogin(ctx context.Context, wr WrappedRequest) {
+func CheckLogin(ctx context.Context, wr *WrappedRequest) {
 	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(ctx, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation))))
 }
 
-func handleLoginError(ctx context.Context, wr WrappedRequest) {
+func handleLoginError(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	message_list, ok := wr.Request.Form["message"]
 	var message string
@@ -249,14 +249,14 @@ func handleLoginError(ctx context.Context, wr WrappedRequest) {
 	}
 }
 
-func handleLogout(ctx context.Context, wr WrappedRequest) {
+func handleLogout(ctx context.Context, wr *WrappedRequest) {
 	wr.SetSessionValue("code", nil)
 	wr.SetSessionValue("person", nil)
 	wr.SaveSession()
 	http.Redirect(wr.ResponseWriter, wr.Request, "/", http.StatusFound)
 }
 
-func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
+func handleResendInvitation(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	emailAddresses, ok := wr.Request.PostForm["emailAddress"]
 	if !ok || len(emailAddresses) != 1 {
@@ -298,7 +298,7 @@ func handleResendInvitation(ctx context.Context, wr WrappedRequest) {
 		http.StatusFound)
 }
 
-func handleResentInvitation(ctx context.Context, wr WrappedRequest) {
+func handleResentInvitation(ctx context.Context, wr *WrappedRequest) {
 	wr.Request.ParseForm()
 	emailAddresses, ok := wr.Request.Form["emailAddress"]
 	if !ok || len(emailAddresses) != 1 {
