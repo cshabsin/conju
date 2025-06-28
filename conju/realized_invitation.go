@@ -56,11 +56,11 @@ func (ri RealizedInvitation) GetPeopleComing() []person.Person {
 	return peopleComing
 }
 
-func MakeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) RealizedInvitation {
+func MakeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) *RealizedInvitation {
 	return makeRealizedInvitation(ctx, invitationKey, inv)
 }
 
-func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) RealizedInvitation {
+func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, inv *Invitation) *RealizedInvitation {
 	personKeys := inv.Invitees
 	var inviteePeople []person.Person
 	var invitees []person.PersonWithKey
@@ -140,7 +140,7 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		realizedActivityLeadersMap[p.Encode()] = personMap
 	}
 
-	realizedInvitation := RealizedInvitation{
+	return &RealizedInvitation{
 		Invitation:                inv,
 		EncodedKey:                invitationKey.Encode(),
 		Invitees:                  invitees,
@@ -171,8 +171,6 @@ func makeRealizedInvitation(ctx context.Context, invitationKey *datastore.Key, i
 		COVIDAcked:                inv.COVIDAcked,
 		Storyland:                 inv.Storyland,
 	}
-
-	return realizedInvitation
 }
 
 func printInvitation(ctx context.Context, key *datastore.Key, inv *Invitation) string {
@@ -190,10 +188,10 @@ func printInvitation(ctx context.Context, key *datastore.Key, inv *Invitation) s
 	return toReturn
 }
 
-func makeRealizedInvitations(ctx context.Context, invitationKeys []*datastore.Key, invitations []*Invitation) []RealizedInvitation {
-	realizedInvitations := make([]RealizedInvitation, len(invitations))
-	for i := 0; i < len(invitations); i++ {
-		realizedInvitations[i] = makeRealizedInvitation(ctx, invitationKeys[i], invitations[i])
+func makeRealizedInvitations(ctx context.Context, invitationKeys []*datastore.Key, invitations []*Invitation) []*RealizedInvitation {
+	var realizedInvitations []*RealizedInvitation
+	for i, inv := range invitations {
+		realizedInvitations = append(realizedInvitations, makeRealizedInvitation(ctx, invitationKeys[i], inv))
 	}
 	return realizedInvitations
 }
