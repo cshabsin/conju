@@ -609,7 +609,7 @@ func handleViewInvitation(ctx context.Context, wr WrappedRequest, invitationKey 
 		"AllParkingTypes":              GetAllParkingTypes(),
 		"InvitationHasChildren":        inv.HasChildren(ctx),
 		"IsAdminUser":                  wr.IsAdminUser(),
-		"RoomingInfo":                  getRoomingInfo(ctx, wr, invitationKey),
+		"RoomingInfo":                  getRoomingInfo(ctx, &wr, invitationKey),
 	})
 
 	if invitationTpl == nil {
@@ -819,7 +819,7 @@ func handleSaveInvitation(ctx context.Context, wr WrappedRequest) {
 		BccSelf: false,
 	}
 
-	sendMail(ctx, wr, "rsvpconfirmation", data, header)
+	SendMailViaSendgrid(ctx, wr, "rsvpconfirmation", data, header)
 
 	if !wr.IsAdminUser() {
 
