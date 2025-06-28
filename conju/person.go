@@ -43,7 +43,7 @@ func handleListPeople(ctx context.Context, wr *WrappedRequest) {
 	})
 
 	functionMap := template.FuncMap{
-		"makeLoginUrl": makeLoginUrl,
+		"makeLoginUrl": MakeLoginUrl,
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listPeople.html"))
 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {

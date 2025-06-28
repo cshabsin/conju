@@ -187,7 +187,7 @@ func handleEvents(ctx context.Context, wr *WrappedRequest) {
 	})
 
 	functionMap := template.FuncMap{
-		"makeLoginUrl":   makeLoginUrl,
+		"makeLoginUrl":   MakeLoginUrl,
 		"dereferenceKey": func(key *datastore.Key) datastore.Key { return *key },
 		"encodeKey": func(key *datastore.Key) string {
 			if key == nil {

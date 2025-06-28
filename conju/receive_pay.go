@@ -32,7 +32,7 @@ func handleReceivePay(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	realizedInvitation := makeRealizedInvitation(ctx, invitationKey, &invitation)
-	roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, &invitation, invitationKey)
+	roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, &invitation, invitationKey)
 	data := wr.MakeTemplateData(map[string]interface{}{
 		"Invitation":  realizedInvitation,
 		"RoomingInfo": roomingInfo,

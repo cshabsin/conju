@@ -99,10 +99,10 @@ func getRoomingInfo(ctx context.Context, wr *WrappedRequest, invitationKey *data
 	if err != nil {
 		log.Printf("Error retrieving invitation: %v", err)
 	}
-	return getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, &invitation, invitationKey)
+	return GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, &invitation, invitationKey)
 }
 
-func getRoomingInfoWithInvitation(ctx context.Context, bookingInfo *BookingInfo, ev *event.Event, inv *Invitation,
+func GetRoomingInfoWithInvitation(ctx context.Context, bookingInfo *BookingInfo, ev *event.Event, inv *Invitation,
 	invitationKey *datastore.Key) *RoomingAndCostInfo {
 
 	// Construct set of Booking ids that contain any people in the invitation.
