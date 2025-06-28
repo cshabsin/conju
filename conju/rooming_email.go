@@ -315,7 +315,7 @@ func getRoomingEmails(ctx context.Context, wr *WrappedRequest, emailName string)
 			data := wr.MakeTemplateData(map[string]interface{}{
 				"Invitation":      ri,
 				"InviteeBookings": bookings,
-				"LoginLink":       makeLoginUrl(&p, true),
+				"LoginLink":       MakeLoginUrl(&p, true),
 				"PeopleComing":    ri.GetPeopleComing(),
 				"Thursday":        thursday,
 				"Unreserved":      unreserved,

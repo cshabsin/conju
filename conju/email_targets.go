@@ -56,7 +56,7 @@ func SelfOnlyDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSe
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
-	roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
+	roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
 	emailData := map[string]interface{}{
 		"Event":       wr.Event,
@@ -87,7 +87,7 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, s
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
@@ -131,7 +131,7 @@ func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender 
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
@@ -173,7 +173,7 @@ func AllInviteesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sen
 		return err
 	}
 	for i := 0; i < len(invitations); i++ {
-		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
+		realizedInvitation := MakeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
@@ -209,7 +209,7 @@ func AttendeesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sende
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
 		}
@@ -242,7 +242,7 @@ func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender 
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
 		}
@@ -283,7 +283,7 @@ func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailS
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		if roomingInfo == nil {
 			continue
 		}
@@ -356,7 +356,7 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest,
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue
@@ -396,7 +396,7 @@ func QualifiedInviteesDistributor(ctx context.Context, wr *WrappedRequest, sende
 	for i := 0; i < len(invitations); i++ {
 		realizedInvitation := makeRealizedInvitation(ctx, invitationKeys[i],
 			invitations[i])
-		roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
+		roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, invitations[i], invitationKeys[i])
 		for _, p := range realizedInvitation.Invitees {
 			if p.Person.Email == "" {
 				continue

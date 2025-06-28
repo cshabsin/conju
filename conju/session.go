@@ -270,17 +270,22 @@ type BookingInfo struct {
 }
 
 func (wr *WrappedRequest) GetBookingInfo(ctx context.Context) *BookingInfo {
+	if wr.BookingInfo != nil {
+		return wr.BookingInfo
+	}
+	wr.BookingInfo = GetBookingInfo(ctx, wr.Event)
+	return wr.BookingInfo
+}
+
+func GetBookingInfo(ctx context.Context, ev *event.Event) *BookingInfo {
 	client := dsclient.FromContext(ctx)
 	if client == nil {
 		log.Println("GetBookingInfo called with nil client")
 		return nil
 	}
-	if wr.BookingInfo != nil {
-		return wr.BookingInfo
-	}
 	// Load all bookings for the event.
 	var bookings []Booking
-	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
+	q := datastore.NewQuery("Booking").Ancestor(ev.Key)
 	allBookingKeys, err := client.GetAll(ctx, q, &bookings)
 	if err != nil {
 		log.Printf("Error reading all booking keys: %v", err)
@@ -296,6 +301,5 @@ func (wr *WrappedRequest) GetBookingInfo(ctx context.Context) *BookingInfo {
 			personToBookingMap[person.ID] = allBookingKeys[b].ID
 		}
 	}
-	wr.BookingInfo = &BookingInfo{bookingKeyToBookingMap, personToBookingMap}
-	return wr.BookingInfo
+	return &BookingInfo{bookingKeyToBookingMap, personToBookingMap}
 }

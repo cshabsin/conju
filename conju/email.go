@@ -12,6 +12,7 @@ import (
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
+	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"golang.org/x/text/encoding/charmap"
 )
@@ -229,7 +230,7 @@ func handleMailPage(ctx context.Context, wr *WrappedRequest, emailTemplate, html
 	// TODO: What data do we send this?
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
-	roomingInfo := getRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event,
+	roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event,
 		wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	var unreserved []BuildingRoom
 	if roomingInfo != nil {
@@ -243,7 +244,7 @@ func handleMailPage(ctx context.Context, wr *WrappedRequest, emailTemplate, html
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
 		"Person":      wr.LoginInfo.Person,
-		"LoginLink":   makeLoginUrl(wr.LoginInfo.Person, true),
+		"LoginLink":   MakeLoginUrl(wr.LoginInfo.Person, true),
 		"RoomingInfo": roomingInfo,
 		"Env":         wr.GetEnvForTemplates(),
 		"Unreserved":  unreserved,
@@ -304,7 +305,7 @@ func handleDoSendMail(ctx context.Context, wr *WrappedRequest) {
 	var senderFunc EmailSender = func(ctx context.Context, emailData map[string]any, headerData MailHeaderInfo) error {
 		p := emailData["Person"].(*person.Person)
 		if _, ok := emailData["LoginLink"]; !ok {
-			emailData["LoginLink"] = makeLoginUrl(p, true)
+			emailData["LoginLink"] = MakeLoginUrl(p, true)
 		}
 		if _, ok := emailData["Env"]; !ok {
 			emailData["Env"] = wr.GetEnvForTemplates()
@@ -365,9 +366,27 @@ func handleListMail(ctx context.Context, wr *WrappedRequest) {
 
 const senders = "Dana Scott and Chris Shabsin"
 
+type SendgridEnvironment struct {
+	EmailClient *sendgrid.Client
+
+	EventKey      *datastore.Key
+	BccAddress    string
+	SenderAddress string
+}
+
 func SendMailViaSendgrid(ctx context.Context, wr *WrappedRequest, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
-	text, html, subject, err := RenderMail(ctx, wr.Event.Key, templatePrefix, data,
+	sg := &SendgridEnvironment{
+		EmailClient:   wr.GetEmailClient(),
+		EventKey:      wr.Event.Key,
+		BccAddress:    wr.GetBccAddress(),
+		SenderAddress: wr.GetSenderAddress(),
+	}
+	return SendMailViaSendgridImpl(ctx, sg, templatePrefix, data, headerData)
+}
+func SendMailViaSendgridImpl(ctx context.Context, sg *SendgridEnvironment, templatePrefix string, data any,
+	headerData MailHeaderInfo) error {
+	text, html, subject, err := RenderMail(ctx, sg.EventKey, templatePrefix, data,
 		/* needSubject = */ headerData.Subject == "")
 	if headerData.Subject != "" {
 		subject = headerData.Subject
@@ -382,13 +401,13 @@ func SendMailViaSendgrid(ctx context.Context, wr *WrappedRequest, templatePrefix
 
 	if headerData.BccSelf {
 		bccPers := mail.NewPersonalization()
-		bccPers.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
+		bccPers.AddBCCs(mail.NewEmail("", sg.BccAddress))
 		personalizations = append(personalizations, bccPers)
 	}
 
 	// TODO(cshabsin): get string name from somewhere environmental?
 	message := &mail.SGMailV3{
-		From:    mail.NewEmail(senders, wr.GetSenderAddress()),
+		From:    mail.NewEmail(senders, sg.SenderAddress),
 		Subject: subject,
 		Content: []*mail.Content{
 			mail.NewContent("text/plain", text),
@@ -398,7 +417,7 @@ func SendMailViaSendgrid(ctx context.Context, wr *WrappedRequest, templatePrefix
 	}
 
 	log.Printf("sending mail to %v: %v", headerData.To, message)
-	if resp, err := wr.GetEmailClient().Send(message); err != nil {
+	if resp, err := sg.EmailClient.Send(message); err != nil {
 		log.Printf("sendgrid.Send got err: %v, %v", resp, err)
 	} else {
 		log.Printf("sendgrid.Send got resp: %v", resp)
