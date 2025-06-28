@@ -796,7 +796,7 @@ func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 	//realizedInvitation.HousingNotes = strings.Replace(realizedInvitation.HousingNotes, "\n", "<br>", -1)
 
 	data := struct {
-		RealInvitation               RealizedInvitation
+		RealInvitation               *RealizedInvitation
 		AllHousingPreferenceBooleans []HousingPreferenceBooleanInfo
 		AllPronouns                  []person.PronounSet
 		AllFoodRestrictions          []person.FoodRestrictionTag
