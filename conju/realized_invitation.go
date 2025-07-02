@@ -20,7 +20,7 @@ type RealizedInvitation struct {
 	Invitees                  []person.PersonWithKey
 	Event                     *event.Event
 	RsvpMap                   map[string]invitation.RsvpStatusInfo
-	Housing                   HousingPreferenceInfo
+	Housing                   *HousingPreferenceInfo
 	HousingPreferenceBooleans int
 	HousingNotes              string
 	Activities                []activity.ActivityWithKey
