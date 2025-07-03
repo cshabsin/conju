@@ -21,8 +21,12 @@ func NewClient(ctx context.Context) (*Client, error) {
 	return &Client{client: client}, nil
 }
 
-func FromContext(ctx context.Context) *Client {
-	return ctx.Value(key).(*Client)
+func FromContext(ctx context.Context) (*Client, error) {
+	c, ok := ctx.Value(key).(*Client)
+	if !ok {
+		return nil, fmt.Errorf("no secret manager client in context")
+	}
+	return c, nil
 }
 
 func WrapContext(ctx context.Context, client *Client) context.Context {

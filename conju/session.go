@@ -14,6 +14,7 @@ import (
 	"google.golang.org/appengine/v2"
 	"google.golang.org/appengine/v2/user"
 
+	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/model/event"
 )
@@ -74,6 +75,13 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		ctx := dsclient.WrapContext(appengine.NewContext(r), s.Client)
+		secretmanagerClient, err := secretmanager.NewClient(ctx)
+		if err != nil {
+			log.Printf("Could not create secret manager client: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		ctx = secretmanager.WrapContext(ctx, secretmanagerClient)
 		log.Printf("Handling request %v", r.URL.Path)
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
@@ -112,7 +120,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 				if _, ok := err.(DoneProcessingError); ok {
 					return
 				}
-				sendErrorMail(wr, fmt.Sprintf(
+				sendErrorMail(ctx, wr, fmt.Sprintf(
 					"Getter (index %d) returned an error on request %s: %v",
 					i, wr.Request.URL.Path, err))
 				log.Printf("Getter (index %d) returned an error on request %s: %v",
@@ -185,11 +193,19 @@ func (w WrappedRequest) MakeTemplateData(extraVals map[string]any) map[string]in
 	return vals
 }
 
-func (w *WrappedRequest) GetEmailClient() *sendgrid.Client {
+func (w *WrappedRequest) GetSendgridClient(ctx context.Context) (*sendgrid.Client, error) {
 	if w.EmailClient == nil {
-		w.EmailClient = sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+		secretmanagerClient, err := secretmanager.FromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		apiKey, err := secretmanagerClient.Get(ctx, "sendgrid_api_key")
+		if err != nil {
+			return nil, err
+		}
+		w.EmailClient = sendgrid.NewSendClient(apiKey)
 	}
-	return w.EmailClient
+	return w.EmailClient, nil
 }
 
 // Also receives the rsvp change status.

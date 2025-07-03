@@ -376,14 +376,20 @@ type SendgridEnvironment struct {
 
 func SendMailViaSendgrid(ctx context.Context, wr *WrappedRequest, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
+	client, err := wr.GetSendgridClient(ctx)
+	if err != nil {
+		return err
+	}
+
 	sg := &SendgridEnvironment{
-		EmailClient:   wr.GetEmailClient(),
+		EmailClient:   client,
 		EventKey:      wr.Event.Key,
 		BccAddress:    wr.GetBccAddress(),
 		SenderAddress: wr.GetSenderAddress(),
 	}
 	return SendMailViaSendgridImpl(ctx, sg, templatePrefix, data, headerData)
 }
+
 func SendMailViaSendgridImpl(ctx context.Context, sg *SendgridEnvironment, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
 	text, html, subject, err := RenderMail(ctx, sg.EventKey, templatePrefix, data,
@@ -439,7 +445,7 @@ func ToPersonalization(name, addr string) *mail.Personalization {
 	return mailPersonalizations
 }
 
-func sendErrorMail(wr *WrappedRequest, message string) {
+func sendErrorMail(ctx context.Context, wr *WrappedRequest, message string) {
 	mailPersonalizations := mail.NewPersonalization()
 	mailPersonalizations.AddTos(mail.NewEmail("Errors", wr.GetErrorAddress()))
 	msg := &mail.SGMailV3{
@@ -450,7 +456,14 @@ func sendErrorMail(wr *WrappedRequest, message string) {
 		},
 		Personalizations: []*mail.Personalization{mailPersonalizations},
 	}
-	if _, err := wr.GetEmailClient().Send(msg); err != nil {
+	client, err := wr.GetSendgridClient(ctx)
+	if err != nil {
+		log.Printf("Error getting sendgrid client: %v", err)
+		http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting sendgrid client: %v", err),
+			http.StatusInternalServerError)
+		return
+	}
+	if _, err := client.Send(msg); err != nil {
 		log.Printf("Error sending error mail: %v", err)
 	}
 }

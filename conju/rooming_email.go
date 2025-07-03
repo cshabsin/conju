@@ -131,7 +131,14 @@ func handleSendRoomingEmail(ctx context.Context, wr *WrappedRequest, emailName s
 			message.AddPersonalizations(p)
 		}
 		fmt.Fprintf(wr.ResponseWriter, "Sending to %s (isTest = %v)<p>", p.FullName(), isTest)
-		_, err = wr.GetEmailClient().Send(message)
+		client, err := wr.GetSendgridClient(ctx)
+		if err != nil {
+			log.Printf("Error getting sendgrid client: %v", err)
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting sendgrid client: %v", err),
+				http.StatusInternalServerError)
+			return
+		}
+		_, err = client.Send(message)
 		if err != nil {
 			log.Printf("Error sending mail: %v", err)
 		}
