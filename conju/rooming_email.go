@@ -312,7 +312,7 @@ func getRoomingEmails(ctx context.Context, wr *WrappedRequest, emailName string)
 			if !ri.RsvpMap[ri.Invitees[i].Key].Attending {
 				continue
 			}
-			data := wr.MakeTemplateData(map[string]interface{}{
+			data := wr.MakeTemplateData(map[string]any{
 				"Invitation":      ri,
 				"InviteeBookings": bookings,
 				"LoginLink":       MakeLoginUrl(&p, true),

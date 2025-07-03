@@ -171,7 +171,7 @@ func handleEvents(ctx context.Context, wr *WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 	log.Print(3)
 
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"Events":              allEvents,
 		"BuildingOrder":       buildingOrder,
 		"BuildingKeyMap":      buildingKeyMap,

@@ -38,7 +38,7 @@ func handleListPeople(ctx context.Context, wr *WrappedRequest) {
 
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"People": allPeople,
 	})
 
@@ -92,7 +92,7 @@ func handleUpdatePersonForm(ctx context.Context, wr *WrappedRequest) {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	formInfo := person.MakePersonUpdateFormInfo(pers.DatastoreKey, *pers, 0, false)
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"FormInfo": formInfo,
 	})
 	functionMap := template.FuncMap{
