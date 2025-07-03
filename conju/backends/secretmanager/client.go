@@ -22,7 +22,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 }
 
 func FromContext(ctx context.Context) (*Client, error) {
-	c, ok := ctx.Value(key).(*Client)
+	c, ok := ctx.Value(contextKey{}).(*Client)
 	if !ok {
 		return nil, fmt.Errorf("no secret manager client in context")
 	}
@@ -30,10 +30,10 @@ func FromContext(ctx context.Context) (*Client, error) {
 }
 
 func WrapContext(ctx context.Context, client *Client) context.Context {
-	return context.WithValue(ctx, key, client)
+	return context.WithValue(ctx, contextKey{}, client)
 }
 
-var key = &struct{}{}
+type contextKey struct{}
 
 func (c *Client) Close() error {
 	return c.client.Close()

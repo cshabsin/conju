@@ -14,6 +14,7 @@ import (
 	"google.golang.org/appengine/v2"
 	"google.golang.org/appengine/v2/user"
 
+	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/model/event"
 )
@@ -75,6 +76,13 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		ctx := dsclient.WrapContext(appengine.NewContext(r), s.Client)
 		log.Printf("Handling request %v", r.URL.Path)
+		secretmanagerClient, err := secretmanager.NewClient(ctx)
+		if err != nil {
+			log.Printf("Could not create secret manager client: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		ctx = secretmanager.WrapContext(ctx, secretmanagerClient)
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
 		if err != nil {
