@@ -251,7 +251,7 @@ func handleLoginError(ctx context.Context, wr *WrappedRequest) {
 		"templates/main.html",
 		"templates/bad_login.html"))
 	url, _ := user.LoginURL(ctx, "/")
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"Message":  message,
 		"LoginURL": url,
 	})
@@ -292,15 +292,15 @@ func handleResendInvitation(ctx context.Context, wr *WrappedRequest) {
 	// privacy.
 	if len(people) == 1 {
 		loginUrl := MakeLoginUrl(&people[0], true)
-		data := map[string]interface{}{
+		data := map[string]any{
 			"Event":     *wr.Event,
 			"LoginLink": loginUrl,
 		}
 		header := MailHeaderInfo{
-			To:      []string{people[0].Email},
+			To:      emailForPerson(&people[0]),
 			BccSelf: false,
 		}
-		SendMailViaSendgrid(ctx, wr, "resendInvitation", data, header)
+		SendMail(ctx, wr, "resendInvitation", data, header)
 	}
 	// TODO: Make a resentInvitation.html template explaining that
 	// if they don't get email in a minute or two from us, they
@@ -319,7 +319,7 @@ func handleResentInvitation(ctx context.Context, wr *WrappedRequest) {
 			loginErrorPage+"?message=An error occurred.", http.StatusFound)
 		return
 	}
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"ResentAddress": emailAddresses[0],
 	})
 	tpl := template.Must(template.New("").ParseFiles(

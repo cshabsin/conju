@@ -164,7 +164,7 @@ func handleRsvpReport(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/rsvpReport.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"RsvpMap":              allRsvpMap,
 		"NoRsvp":               allNoRsvp,
 		"StatusOrder":          statusOrder,
@@ -282,7 +282,7 @@ func handleActivitiesReport(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/activitiesReport.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"ActivityKeys":        activityKeys,
 		"KeysToActivities":    keysToActivities,
 		"ActivityResponseMap": activityResponseMap,
@@ -475,7 +475,7 @@ func handleRoomingReport(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingReport.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"BookingsByBuilding":   realBookingsByBuilding,
 		"TotalCostForEveryone": totalCostForEveryone,
 	})
@@ -557,7 +557,7 @@ func handleFoodReport(ctx context.Context, wr *WrappedRequest) {
 	sort.Slice(people, func(a, b int) bool { return person.SortByLastFirstName(people[a], people[b]) })
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/foodReport.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"AllRestrictions":      person.GetAllFoodRestrictionTags(),
 		"Counts":               counts,
 		"People":               people,
@@ -658,7 +658,7 @@ func handleRidesReport(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/ridesReport.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"ThursdayDrivers":     ThursdayDrivers,
 		"ThursdayRiders":      ThursdayRiders,
 		"ThursdayIndependent": ThursdayIndependent,
