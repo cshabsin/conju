@@ -6,12 +6,12 @@ import (
 	"cloud.google.com/go/datastore"
 )
 
-var dsClientKey = &struct{}{}
+type contextKey struct{}
 
 func FromContext(ctx context.Context) *datastore.Client {
-	return ctx.Value(dsClientKey).(*datastore.Client)
+	return ctx.Value(contextKey{}).(*datastore.Client)
 }
 
 func WrapContext(ctx context.Context, client *datastore.Client) context.Context {
-	return context.WithValue(ctx, dsClientKey, client)
+	return context.WithValue(ctx, contextKey{}, client)
 }
