@@ -11,7 +11,7 @@ type Client interface {
 }
 
 func FromContext(ctx context.Context) (Client, error) {
-	c, ok := ctx.Value(key).(Client)
+	c, ok := ctx.Value(mailerKey{}).(Client)
 	if !ok {
 		return nil, fmt.Errorf("no email client in context")
 	}
@@ -19,10 +19,10 @@ func FromContext(ctx context.Context) (Client, error) {
 }
 
 func WrapContext(ctx context.Context, client Client) context.Context {
-	return context.WithValue(ctx, key, client)
+	return context.WithValue(ctx, mailerKey{}, client)
 }
 
-var key = &struct{}{}
+type mailerKey struct{}
 
 // An email address, generally rendered as Name <Addr>
 type Email struct {

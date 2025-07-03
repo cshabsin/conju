@@ -16,6 +16,8 @@ import (
 
 	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/dsclient"
+	"github.com/cshabsin/conju/conju/mailer"
+	forwardemail "github.com/cshabsin/conju/conju/mailer/forwardmail"
 	"github.com/cshabsin/conju/model/event"
 )
 
@@ -34,7 +36,7 @@ type WrappedRequest struct {
 	*event.Event
 	*user.User
 	*LoginInfo
-	TemplateData  map[string]interface{}
+	TemplateData  map[string]any
 	SenderAddress *string
 	BccAddress    *string
 	ErrorAddress  *string
@@ -75,6 +77,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
 		ctx := dsclient.WrapContext(appengine.NewContext(r), s.Client)
 		log.Printf("Handling request %v", r.URL.Path)
+
 		secretmanagerClient, err := secretmanager.NewClient(ctx)
 		if err != nil {
 			log.Printf("Could not create secret manager client: %v", err)
@@ -82,6 +85,15 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 			return
 		}
 		ctx = secretmanager.WrapContext(ctx, secretmanagerClient)
+
+		mailClient, err := forwardemail.NewClientFromSecretManager(ctx, secretmanagerClient)
+		if err != nil {
+			log.Printf("Could not create mail client: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		ctx = mailer.WrapContext(ctx, mailClient)
+
 		wrw := NewWrappedResponseWriter(w)
 		sess, err := store.Get(r, "conju")
 		if err != nil {
@@ -96,7 +108,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 			Request:        r,
 			Session:        sess,
 			User:           u,
-			TemplateData: map[string]interface{}{
+			TemplateData: map[string]any{
 				"User": u,
 			},
 		}
@@ -141,7 +153,7 @@ func (g *Getters) Needs(getter Getter) *Getters {
 // TODO(cshabsin): Add check for whether the wrapped request has
 // already written the header (in which case emit a warning or
 // something since the change to the value will not be saved.
-func (w *WrappedRequest) SetSessionValue(key string, value interface{}) {
+func (w *WrappedRequest) SetSessionValue(key string, value any) {
 	if w.ResponseWriter.HasWrittenHeader() {
 		log.Printf("SetSessionValue called after header written. key %s, value %v", key, value)
 	}
@@ -180,7 +192,7 @@ func (w WrappedRequest) IsAdminUser() bool {
 	return w.User.Admin
 }
 
-func (w WrappedRequest) MakeTemplateData(extraVals map[string]any) map[string]interface{} {
+func (w WrappedRequest) MakeTemplateData(extraVals map[string]any) map[string]any {
 	vals := map[string]any{}
 	for k, v := range w.TemplateData {
 		vals[k] = v

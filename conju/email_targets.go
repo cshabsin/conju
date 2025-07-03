@@ -7,7 +7,9 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"github.com/cshabsin/conju/conju/dsclient"
+	"github.com/cshabsin/conju/conju/mailer"
 	"github.com/cshabsin/conju/invitation"
+	"github.com/cshabsin/conju/model/person"
 )
 
 // This file defines a set of EmailDistributors, which the
@@ -15,15 +17,15 @@ import (
 
 // MailHeaderInfo contains the header info for outgoing email, passed into sendMail.
 type MailHeaderInfo struct {
-	To      []string
-	Cc      []string
-	Bcc     []string
+	To      mailer.Email
+	Cc      []mailer.Email
+	Bcc     []mailer.Email
 	Subject string
 
 	BccSelf bool
 }
 
-type EmailSender func(context.Context, map[string]interface{}, MailHeaderInfo) error
+type EmailSender func(context.Context, map[string]any, MailHeaderInfo) error
 
 type EmailDistributor func(context.Context, *WrappedRequest, EmailSender) error
 type EmailDistributorEntry struct {
@@ -52,19 +54,26 @@ var AllDistributors = map[string]EmailDistributorEntry{
 	"Qualified*REAL*":       {true, QualifiedInviteesDistributor},
 }
 
+func emailForPerson(p *person.Person) mailer.Email {
+	return mailer.Email{
+		Name: p.FullName(),
+		Addr: p.Email,
+	}
+}
+
 func SelfOnlyDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
 	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
 	roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
 	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
-	emailData := map[string]interface{}{
+	emailData := map[string]any{
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
 		"Person":      wr.LoginInfo.Person,
 		"RoomingInfo": roomingInfo,
 	}
-	err := sender(ctx, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+	err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
 	return err
 }
 
@@ -95,14 +104,14 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, s
 			if p.Person.EmailTier != tier {
 				continue
 			}
-			emailData := map[string]interface{}{
+			emailData := map[string]any{
 				"Event":       wr.Event,
 				"Invitation":  realizedInvitation,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -139,14 +148,14 @@ func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender 
 			if p.Person.EmailTier != tier {
 				continue
 			}
-			emailData := map[string]interface{}{
+			emailData := map[string]any{
 				"Event":       wr.Event,
 				"Invitation":  realizedInvitation,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: []string{p.Person.Email}})
+			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(&p.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -253,14 +262,14 @@ func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender 
 			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
 				continue
 			}
-			emailData := map[string]interface{}{
+			emailData := map[string]any{
 				"Event":       wr.Event,
 				"Invitation":  realizedInvitation,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -294,14 +303,14 @@ func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailS
 			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
 				continue
 			}
-			emailData := map[string]interface{}{
+			emailData := map[string]any{
 				"Event":       wr.Event,
 				"Invitation":  realizedInvitation,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: []string{p.Person.Email}})
+			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(&p.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -364,14 +373,14 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest,
 			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == invitation.No {
 				continue
 			}
-			emailData := map[string]interface{}{
+			emailData := map[string]any{
 				"Event":       wr.Event,
 				"Invitation":  realizedInvitation,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: []string{wr.LoginInfo.Person.Email}})
+			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -404,14 +413,14 @@ func QualifiedInviteesDistributor(ctx context.Context, wr *WrappedRequest, sende
 			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == invitation.No {
 				continue
 			}
-			emailData := map[string]interface{}{
+			emailData := map[string]any{
 				"Event":       wr.Event,
 				"Invitation":  realizedInvitation,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: []string{p.Person.Email}})
+			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(&p.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
