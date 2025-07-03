@@ -17,6 +17,7 @@ import (
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/conju/dsclient"
+	"github.com/cshabsin/conju/conju/mailer"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/person"
@@ -419,7 +420,7 @@ func handleInvitations(ctx context.Context, wr *WrappedRequest) {
 		}
 	}
 
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"Invitations":         invitations,
 		"RealizedInvitations": realizedInvitations,
 		"NotInvitedList":      notInvitedList,
@@ -598,7 +599,7 @@ func handleViewInvitation(ctx context.Context, wr *WrappedRequest, invitationKey
 		log.Printf("activity.Realize: %v", err)
 	}
 
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"Invitation":                   realizedInvitation,
 		"FormInfoMap":                  formInfoMap,
 		"AllRsvpStatuses":              invitation.GetAllRsvpStatuses(),
@@ -814,16 +815,16 @@ func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	header := MailHeaderInfo{
-		To:      []string{wr.GetSenderAddress()},
+		To:      mailer.Email{Name: senders, Addr: wr.GetSenderAddress()},
 		Subject: subject,
 		BccSelf: false,
 	}
 
-	SendMailViaSendgrid(ctx, wr, "rsvpconfirmation", data, header)
+	SendMail(ctx, wr, "rsvpconfirmation", data, header)
 
 	if !wr.IsAdminUser() {
 
-		data := wr.MakeTemplateData(map[string]interface{}{
+		data := wr.MakeTemplateData(map[string]any{
 			"AnyAttending":             inv.AnyAttending(),
 			"AnyUndecided":             inv.AnyUndecided(),
 			"newPeopleSubjectFragment": newPeopleSubjectFragment,

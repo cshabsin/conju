@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/datastore"
+	"github.com/cshabsin/conju/conju/mailer"
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
@@ -322,7 +323,7 @@ func handleDoSendMail(ctx context.Context, wr *WrappedRequest) {
 		}
 		emailData["Unreserved"] = unreserved
 		headerData.BccSelf = bccSelf
-		return SendMailViaSendgrid(ctx, wr, emailTemplate, emailData, headerData)
+		return SendMail(ctx, wr, emailTemplate, emailData, headerData)
 	}
 	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
@@ -366,7 +367,7 @@ func handleListMail(ctx context.Context, wr *WrappedRequest) {
 
 const senders = "Dana Scott and Chris Shabsin"
 
-type SendgridEnvironment struct {
+type EmailData struct {
 	EmailClient *sendgrid.Client
 
 	EventKey      *datastore.Key
@@ -374,17 +375,18 @@ type SendgridEnvironment struct {
 	SenderAddress string
 }
 
-func SendMailViaSendgrid(ctx context.Context, wr *WrappedRequest, templatePrefix string, data any,
+func SendMail(ctx context.Context, wr *WrappedRequest, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
-	sg := &SendgridEnvironment{
+	sg := &EmailData{
 		EmailClient:   wr.GetEmailClient(),
 		EventKey:      wr.Event.Key,
 		BccAddress:    wr.GetBccAddress(),
 		SenderAddress: wr.GetSenderAddress(),
 	}
-	return SendMailViaSendgridImpl(ctx, sg, templatePrefix, data, headerData)
+	return SendMailImpl(ctx, sg, templatePrefix, data, headerData)
 }
-func SendMailViaSendgridImpl(ctx context.Context, sg *SendgridEnvironment, templatePrefix string, data any,
+
+func SendMailImpl(ctx context.Context, sg *EmailData, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
 	text, html, subject, err := RenderMail(ctx, sg.EventKey, templatePrefix, data,
 		/* needSubject = */ headerData.Subject == "")
@@ -395,32 +397,33 @@ func SendMailViaSendgridImpl(ctx context.Context, sg *SendgridEnvironment, templ
 		log.Printf("Error rendering mail: %v", err)
 		return err
 	}
-	personalizations := []*mail.Personalization{
-		ToListPersonalization(headerData.To),
+
+	mailClient, err := mailer.FromContext(ctx)
+	if err != nil {
+		log.Printf("Error getting mail client: %v", err)
+		return err
+	}
+	msg := &mailer.Message{
+		To: headerData.To,
+		From: mailer.Email{
+			Name: senders,
+			Addr: sg.SenderAddress,
+		},
+		Subject: subject,
+		Text:    text,
+		HTML:    html,
 	}
 
 	if headerData.BccSelf {
-		bccPers := mail.NewPersonalization()
-		bccPers.AddBCCs(mail.NewEmail("", sg.BccAddress))
-		personalizations = append(personalizations, bccPers)
+		msg.BCC = append(msg.BCC, mailer.Email{
+			Addr: sg.BccAddress,
+		})
 	}
 
-	// TODO(cshabsin): get string name from somewhere environmental?
-	message := &mail.SGMailV3{
-		From:    mail.NewEmail(senders, sg.SenderAddress),
-		Subject: subject,
-		Content: []*mail.Content{
-			mail.NewContent("text/plain", text),
-			mail.NewContent("text/html", html),
-		},
-		Personalizations: personalizations,
-	}
-
-	log.Printf("sending mail to %v: %v", headerData.To, message)
-	if resp, err := sg.EmailClient.Send(message); err != nil {
-		log.Printf("sendgrid.Send got err: %v, %v", resp, err)
-	} else {
-		log.Printf("sendgrid.Send got resp: %v", resp)
+	log.Printf("sending mail to %v", headerData.To)
+	if err := mailClient.Send(ctx, msg); err != nil {
+		log.Printf("mailclient.Send got err: %v", err)
+		return err
 	}
 	return nil
 }
