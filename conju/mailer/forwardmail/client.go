@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -48,6 +49,7 @@ func NewClientFromSecretManager(ctx context.Context, client *secretmanager.Clien
 }
 
 func (c *Client) Send(ctx context.Context, m *mailer.Message) error {
+	log.Printf("forwardemail sending email to %s from %s", m.To.String(), m.From.String())
 	url := "https://api.forwardemail.net/v1/emails"
 
 	msg := &Message{
@@ -76,9 +78,13 @@ func (c *Client) Send(ctx context.Context, m *mailer.Message) error {
 	}
 
 	defer res.Body.Close()
-	_, err = io.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
+	}
+
+	if res.StatusCode >= 400 {
+		return fmt.Errorf("forwardemail returned status %d: %s", res.StatusCode, string(body))
 	}
 
 	return nil
