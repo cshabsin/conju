@@ -157,7 +157,7 @@ func handleRoomingTool(ctx context.Context, wr *WrappedRequest) {
 	sort.Slice(noRsvps, func(a, b int) bool { return person.SortByFirstName(noRsvps[a][0], noRsvps[b][0]) })
 
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/roomingTool.html"))
-	data := wr.MakeTemplateData(map[string]interface{}{
+	data := wr.MakeTemplateData(map[string]any{
 		"RsvpToGroupsMap":      rsvpToGroupsMap,
 		"NoRsvps":              noRsvps,
 		"StatusOrder":          statusOrder,
