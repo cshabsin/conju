@@ -24,8 +24,7 @@ import (
 var store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
 
 type WrappedRequest struct {
-	EmailClient     *sendgrid.Client
-	DatastoreClient *datastore.Client
+	EmailClient *sendgrid.Client
 
 	ResponseWriter WrappedResponseWriter
 	*http.Request
@@ -100,7 +99,6 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 			TemplateData: map[string]interface{}{
 				"User": u,
 			},
-			DatastoreClient: s.Client,
 		}
 		if u != nil {
 			logoutUrl, err := user.LogoutURL(ctx, wr.URL.RequestURI())
