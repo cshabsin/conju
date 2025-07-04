@@ -14,10 +14,10 @@ import (
 	"google.golang.org/appengine/v2"
 	"google.golang.org/appengine/v2/user"
 
-	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/mailer"
 	"github.com/cshabsin/conju/conju/mailer/forwardemail"
+	"github.com/cshabsin/conju/conju/secretmanager"
 	"github.com/cshabsin/conju/model/event"
 )
 

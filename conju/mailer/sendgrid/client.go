@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/mailer"
+	"github.com/cshabsin/conju/conju/secretmanager"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )

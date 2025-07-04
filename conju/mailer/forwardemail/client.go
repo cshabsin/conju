@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/mailer"
+	"github.com/cshabsin/conju/conju/secretmanager"
 )
 
 type Client struct {
