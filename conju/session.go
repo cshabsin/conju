@@ -17,7 +17,7 @@ import (
 	"github.com/cshabsin/conju/conju/backends/secretmanager"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/mailer"
-	forwardemail "github.com/cshabsin/conju/conju/mailer/forwardmail"
+	"github.com/cshabsin/conju/conju/mailer/forwardemail"
 	"github.com/cshabsin/conju/model/event"
 )
 
