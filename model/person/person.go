@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cshabsin/conju/conju/util"
-
 	"cloud.google.com/go/datastore"
 )
 
@@ -391,7 +389,7 @@ func (p Person) IsBabyAtTime(datetime time.Time) bool {
 
 // Round a duration to half-years.
 func HalfYears(d time.Duration) float64 {
-	return util.RoundDuration(d, Halfyear).Hours() / 24 / 365
+	return d.Round(Halfyear).Hours() / 24 / 365
 }
 
 func (p Person) FormattedAddressForHtml() []string {
