@@ -159,8 +159,6 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 			}
 		}
 		wr.TemplateData["IsAdminUser"] = wr.IsAdminUser()
-		// TODO: make this always true once we go live.
-		wr.TemplateData["ShowRsvp"] = wr.IsAdminUser()
 		for i, getter := range getters.Getters {
 			if err = getter(ctx, wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {

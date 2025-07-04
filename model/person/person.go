@@ -392,10 +392,12 @@ func HalfYears(d time.Duration) float64 {
 	return d.Round(Halfyear).Hours() / 24 / 365
 }
 
+// used in listPeople.html
 func (p Person) FormattedAddressForHtml() []string {
 	return strings.Split(p.Address, "\n")
 }
 
+// used in updatePersonForm.html
 func (p Person) GetFoodRestrictionMap() map[FoodRestriction]int {
 	var restrictionMap = make(map[FoodRestriction]int)
 
