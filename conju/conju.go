@@ -138,5 +138,5 @@ func handleDBMedia(ctx context.Context, wr *WrappedRequest) {
 
 type DBMedia struct {
 	Name  string `datastore:"name"`
-	Value string `datastore:"value,noindex"`
+	Value []byte `datastore:"value,noindex"`
 }
