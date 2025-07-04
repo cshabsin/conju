@@ -54,7 +54,7 @@ var AllDistributors = map[string]EmailDistributorEntry{
 	"Qualified*REAL*":       {true, QualifiedInviteesDistributor},
 }
 
-func emailForPerson(p *person.Person) mailer.Email {
+func EmailForPerson(p *person.Person) mailer.Email {
 	return mailer.Email{
 		Name: p.FullName(),
 		Addr: p.Email,
@@ -73,7 +73,7 @@ func SelfOnlyDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSe
 		"Person":      wr.LoginInfo.Person,
 		"RoomingInfo": roomingInfo,
 	}
-	err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
+	err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 	return err
 }
 
@@ -111,7 +111,7 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, s
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
+			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -155,7 +155,7 @@ func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender 
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(&p.Person)})
+			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(&p.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -269,7 +269,7 @@ func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender 
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
+			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -310,7 +310,7 @@ func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailS
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(&p.Person)})
+			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(&p.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -380,7 +380,7 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest,
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(wr.LoginInfo.Person)})
+			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
@@ -420,7 +420,7 @@ func QualifiedInviteesDistributor(ctx context.Context, wr *WrappedRequest, sende
 				"RoomingInfo": roomingInfo,
 			}
 			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
-			err := sender(ctx, emailData, MailHeaderInfo{To: emailForPerson(&p.Person)})
+			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(&p.Person)})
 			if err != nil {
 				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
 				return err
