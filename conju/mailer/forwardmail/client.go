@@ -3,6 +3,7 @@ package forwardemail
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,6 +46,7 @@ func NewClientFromSecretManager(ctx context.Context, client *secretmanager.Clien
 	if err != nil {
 		return nil, fmt.Errorf("error getting api key for forwardemail: %w", err)
 	}
+	apiKey = base64.StdEncoding.EncodeToString([]byte(apiKey))
 	return &Client{apiKey: apiKey}, nil
 }
 
