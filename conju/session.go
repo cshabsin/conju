@@ -159,6 +159,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 			}
 		}
 		wr.TemplateData["IsAdminUser"] = wr.IsAdminUser()
+		wr.TemplateData["DevMode"] = wr.IsAdminUser() && len(wr.Request.URL.Query()["devmode"]) > 0
 		for i, getter := range getters.Getters {
 			if err = getter(ctx, wr); err != nil {
 				if redirect, ok := err.(RedirectError); ok {
