@@ -24,12 +24,14 @@ import (
 var store *sessions.CookieStore
 
 func handleWarmup(ctx context.Context, wr *WrappedRequest) {
+	// TODO - don't run this through sessionizer, so we get to do the initialization instead of having it done with the lazy code there.
 	if store != nil {
 		return
 	}
 	if err := initializeCookieStore(ctx); err != nil {
 		log.Printf("Could not initialize secret manager in warmup: %v", err)
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
 	}
 }
 
@@ -130,7 +132,7 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 			}
 			if store == nil {
 				// Fallback to old store.
-				sessions.NewCookieStore([]byte("devmode_key_crsdms"))
+				store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
 			}
 		}
 		sess, err := store.Get(r, "conju")
