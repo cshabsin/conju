@@ -27,7 +27,7 @@ var store *sessions.CookieStore
 
 func handleWarmup(ctx context.Context, wr *WrappedRequest) {
 	if err := initializeCookieStore(ctx); err != nil {
-		log.Printf("Could not initialize secret manager in warmup: %v")
+		log.Printf("Could not initialize secret manager in warmup: %v", err)
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
