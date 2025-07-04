@@ -21,7 +21,7 @@ func NewClient(ctx context.Context) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Client{client: sendgrid.NewSendClient(apiKey)}, nil
+	return &Client{client: sendgrid.NewSendClient(string(apiKey))}, nil
 }
 
 type Client struct {

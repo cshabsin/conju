@@ -23,7 +23,27 @@ import (
 
 // TODO(cshabsin): Figure out how to store the secret in the datastore
 // instead of source.
-var store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
+var store *sessions.CookieStore
+
+func handleWarmup(ctx context.Context, wr *WrappedRequest) {
+	if err := initializeCookieStore(ctx); err != nil {
+		log.Printf("Could not initialize secret manager in warmup: %v")
+		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func initializeCookieStore(ctx context.Context) error {
+	secretmanager, err := secretmanager.FromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("Error getting secret manager: %w", err)
+	}
+	secret, err := secretmanager.Get(ctx, "gorilla_cookie_auth_key")
+	if err != nil {
+		return fmt.Errorf("Error getting gorilla cookie auth key: %w", err)
+	}
+	store = sessions.NewCookieStore(secret)
+	return nil
+}
 
 type WrappedRequest struct {
 	EmailClient *sendgrid.Client
@@ -95,6 +115,15 @@ func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *Wrap
 		ctx = mailer.WrapContext(ctx, mailClient)
 
 		wrw := NewWrappedResponseWriter(w)
+		if store == nil {
+			if err := initializeCookieStore(ctx); err != nil {
+				log.Printf("Could not initialize secret manager in sessionizer: %v", err)
+			}
+			if store == nil {
+				// Fallback to old store.
+				sessions.NewCookieStore([]byte("devmode_key_crsdms"))
+			}
+		}
 		sess, err := store.Get(r, "conju")
 		if err != nil {
 			log.Printf("Could not get session from store: %v", err)

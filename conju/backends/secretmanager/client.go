@@ -71,13 +71,13 @@ func (c *Client) Create(ctx context.Context, parent, secretID, value string) err
 	return err
 }
 
-func (c *Client) Get(ctx context.Context, secretID string) (string, error) {
+func (c *Client) Get(ctx context.Context, secretID string) ([]byte, error) {
 	var projectID string
 	if metadata.OnGCE() {
 		var err error
 		projectID, err = metadata.ProjectIDWithContext(ctx)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	fqName := "projects/" + projectID + "/secrets/" + secretID + "/versions/latest"
@@ -86,7 +86,7 @@ func (c *Client) Get(ctx context.Context, secretID string) (string, error) {
 	}
 	response, err := c.client.AccessSecretVersion(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to get secret: %v", err)
+		return nil, fmt.Errorf("failed to get secret: %v", err)
 	}
-	return string(response.GetPayload().GetData()), nil
+	return response.GetPayload().GetData(), nil
 }

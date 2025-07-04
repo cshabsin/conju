@@ -12,6 +12,8 @@ import (
 )
 
 func Register(s Sessionizer) {
+	s.AddSessionHandler("/_ah/warmup", handleWarmup)
+
 	s.AddSessionHandler("/reloadData", AskReloadData).Needs(AdminGetter)
 	s.AddSessionHandler("/doReloadData", ReloadData).Needs(AdminGetter)
 	//AddSessionHandler("/clearData", ClearAllData).Needs(AdminGetter)

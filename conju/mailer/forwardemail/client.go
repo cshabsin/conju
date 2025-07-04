@@ -52,10 +52,11 @@ func NewClientFromEnv() *Client {
 }
 
 func NewClientFromSecretManager(ctx context.Context, client *secretmanager.Client) (*Client, error) {
-	apiKey, err := client.Get(ctx, "forwardemail_api_key")
+	keyBytes, err := client.Get(ctx, "forwardemail_api_key")
 	if err != nil {
 		return nil, fmt.Errorf("error getting api key for forwardemail: %w", err)
 	}
+	apiKey := string(keyBytes)
 	apiKey = base64.StdEncoding.EncodeToString([]byte(apiKey + ":"))
 	return &Client{apiKey: apiKey}, nil
 }
