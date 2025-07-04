@@ -1,8 +1,19 @@
+// Package forwardemail is a client for forwardemail.net.
+//
+// It uses the APIs documented at https://forwardemail.net/en/email-api.
+//
+// It retrieves the API key from the secretmanager client using the client
+// stashed in the context by secretmanager.WrapContext.
+//
+// Store the API key as the 26-character "API token" as viewed in the Security
+// section of the forwardemail.net account settings. The code manages the
+// proper base64 encoding of it as a username in their weird setup.
 package forwardemail
 
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -45,6 +56,7 @@ func NewClientFromSecretManager(ctx context.Context, client *secretmanager.Clien
 	if err != nil {
 		return nil, fmt.Errorf("error getting api key for forwardemail: %w", err)
 	}
+	apiKey = base64.StdEncoding.EncodeToString([]byte(apiKey + ":"))
 	return &Client{apiKey: apiKey}, nil
 }
 
