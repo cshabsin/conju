@@ -21,11 +21,12 @@ import (
 	"github.com/cshabsin/conju/model/event"
 )
 
-// TODO(cshabsin): Figure out how to store the secret in the datastore
-// instead of source.
 var store *sessions.CookieStore
 
 func handleWarmup(ctx context.Context, wr *WrappedRequest) {
+	if store != nil {
+		return
+	}
 	if err := initializeCookieStore(ctx); err != nil {
 		log.Printf("Could not initialize secret manager in warmup: %v", err)
 		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
@@ -33,15 +34,23 @@ func handleWarmup(ctx context.Context, wr *WrappedRequest) {
 }
 
 func initializeCookieStore(ctx context.Context) error {
-	secretmanager, err := secretmanager.FromContext(ctx)
+	log.Printf("initializing cookie store")
+	smClient, err := secretmanager.FromContext(ctx)
 	if err != nil {
 		return fmt.Errorf("Error getting secret manager: %w", err)
 	}
-	secret, err := secretmanager.Get(ctx, "gorilla_cookie_auth_key")
+	secrets, err := smClient.GetVersionsWithinGracePeriod(ctx, "gorilla_cookie_auth_key", 0)
 	if err != nil {
 		return fmt.Errorf("Error getting gorilla cookie auth key: %w", err)
 	}
-	store = sessions.NewCookieStore(secret)
+	var secretArgs [][]byte
+	for _, secret := range secrets {
+		// NewCookieStore takes arg pairs - an auth key and an encryption key.
+		// Right now we're not doing encryption keys, for simplicity.
+		secretArgs = append(secretArgs, secret)
+		secretArgs = append(secretArgs, nil)
+	}
+	store = sessions.NewCookieStore(secretArgs...)
 	return nil
 }
 
