@@ -9,6 +9,8 @@ import (
 	"google.golang.org/appengine/v2"
 
 	"github.com/cshabsin/conju/conju"
+	"github.com/cshabsin/conju/conju/mailer/forwardemail"
+	"github.com/cshabsin/conju/conju/secretmanager"
 	"github.com/cshabsin/conju/view/poll"
 )
 
@@ -26,8 +28,20 @@ func main() {
 	}
 	defer datastoreClient.Close()
 
+	secretmanagerClient, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		log.Fatalf("Could not create secret manager client: %v", err)
+	}
+
+	mailClient, err := forwardemail.NewClientFromSecretManager(ctx, secretmanagerClient)
+	if err != nil {
+		log.Fatalf("Could not create mail client: %v", err)
+	}
+
 	s := conju.Sessionizer{
-		Client: datastoreClient,
+		DatastoreClient:     datastoreClient,
+		SecretmanagerClient: secretmanagerClient,
+		MailClient:          mailClient,
 	}
 
 	conju.Register(s)

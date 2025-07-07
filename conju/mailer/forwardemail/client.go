@@ -51,14 +51,23 @@ func NewClientFromEnv() *Client {
 	return NewClientFromKey(os.Getenv("FORWARDEMAIL_API_KEY"))
 }
 
-func NewClientFromSecretManager(ctx context.Context, client *secretmanager.Client) (*Client, error) {
-	keyBytes, err := client.Get(ctx, "forwardemail_api_key")
+func NewClientFromSecretManager(ctx context.Context, secretClient *secretmanager.Client) (*Client, error) {
+	client := &Client{}
+	if err := client.RefreshSecret(ctx, secretClient); err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func (c *Client) RefreshSecret(ctx context.Context, secretClient *secretmanager.Client) error {
+	keyBytes, err := secretClient.Get(ctx, "forwardemail_api_key")
 	if err != nil {
-		return nil, fmt.Errorf("error getting api key for forwardemail: %w", err)
+		return fmt.Errorf("error getting api key for forwardemail: %w", err)
 	}
 	apiKey := string(keyBytes)
 	apiKey = base64.StdEncoding.EncodeToString([]byte(apiKey + ":"))
-	return &Client{apiKey: apiKey}, nil
+	c.apiKey = apiKey
+	return nil
 }
 
 func (c *Client) Send(ctx context.Context, m *mailer.Message) error {

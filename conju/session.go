@@ -99,31 +99,19 @@ func (dpe DoneProcessingError) Error() string {
 }
 
 type Sessionizer struct {
-	Client *datastore.Client
+	DatastoreClient     *datastore.Client
+	SecretmanagerClient *secretmanager.Client
+	MailClient          *forwardemail.Client
 }
 
 func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *WrappedRequest)) *Getters {
 	var getters Getters
 	getters.Getters = []Getter{EventGetter}
 	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-		ctx := dsclient.WrapContext(appengine.NewContext(r), s.Client)
 		log.Printf("Handling request %v", r.URL.Path)
-
-		secretmanagerClient, err := secretmanager.NewClient(ctx)
-		if err != nil {
-			log.Printf("Could not create secret manager client: %v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		ctx = secretmanager.WrapContext(ctx, secretmanagerClient)
-
-		mailClient, err := forwardemail.NewClientFromSecretManager(ctx, secretmanagerClient)
-		if err != nil {
-			log.Printf("Could not create mail client: %v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		ctx = mailer.WrapContext(ctx, mailClient)
+		ctx := dsclient.WrapContext(appengine.NewContext(r), s.DatastoreClient)
+		ctx = secretmanager.WrapContext(ctx, s.SecretmanagerClient)
+		ctx = mailer.WrapContext(ctx, s.MailClient)
 
 		wrw := NewWrappedResponseWriter(w)
 		if store == nil {
