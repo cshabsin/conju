@@ -4,7 +4,9 @@ import (
 	"context"
 	"html/template"
 	"log"
+	"mime"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"cloud.google.com/go/datastore"
@@ -122,17 +124,8 @@ func handleDBMedia(ctx context.Context, wr *WrappedRequest) {
 		http.Error(wr.ResponseWriter, "Media not found", http.StatusNotFound)
 		return
 	}
-	contentType := "text/html; charset=utf-8"
-	if strings.HasSuffix(path, ".js") {
-		contentType = "application/javascript"
-	} else if strings.HasSuffix(path, ".css") {
-		contentType = "text/css"
-	} else if strings.HasSuffix(path, ".png") {
-		contentType = "image/png"
-	} else if strings.HasSuffix(path, ".jpg") || strings.HasSuffix(path, ".jpeg") {
-		contentType = "image/jpeg"
-	}
-	wr.ResponseWriter.Header().Set("Content-Type", contentType)
+
+	wr.ResponseWriter.Header().Set("Content-Type", mime.TypeByExtension(filepath.Ext(path)))
 	wr.ResponseWriter.Write([]byte(media.Value))
 }
 
