@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/secretmanager v1.14.2
 	github.com/gorilla/sessions v1.2.1
 	github.com/sendgrid/sendgrid-go v3.10.5+incompatible
-	golang.org/x/oauth2 v0.24.0
+	golang.org/x/oauth2 v0.27.0
 	golang.org/x/text v0.23.0
 	google.golang.org/api v0.214.0
 	google.golang.org/appengine/v2 v2.0.6
