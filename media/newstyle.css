@@ -1,0 +1,821 @@
+/* Colors:
+    dark red:     #990000
+    lighter red:  #bb0000
+    blue:         #009933
+    dark beige:   #e6c0d8
+    light beige:  #ffeff9
+    mid beige:    #ffd5ef
+    mid beigh 2:  #f6e3ec
+    light blue:   #eff9ff
+
+    wedding blue background: #CDE9FA
+    wedding purple text: #4F0463
+
+  Derived from: http://www.456bereastreet.com/lab/developing_with_web_standards/csslayout/2-col/
+*/
+
+body {
+  margin: 0;
+  padding: 0px 30px;
+  color: #1F1497;
+  background-color: #BBEEEE;
+  /* background: #FAF4E2; */
+  font-family: georgia, new york, serif;
+}
+
+html {
+  margin: 0;
+  padding: 0;
+}
+
+input[type=checkbox] {
+  /* Double-sized Checkboxes */
+  transform: scale(2);
+  padding: 10px;
+}
+
+@media only screen and (max-width:1000px) {
+  textarea {
+    font-size: 22pt;
+  }
+
+  .formTable {
+    width: 100%
+  }
+
+  .formTable td,
+  th {
+    font-size: 22pt;
+  }
+
+  .formTable input,
+  select {
+    margin: 15px 0px;
+    transform: scale(2);
+  }
+
+  .formTable input[type=checkbox] {
+    margin-right: 25px
+  }
+
+  .formTable input[type=radio] {
+    margin-right: 25px
+  }
+
+  label {
+    font-size: 20pt
+  }
+
+  h4 {
+    margin-top: 70px
+  }
+
+  input[type=radio] {
+    /* Double-sized Checkboxes */
+    transform: scale(2);
+    padding: 10px;
+  }
+}
+
+
+#header {
+  padding: 5px 10px;
+  border-bottom: 1px solid #1F1497;
+  margin: 10px 0px;
+  text-align: left;
+  width: 100%;
+}
+
+#headerLinks {
+  display: inline-block;
+  max-width: 100%;
+}
+
+#headerLinks div {
+  padding-right: 10px;
+  padding-left: 10px;
+  font-weight: bold;
+  display: inline-block;
+  border: 1px solid #1F1497;
+  background-color: #003030;
+  color: white;
+}
+
+#headerLinks div:hover {
+  background-color: #408080;
+}
+
+#headerlinks a {
+  text-decoration: none;
+  color: white;
+}
+
+#logoutLink {
+  float: right;
+  text-align: right;
+  font-weight: bold;
+}
+
+a:link {
+  color: #1f1497;
+}
+
+a:visited {
+  color: #1f1497;
+}
+
+a:active {
+  color: #1f1497;
+}
+
+a:hover {
+  color: #444444;
+}
+
+
+#email {
+  border: 1px solid #1f1497;
+  margin: 20px;
+  padding: 5px;
+  color: black;
+  background: white;
+}
+
+#headerEmail {
+  border: 1px solid #ddd;
+  padding: 5px;
+  margin: 5px;
+}
+
+#textEmail {
+  border: 1px solid #ddd;
+  font-family: monospace;
+  padding: 5px;
+  margin: 5px;
+  white-space: pre;
+}
+
+#htmlEmail {
+  border: 1px solid #ddd;
+  padding: 5px;
+  margin: 5px;
+}
+
+textarea {
+  width: 100%
+}
+
+table.listTable {
+  margin: 20px;
+  border-collapse: collapse
+}
+
+table.listTable td {
+  padding: 5px;
+  vertical-align: top;
+  border-top: 1px solid #1F1497;
+  border-bottom: 1px solid #1F1497;
+}
+
+table.formTable {
+  margin: 20px
+}
+
+.formTable td {
+  padding: 5px 0px;
+  vertical-align: top
+}
+
+.formTable input[type="checkbox"] {
+  padding-right: 10px
+}
+
+.addressField {
+  width: 150px;
+}
+
+.freeformTextField {
+  width: 450px;
+  height: 150px
+}
+
+@media only screen and (max-width:1000px) {
+  .freeformTextField {
+    width: 100%
+  }
+}
+
+.rideSharingOptions {
+  margin: 10px 0px;
+}
+
+.drivingSelect {
+  margin-top: 10px;
+}
+
+.activityInput {
+  width: 25px;
+}
+
+.activityDescription {
+  padding-left: 10px
+}
+
+.emphasizedSubmit {
+  width: 100px;
+  height: 50px;
+  font-size: 150%;
+  border-radius: 10px;
+  margin-top: 30px;
+}
+
+input[type="checkbox"] {
+  margin: 7px
+}
+
+input[type="radio"] {
+  margin: 7px
+}
+
+input[type="button"] {
+  color: #1F1497;
+}
+
+input[type="submit"] {
+  background-color: #1F1497;
+  color: #EEEEEE;
+}
+
+
+.listUpArrow {
+  vertical-align: top;
+}
+
+.listUpArrow img {
+  width: 20px;
+  height: 20px;
+}
+
+.listDownArrow {
+  vertical-align: top;
+}
+
+.listDownArrow img {
+  width: 20px;
+  height: 20px;
+  transform: rotate(180deg);
+}
+
+.inviteeTable td {
+  padding: 10px 5px;
+}
+
+.inviteeTable .formTable td {
+  padding: 0px 5px;
+}
+
+.hidden {
+  display: none;
+}
+
+.invitationPersonHeading {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.invitationPersonalInfoLink {
+  font-size: smaller;
+  display: inline-block;
+  font-weight: lighter;
+  margin-left: 30px;
+}
+
+.invitationPersonalInfoLink a:hover {
+  color: #1F1497;
+}
+
+
+.food {
+  padding: 20px;
+}
+
+.foodRestrictions {
+  margin: 20px
+}
+
+.foodRestrictions div {
+  padding: 5px 0px
+}
+
+.personal {
+  padding: 20px;
+}
+
+.inputHighlight {
+  color: red
+}
+
+.addNewPersonButton {
+  font-size: 120%;
+  border: 2px solid #1F1497;
+  margin-top: 15px;
+}
+
+.rsvpStatus {
+  margin-left: 29px
+}
+
+@media only screen and (max-width:1000px) {
+  .rsvpStatus {
+    margin: 25px 0px 25px 138px;
+    /* Double-sized Checkboxes */
+    -ms-transform: scale(2);
+    /* IE */
+    -moz-transform: scale(2);
+    /* FF */
+    -webkit-transform: scale(2);
+    /* Safari and Chrome */
+    -o-transform: scale(2);
+    /* Opera */
+    padding: 10px;
+  }
+
+  .personSupplementaryInfo {
+    font-size: 22pt
+  }
+
+  .personalInfo td:nth-child(2) {
+    width: 100%;
+    padding-left: 20px;
+  }
+
+  .personalInfo textarea {
+    width: 100%;
+    height: 60px;
+    font-size: 25px
+  }
+
+  .personalInfo input {
+    margin-left: 90px
+  }
+
+  .personalInfo select {
+    margin-left: 68px
+  }
+
+  .housingPreference,
+  .drivingPreference {
+    margin: 20px 0px 35px 200px
+  }
+
+  .housingPreferenceBoolean {
+    font-size: 22pt;
+    padding: 5px 0px;
+  }
+
+  .rideSharingOptions td {
+    font-size: 22pt
+  }
+
+  .rideSharingOptions td:nth-child(1) {
+    width: 60%;
+  }
+
+  .rideSharingOptions input {
+    margin-left: 120px;
+    width: 150px
+  }
+
+  .allDrivers {
+    font-size: 22pt
+  }
+
+  .emphasizedSubmit {
+    width: 200px;
+    height: 100px;
+    font-size: 200%;
+    border-radius: 25px;
+    margin-top: 30px;
+  }
+
+  .covidAcknowledgement {
+    font-weight: bold;
+    font-size: 25pt
+  }
+
+  .addNewPersonButton {
+    font-size: 22pt;
+    border: 2px solid #1F1497;
+  }
+
+  .newPersonInstructionsSingular {
+    font-size: 22pt
+  }
+
+  .newPersonInstructionsPlural {
+    font-size: 22pt
+  }
+}
+
+
+
+
+.rsvpHousing td {
+  vertical-align: top;
+}
+
+.rsvpHousing td select {
+  margin: 0px 20px 20px 0px;
+}
+
+.rsvpHousing td textarea {
+  margin-top: 15px;
+}
+
+.lodgingFormContainer {
+  margin-top: 30px;
+}
+
+.rideFormContainer textarea {
+  margin-top: 15px;
+  display: block;
+}
+
+.personSupplementaryInfo {
+  border: 1px solid #1F1497;
+  margin: 10px 0px 0px 30px;
+}
+
+.newPersonContainer {
+  margin: 10px 0px;
+}
+
+.newPersonContainer input:nth-of-type(1) {
+  margin-right: 30px;
+}
+
+
+#newPersonCollectionContainer {
+  margin: 40px 0px 20px 0px;
+}
+
+.newPersonInstructionsSingular,
+.newPersonInstructionsPlural {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.allDrivers {
+  margin-top: 20px;
+}
+
+.anyAttendeesContainer textarea {
+  margin-top: 15px;
+}
+
+.invitationCloser {
+  margin-top: 30px;
+}
+
+.activityHeader {
+  margin: 20px;
+}
+
+.activityTable {
+  margin: 0px 0px 40px 40px;
+}
+
+.activityTable td {
+  border-collapse: collapse;
+  padding: 0px;
+}
+
+.activityTable input[type="radio"] {
+  padding: 0px;
+}
+
+.activityTable .leader {
+  padding-left: 25px;
+  text-align: center;
+}
+
+.ranking {
+  width: 75px;
+  text-align: center;
+}
+
+.rsvpReportTable {
+  margin: 40px;
+}
+
+.rsvpReportTable td {
+  vertical-align: top;
+  padding: 5px 10px;
+}
+
+.rsvpSelector {
+  display: inline-block;
+  vertical-align: top;
+  margin: 5px 15px;
+}
+
+.roomingTestTable {
+  margin-top: 50px;
+  border-collapse: collapse;
+  border: 0px;
+  width: 800px;
+}
+
+.roomingTestTable td {
+  width: auto;
+  height: auto;
+  border: none;
+}
+
+.buildingRoomingList {
+  margin: 20px;
+}
+
+.buildingName {
+  font-size: larger;
+  font-weight: bold;
+}
+
+.roomingList {
+  padding-right: 15px;
+}
+
+.roomNumber {
+  font-weight: bold;
+}
+
+.currentEvent {
+  background-color: #1F1497;
+  color: #EEEEEE;
+}
+
+.currentEvent a {
+  color: #EEEEEE;
+}
+
+.hostLiability {
+  font-weight: bold;
+  font-size: 200%;
+}
+
+.roommateCosts th {
+  text-align: center;
+  vertical-align: top;
+  padding: 5px;
+  width: 90px;
+}
+
+.roommateCosts td {
+  text-align: center;
+}
+
+/*
+ * Copied from https://developers.google.com/identity/branding-guidelines 2024-06-08
+ */
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -webkit-appearance: none;
+  background-color: WHITE;
+  background-image: none;
+  border: 1px solid #747775;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Roboto', arial, sans-serif;
+  font-size: 14px;
+  height: 40px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 12px;
+  position: relative;
+  text-align: center;
+  -webkit-transition: background-color .218s, border-color .218s, box-shadow .218s;
+  transition: background-color .218s, border-color .218s, box-shadow .218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: auto;
+  max-width: 400px;
+  min-width: min-content;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  -webkit-align-items: center;
+  align-items: center;
+  display: flex;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  -webkit-flex-wrap: nowrap;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  -webkit-flex-grow: 1;
+  flex-grow: 1;
+  font-family: 'Roboto', arial, sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button .gsi-material-button-state {
+  -webkit-transition: opacity .218s;
+  transition: opacity .218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.gsi-material-button:disabled {
+  cursor: default;
+  background-color: #ffffff61;
+  border-color: #1f1f1f1f;
+}
+
+.gsi-material-button:disabled .gsi-material-button-contents {
+  opacity: 38%;
+}
+
+.gsi-material-button:disabled .gsi-material-button-icon {
+  opacity: 38%;
+}
+
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
+.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 12%;
+}
+
+.gsi-material-button:not(:disabled):hover {
+  -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+}
+
+.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 8%;
+}
+
+@media only screen and (max-width:1000px) {
+  .sidebarPictures {
+    display: none !important;
+  }
+
+  .headerSidePicture {
+    display: none !important;
+  }
+
+  .mainContent {
+    padding-left: 0px !important;
+  }
+
+  .headerMainPicture img {
+    width: 100% !important;
+    height: auto !important
+  }
+
+  .homeMain {
+    padding: 30px 0px !important
+  }
+}
+
+.homeMain {
+  padding: 30px;
+  text-align: justify;
+  overflow: auto;
+  max-width: 800px;
+}
+
+.headerMainPicture {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.headerMainPicture img {
+  height: 187px;
+  width: max-width;
+  margin: 3px;
+
+}
+
+.headerPictures,
+.textHeader {
+  white-space: nowrap;
+  width: 100%;
+}
+
+.headerPictures img {
+  display: inline-block;
+}
+
+.headerSidePicture:nth-child(odd) img {
+  width: 250px;
+}
+
+.sidebarPictures {
+  float: left;
+  vertical-align: top;
+  display: inline-block;
+}
+
+.sidebarPictures img {
+  vertical-align: top;
+  width: 250px;
+  margin: 0px 3px 6px 3px;
+  display: block;
+}
+
+.headerSidePicture {
+  display: inline-block;
+}
+
+.headerSidePicture img {
+  max-width: 100%;
+  max-height: 100%;
+  margin: 3px;
+}
+
+.textHeader {
+  text-align: center;
+}
+
+.lydia-superscript {
+  font-family: "Comic Sans MS", cursive, sans-serif;
+  position: relative;
+  top: 0px;
+  left: 10px;
+  font-size: 150%;
+  transform: rotate(-10deg);
+  color: #AA66FF;
+}
+
+.caret-subscript {
+  font-family: "Comic Sans MS", cursive, sans-serif;
+  font-size: 250%;
+  position: relative;
+  top: -35px;
+  left: -7px;
+  height: 0px;
+  color: #AA66FF;
+}
+
+.textHeaderTitle {
+  margin-top: 0px;
+}
+
+.textHeaderPlace {
+  margin: 0px 0px 5px 0px;
+}
+
+.textHeaderDate {
+  margin: 0px;
+}
+
+.mainContent {
+  padding-left: 40px;
+  text-align: justify;
+}
+
+.rateTableContainer {
+  width: 100%;
+  text-align: center;
+  margin: 30px;
+}
+
+.rateTable {
+  margin: auto;
+  border-collapse: collapse;
+}
+
+.rateTable td,
+th {
+  border: 1px solid #1F1497;
+  padding: 5px;
+  text-align: center;
+  vertical-align: top;
+}
