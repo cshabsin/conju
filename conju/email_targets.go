@@ -10,6 +10,7 @@ import (
 	"github.com/cshabsin/conju/conju/mailer"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/person"
+	"github.com/gin-gonic/gin"
 )
 
 // This file defines a set of EmailDistributors, which the
@@ -27,7 +28,7 @@ type MailHeaderInfo struct {
 
 type EmailSender func(context.Context, map[string]any, MailHeaderInfo) error
 
-type EmailDistributor func(context.Context, *WrappedRequest, EmailSender) error
+type EmailDistributor func(*gin.Context, EmailSender) error
 type EmailDistributorEntry struct {
 	NeedsConfirm bool
 	Distribute   EmailDistributor
@@ -61,12 +62,14 @@ func EmailForPerson(p *person.Person) mailer.Email {
 	}
 }
 
-func SelfOnlyDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
+func SelfOnlyDistributor(c *gin.Context, sender EmailSender) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
 	roomingInfo := GetRoomingInfoWithInvitation(ctx, wr.GetBookingInfo(ctx), wr.Event, wr.LoginInfo.Invitation, wr.LoginInfo.InvitationKey)
-	fmt.Fprintf(wr.ResponseWriter, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
+	c.String(200, "Sending only to &lt;%s&gt;.<br>", wr.LoginInfo.Person.Email)
 	emailData := map[string]any{
 		"Event":       wr.Event,
 		"Invitation":  realizedInvitation,
@@ -78,14 +81,16 @@ func SelfOnlyDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSe
 }
 
 func AllInviteesDryRunDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-		return AllInviteesDryRunDistributorImpl(ctx, wr, sender, tier)
+	return func(c *gin.Context, sender EmailSender) error {
+		return AllInviteesDryRunDistributorImpl(c, sender, tier)
 	}
 }
 
-func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+func AllInviteesDryRunDistributorImpl(c *gin.Context, sender EmailSender, tier int) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all invitees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -110,10 +115,10 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, s
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			c.String(200, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
-				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				c.String(500, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
 		}
@@ -122,14 +127,16 @@ func AllInviteesDryRunDistributorImpl(ctx context.Context, wr *WrappedRequest, s
 }
 
 func AllInviteesDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-		return AllInviteesDistributorImpl(ctx, wr, sender, tier)
+	return func(c *gin.Context, sender EmailSender) error {
+		return AllInviteesDistributorImpl(c, sender, tier)
 	}
 }
 
-func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+func AllInviteesDistributorImpl(c *gin.Context, sender EmailSender, tier int) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all invitees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -154,10 +161,10 @@ func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender 
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
+			c.String(200, "Sending email for %s.<br>", p.Person.Email)
 			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(&p.Person)})
 			if err != nil {
-				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				c.String(500, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
 		}
@@ -166,14 +173,16 @@ func AllInviteesDistributorImpl(ctx context.Context, wr *WrappedRequest, sender 
 }
 
 func AllInviteesListDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-		return AllInviteesListDistributorImpl(ctx, wr, sender, tier)
+	return func(c *gin.Context, sender EmailSender) error {
+		return AllInviteesListDistributorImpl(c, sender, tier)
 	}
 }
 
-func AllInviteesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+func AllInviteesListDistributorImpl(c *gin.Context, sender EmailSender, tier int) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all invitees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -189,25 +198,27 @@ func AllInviteesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sen
 				continue
 			}
 			if p.Person.EmailTier != tier {
-				fmt.Fprintf(wr.ResponseWriter, "Skipping %s (tier %d).<br>", p.Person.Email, p.Person.EmailTier)
+				c.String(200, "Skipping %s (tier %d).<br>", p.Person.Email, p.Person.EmailTier)
 				continue
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s.<br>", p.Person.Email)
+			c.String(200, "Would send email for %s.<br>", p.Person.Email)
 		}
 	}
 	return nil
 }
 
 func AttendeesListDistributor(tier int) EmailDistributor {
-	return func(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
+	return func(c *gin.Context, sender EmailSender) error {
 		log.Printf("AttendeesListDistributor called with tier %d", tier)
-		return AttendeesListDistributorImpl(ctx, wr, sender, tier)
+		return AttendeesListDistributorImpl(c, sender, tier)
 	}
 }
 
-func AttendeesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sender EmailSender, tier int) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
+func AttendeesListDistributorImpl(c *gin.Context, sender EmailSender, tier int) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all attendees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -232,15 +243,17 @@ func AttendeesListDistributorImpl(ctx context.Context, wr *WrappedRequest, sende
 			if _, found := roomingInfo.Attendees[p.Person.DatastoreKey.ID]; !found {
 				continue
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			c.String(200, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 		}
 	}
 	return nil
 }
 
-func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
+func AttendeesDryRunDistributor(c *gin.Context, sender EmailSender) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all attendees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -268,10 +281,10 @@ func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender 
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			c.String(200, "Sending email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
-				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				c.String(500, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
 		}
@@ -279,9 +292,11 @@ func AttendeesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender 
 	return nil
 }
 
-func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all attendees...<br>")
+func AttendeesDistributor(c *gin.Context, sender EmailSender) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all attendees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -309,10 +324,10 @@ func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailS
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Sending email for %s.<br>", p.Person.Email)
+			c.String(200, "Sending email for %s.<br>", p.Person.Email)
 			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(&p.Person)})
 			if err != nil {
-				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				c.String(500, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
 		}
@@ -323,9 +338,11 @@ func AttendeesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailS
 // QualifiedInviteesListDistributor is an email distributor that lists all invitees
 // who have not RSVP'ed "no" to the event. If RsvpMap is nil, the invitee has not
 // submitted any RSVP at all, and the person is included.
-func QualifiedInviteesListDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+func QualifiedInviteesListDistributor(c *gin.Context, sender EmailSender) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all invitees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -341,10 +358,10 @@ func QualifiedInviteesListDistributor(ctx context.Context, wr *WrappedRequest, s
 				continue
 			}
 			if len(realizedInvitation.RsvpMap) != 0 && realizedInvitation.RsvpMap[p.Key].Status == invitation.No {
-				fmt.Fprintf(wr.ResponseWriter, "Skipping recipient %s: %v<br>", p.Person.Email, realizedInvitation.RsvpMap[p.Key].Status)
+				c.String(200, "Skipping recipient %s: %v<br>", p.Person.Email, realizedInvitation.RsvpMap[p.Key].Status)
 				continue
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			c.String(200, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 		}
 	}
 	return nil
@@ -352,9 +369,11 @@ func QualifiedInviteesListDistributor(ctx context.Context, wr *WrappedRequest, s
 
 // QualifiedInviteesDryRunDistributor is an email distributor that sends the currently
 // logged in user one email for each person who has not RSVP'ed "no" to the event.
-func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+func QualifiedInviteesDryRunDistributor(c *gin.Context, sender EmailSender) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all invitees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -379,10 +398,10 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest,
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			c.String(200, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(wr.LoginInfo.Person)})
 			if err != nil {
-				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				c.String(500, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
 		}
@@ -392,9 +411,11 @@ func QualifiedInviteesDryRunDistributor(ctx context.Context, wr *WrappedRequest,
 
 // QualifiedInviteesDistributor is an email distributor that sends an email
 // to each person who has not RSVP'ed "no" to the event.
-func QualifiedInviteesDistributor(ctx context.Context, wr *WrappedRequest, sender EmailSender) error {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	fmt.Fprintf(wr.ResponseWriter, "Looking up all invitees...<br>")
+func QualifiedInviteesDistributor(c *gin.Context, sender EmailSender) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.Header("Content-Type", "text/html")
+	c.String(200, "Looking up all invitees...<br>")
 
 	q := datastore.NewQuery("Invitation").FilterField("Event", "=", wr.EventKey)
 	var invitations []*Invitation
@@ -419,10 +440,10 @@ func QualifiedInviteesDistributor(ctx context.Context, wr *WrappedRequest, sende
 				"Person":      &p.Person,
 				"RoomingInfo": roomingInfo,
 			}
-			fmt.Fprintf(wr.ResponseWriter, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
+			c.String(200, "Would send email for %s to %s.<br>", p.Person.Email, wr.LoginInfo.Person.Email)
 			err := sender(ctx, emailData, MailHeaderInfo{To: EmailForPerson(&p.Person)})
 			if err != nil {
-				fmt.Fprintf(wr.ResponseWriter, "Error emailing %s: %v", p.Person.Email, err)
+				c.String(500, "Error emailing %s: %v", p.Person.Email, err)
 				return err
 			}
 		}

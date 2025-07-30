@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/conju/dsclient"
@@ -38,39 +39,39 @@ const Venues_File_Name = "venues.tsv"
 const Buildings_File_Name = "buildings.tsv"
 const Rooms_File_Name = "rooms.tsv"
 
-func ReloadData(ctx context.Context, wr *WrappedRequest) {
-	if wr.Method != "POST" {
-		http.Error(wr.ResponseWriter, "Invalid GET on reload.",
-			http.StatusBadRequest)
+func ReloadData(c *gin.Context) {
+	if c.Request.Method != "POST" {
+		c.String(http.StatusBadRequest, "Invalid GET on reload.")
 		return
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	ClearAllData(ctx, wr, []string{"Activity", "Event", "CurrentEvent", "Person", "Invitation", "LoginCode", "Venue", "Building", "Room"})
-	wr.ResponseWriter.Write([]byte("\n\n"))
-	SetupVenues(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	ClearAllData(c)
+	c.String(200, "\n\n")
+	SetupVenues(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	SetupBuildings(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	SetupBuildings(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	SetupRooms(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	SetupRooms(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	SetupActivities(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	SetupActivities(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	SetupEvents(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	SetupEvents(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	guestMap := ImportGuests(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
-	ImportFoodPreferences(wr.ResponseWriter, ctx, guestMap)
-	wr.ResponseWriter.Write([]byte("\n\n"))
-	ImportRsvps(wr.ResponseWriter, ctx, guestMap)
+	guestMap := ImportGuests(c)
+	c.String(200, "\n\n")
+	ImportFoodPreferences(c, guestMap)
+	c.String(200, "\n\n")
+	ImportRsvps(c, guestMap)
 
 }
 
-func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
+func SetupActivities(c *gin.Context) error {
+	ctx := c.Request.Context()
 	activitiesFile, err := os.Open(Import_Data_Directory + "/" + Activities_File_Name)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
@@ -97,24 +98,25 @@ func SetupActivities(w http.ResponseWriter, ctx context.Context) error {
 			if err != nil {
 				log.Printf("%v", err)
 			}
-			w.Write([]byte(fmt.Sprintf("Loading activity %s\n", fields[0])))
+			c.String(200, "Loading activity %s\n", fields[0])
 		}
 		processedHeader = true
 	}
 	return err
 }
 
-func AskReloadData(ctx context.Context, wr *WrappedRequest) {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// fmt.Fprintf(wr.ResponseWriter, `
+func AskReloadData(c *gin.Context) {
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	// c.String(200, `
 	// <form method="POST" action="/doReloadData">
 	// <input type="submit" value="Do it">
 	// </form>
 	// `)
-	fmt.Fprintf(wr.ResponseWriter, "NO")
+	c.String(200, "NO")
 }
 
-func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
+func SetupEvents(c *gin.Context) error {
+	ctx := c.Request.Context()
 	eventsFile, err := os.Open(Import_Data_Directory + "/" + Events_Data_File_Name)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
@@ -211,10 +213,10 @@ func SetupEvents(w http.ResponseWriter, ctx context.Context) error {
 			err := event.PutEvent(ctx, e)
 			if err != nil {
 				log.Printf("PutEvent: %v", err)
-				w.Write([]byte(fmt.Sprintf("Error calling PutEvent: %v\n", err)))
+				c.String(500, "Error calling PutEvent: %v\n", err)
 			}
 
-			w.Write([]byte(fmt.Sprintf("Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))))
+			c.String(200, "Loading event %s (%s) %s - %s\n", fields[1], fields[2], startDate.Format("01/02/2006"), endDate.Format("01/02/2006"))
 		}
 		processedHeader = true
 	}
@@ -266,7 +268,7 @@ type ImportedGuest struct {
 	Pronouns      person.PronounSet
 }
 
-func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore.Key {
+func ImportGuests(c *gin.Context) map[int]*datastore.Key {
 	b := new(bytes.Buffer)
 	guestFile, err := os.Open(Import_Data_Directory + "/" + Guest_Data_File_Name)
 	if err != nil {
@@ -311,7 +313,7 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 				Guest.Pronouns = person.They
 			}
 
-			personKey, _ := CreatePersonFromImportedGuest(ctx, w, Guest)
+			personKey, _ := CreatePersonFromImportedGuest(c, Guest)
 			guestMap[guestIdInt] = personKey
 		}
 		processedHeader = true
@@ -322,13 +324,14 @@ func ImportGuests(w http.ResponseWriter, ctx context.Context) map[int]*datastore
 		log.Printf("GetAll: %v", err)
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	io.Copy(w, b)
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	io.Copy(c.Writer, b)
 	return guestMap
 
 }
 
-func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, guest ImportedGuest) (*datastore.Key, error) {
+func CreatePersonFromImportedGuest(c *gin.Context, guest ImportedGuest) (*datastore.Key, error) {
+	ctx := c.Request.Context()
 	phone := guest.CellPhone
 	if phone == "" {
 		phone = guest.HomePhone
@@ -355,7 +358,7 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 		LoginCode:     login.RandomLoginCodeString(),
 	}
 
-	w.Write([]byte(fmt.Sprintf("Adding person: %s\n", p.FullName())))
+	c.String(200, "Adding person: %s\n", p.FullName())
 	key, err2 := dsclient.FromContext(ctx).Put(ctx, person.PersonKey(ctx), &p)
 	if err2 != nil {
 		log.Printf("%v", err2)
@@ -363,7 +366,8 @@ func CreatePersonFromImportedGuest(ctx context.Context, w http.ResponseWriter, g
 	return key, err2
 }
 
-func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
+func ImportRsvps(c *gin.Context, guestMap map[int]*datastore.Key) {
+	ctx := c.Request.Context()
 	b := new(bytes.Buffer)
 	rsvpFile, err := os.Open(Import_Data_Directory + "/" + RSVP_Data_File_Name)
 	if err != nil {
@@ -432,16 +436,16 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 				log.Printf("RSVPs: %v -- %s", err, rsvpRow)
 			}
 
-			w.Write([]byte(fmt.Sprintf("Adding retroactive invitation for %s (%v)\n", printInvitation(ctx, invitationKey, &invitation), *invitationKey)))
+			c.String(200, "Adding retroactive invitation for %s (%v)\n", printInvitation(ctx, invitationKey, &invitation), *invitationKey)
 
 		}
 		processedHeader = true
 	}
 
-	w.Write([]byte("\n"))
-	for i, c := range invitationCount {
+	c.String(200, "\n")
+	for i, count := range invitationCount {
 		if i > 0 {
-			w.Write([]byte(fmt.Sprintf("%s: %d invitations\n", eventMap[i].ShortName, c)))
+			c.String(200, "%s: %d invitations\n", eventMap[i].ShortName, count)
 		}
 	}
 
@@ -450,8 +454,8 @@ func ImportRsvps(w http.ResponseWriter, ctx context.Context, guestMap map[int]*d
 		//log.Fatal(err)
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	io.Copy(w, b)
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	io.Copy(c.Writer, b)
 
 }
 
@@ -509,7 +513,8 @@ func getRsvpStatusFromCode(eventId int, status string) invitation.RsvpStatus {
 	return invitation.No
 }
 
-func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap map[int]*datastore.Key) {
+func ImportFoodPreferences(c *gin.Context, guestMap map[int]*datastore.Key) {
+	ctx := c.Request.Context()
 	b := new(bytes.Buffer)
 
 	allRestrictions := person.GetAllFoodRestrictionTags()
@@ -573,7 +578,7 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 
 			p.FoodNotes = foodNotes
 
-			w.Write([]byte(fmt.Sprintf("Restrictions for %s: %s %s\n", name, foodIssues, foodNotes)))
+			c.String(200, "Restrictions for %s: %s %s\n", name, foodIssues, foodNotes)
 			_, err = dsclient.FromContext(ctx).Put(ctx, personKey, &p)
 			if err != nil {
 				log.Printf("%v", err)
@@ -582,33 +587,34 @@ func ImportFoodPreferences(w http.ResponseWriter, ctx context.Context, guestMap 
 		processedHeader = true
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	io.Copy(w, b)
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	io.Copy(c.Writer, b)
 }
 
-func AskReloadHousingSetup(ctx context.Context, wr *WrappedRequest) {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(wr.ResponseWriter, `
+func AskReloadHousingSetup(c *gin.Context) {
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(200, `
 	<form method="POST" action="/doReloadHousingSetup">
 	<input type="submit" value="Do it">
 	</form>
 	`)
-	//fmt.Fprintf(wr.ResponseWriter, "NO")
+	//c.String(200, "NO")
 }
 
-func ReloadHousingSetup(ctx context.Context, wr *WrappedRequest) {
-	ClearAllData(ctx, wr, []string{"Venue", "Building", "Room"})
-	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	SetupVenues(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+func ReloadHousingSetup(c *gin.Context) {
+	ClearAllData(c)
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	SetupVenues(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	SetupBuildings(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	SetupBuildings(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
-	SetupRooms(wr.ResponseWriter, ctx)
-	wr.ResponseWriter.Write([]byte("\n\n"))
+	SetupRooms(c)
+	c.String(200, "\n\n")
 	time.Sleep(2 * time.Second)
 
+	ctx := c.Request.Context()
 	venuesMap := make(map[string]*datastore.Key)
 	var venues []venue.Venue
 	q := datastore.NewQuery("Venue")
@@ -672,7 +678,8 @@ func ReloadHousingSetup(ctx context.Context, wr *WrappedRequest) {
 	}
 }
 
-func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
+func SetupVenues(c *gin.Context) error {
+	ctx := c.Request.Context()
 	venuesFile, err := os.Open(Import_Data_Directory + "/" + Venues_File_Name)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
@@ -705,14 +712,15 @@ func SetupVenues(w http.ResponseWriter, ctx context.Context) error {
 			if err != nil {
 				log.Printf("%v", err)
 			}
-			w.Write([]byte(fmt.Sprintf("Loading venue %s\n", fields[0])))
+			c.String(200, "Loading venue %s\n", fields[0])
 		}
 		processedHeader = true
 	}
 	return err
 }
 
-func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
+func SetupBuildings(c *gin.Context) error {
+	ctx := c.Request.Context()
 	buildingsFile, err := os.Open(Import_Data_Directory + "/" + Buildings_File_Name)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
@@ -764,14 +772,15 @@ func SetupBuildings(w http.ResponseWriter, ctx context.Context) error {
 			if err != nil {
 				log.Printf("%v", err)
 			}
-			w.Write([]byte(fmt.Sprintf("Loading building %s\n", fields[1])))
+			c.String(200, "Loading building %s\n", fields[1])
 		}
 		processedHeader = true
 	}
 	return err
 }
 
-func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
+func SetupRooms(c *gin.Context) error {
+	ctx := c.Request.Context()
 	roomsFile, err := os.Open(Import_Data_Directory + "/" + Rooms_File_Name)
 	if err != nil {
 		log.Printf("GetAll: %v", err)
@@ -843,7 +852,7 @@ func SetupRooms(w http.ResponseWriter, ctx context.Context) error {
 			if err != nil {
 				log.Printf("%v", err)
 			}
-			w.Write([]byte(fmt.Sprintf("Loading room %s%s%s\n", fields[0], fields[1], fields[2])))
+			c.String(200, "Loading room %s%s%s\n", fields[0], fields[1], fields[2])
 		}
 		processedHeader = true
 	}

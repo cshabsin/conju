@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
@@ -16,7 +17,9 @@ import (
 	"github.com/cshabsin/conju/model/person"
 )
 
-func handleRoomingTool(ctx context.Context, wr *WrappedRequest) {
+func handleRoomingTool(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
@@ -171,13 +174,15 @@ func handleRoomingTool(ctx context.Context, wr *WrappedRequest) {
 		"BookingInfos":         bookingInfos,
 		"InvitationsToExplode": invitationsToExplode,
 	})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingTool.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "roomingTool.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 
 }
 
-func handleSaveRooming(ctx context.Context, wr *WrappedRequest) {
+func handleSaveRooming(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	wr.Request.ParseForm()
 
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey).KeysOnly()
@@ -272,7 +277,7 @@ func handleSaveRooming(ctx context.Context, wr *WrappedRequest) {
 		dsclient.FromContext(ctx).Put(ctx, datastore.IncompleteKey("Booking", wr.EventKey), &booking)
 	}
 
-	http.Redirect(wr.ResponseWriter, wr.Request, "rooming", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "rooming")
 }
 
 func getBuildingMapForVenue(ctx context.Context, venueKey *datastore.Key) map[int64]*housing.Building {

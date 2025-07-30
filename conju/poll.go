@@ -1,27 +1,31 @@
-package poll
+package conju
 
 import (
-	"context"
 	"html/template"
 	"log"
 	"net/http"
 
-	"github.com/cshabsin/conju/conju"
 	"github.com/cshabsin/conju/model/poll"
+	"github.com/gin-gonic/gin"
 )
 
-func Register(s conju.Sessionizer) {
-	s.AddSessionHandler("/poll", HandlePoll).Needs(conju.InvitationGetter)
-}
+func HandlePoll(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
 
-func HandlePoll(ctx context.Context, wr *conju.WrappedRequest) {
 	if wr.Invitation == nil {
-		http.Redirect(wr.ResponseWriter, wr.Request, "/login", http.StatusSeeOther)
+		c.Redirect(http.StatusSeeOther, "/login")
+		return
 	}
 	key, poll, err := poll.GetAnswer(ctx, wr.InvitationKey)
 	if err != nil {
 		log.Printf("error reading answer: %v", err)
-		http.Error(wr.ResponseWriter, "error reading answer", http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "error reading answer")
 		return
 	}
 	data := wr.TemplateData
@@ -33,8 +37,8 @@ func HandlePoll(ctx context.Context, wr *conju.WrappedRequest) {
 		data["rating"] = "unset"
 	}
 	tpl := template.Must(template.New("").ParseFiles("templates/main.html", "templates/poll.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "poll.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "poll.html", data); err != nil {
 		log.Printf("error executing poll template %v", err)
-		http.Error(wr.ResponseWriter, "error executing poll template", http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "error executing poll template")
 	}
 }

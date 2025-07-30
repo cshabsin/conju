@@ -1,14 +1,16 @@
 package conju
 
 import (
-	"context"
-	"fmt"
 	"html/template"
 	"log"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func handleInfo(ctx context.Context, wr *WrappedRequest) {
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
+func handleInfo(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	c.Header("Content-Type", "text/html")
 	eventName := "PSR2022"
 	if wr.Event != nil {
 		eventName = wr.Event.ShortName
@@ -16,10 +18,10 @@ func handleInfo(ctx context.Context, wr *WrappedRequest) {
 	tpl, err := template.ParseFiles("templates/main.html", "templates/"+eventName+"/info.html")
 	if err != nil {
 		log.Println("info ParseFiles", err)
-		fmt.Fprintf(wr.ResponseWriter, "Error: %v<p>", err)
+		c.String(http.StatusInternalServerError, "Error: %v<p>", err)
 		return
 	}
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "info.html", wr.TemplateData); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "info.html", wr.TemplateData); err != nil {
 		log.Println("info ExecuteTemplate", err)
 	}
 }

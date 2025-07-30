@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/conju/dsclient"
@@ -33,7 +34,7 @@ func EventGetter(ctx context.Context, wr *WrappedRequest) error {
 	}
 	wr.hasRunEventGetter = true
 	var key *datastore.Key
-	found, err := event.GetEventForHost(ctx, wr.Host, &wr.Event, &key)
+	found, err := event.GetEventForHost(ctx, wr.GetHost(), &wr.Event, &key)
 	if err != nil {
 		return err
 	}
@@ -76,12 +77,20 @@ func EventGetter(ctx context.Context, wr *WrappedRequest) error {
 	return nil
 }
 
-func handleEvents(ctx context.Context, wr *WrappedRequest) {
+func handleEvents(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	tic := time.Now()
 
 	allEvents, err := event.GetAllEvents(ctx)
 	if err != nil {
-		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		log.Printf("GetAllEvents: %v", err)
 		return
 	}
@@ -91,7 +100,7 @@ func handleEvents(ctx context.Context, wr *WrappedRequest) {
 
 	allVenues, err := venue.AllVenues(ctx)
 	if err != nil {
-		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		log.Printf("AllVenues: %v", err)
 		return
 	}
@@ -168,7 +177,7 @@ func handleEvents(ctx context.Context, wr *WrappedRequest) {
 		}
 	}
 
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	c.Header("Content-Type", "text/html; charset=utf-8")
 	log.Print(3)
 
 	data := wr.MakeTemplateData(map[string]any{
@@ -197,13 +206,21 @@ func handleEvents(ctx context.Context, wr *WrappedRequest) {
 		},
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/events.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "events.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "events.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 	log.Print(4)
 }
 
-func handleCreateUpdateEvent(ctx context.Context, wr *WrappedRequest) {
+func handleCreateUpdateEvent(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	wr.Request.ParseForm()
 	form := wr.Request.Form
 
@@ -306,9 +323,9 @@ func handleCreateUpdateEvent(ctx context.Context, wr *WrappedRequest) {
 	ev.Current = makeCurrent
 	if err := event.PutEvent(ctx, ev); err != nil {
 		log.Printf("PutEvent: %v", err)
-		http.Error(wr.ResponseWriter, fmt.Sprintf("PutEvent: %v", err), http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("PutEvent: %v", err))
 		return
 	}
 
-	http.Redirect(wr.ResponseWriter, wr.Request, "events", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "events")
 }

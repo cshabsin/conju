@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/conju/dsclient"
@@ -20,12 +21,14 @@ import (
 
 // func handleReports(wr *WrappedRequest) {
 // 	var tpl = template.Must(template.ParseFiles("templates/main.html", "templates/reports.html"))
-// 	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "reports.html", wr.TemplateData); err != nil {
+// 	if err := tpl.ExecuteTemplate(c.Writer, "reports.html", wr.TemplateData); err != nil {
 // 		log.Printf( "%v", err)
 // 	}
 // }
 
-func handleRsvpReport(ctx context.Context, wr *WrappedRequest) {
+func handleRsvpReport(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
@@ -177,13 +180,15 @@ func handleRsvpReport(ctx context.Context, wr *WrappedRequest) {
 		"PersonToExtraInfoMap": personToExtraInfoMap,
 		"PersonToCost":         personToCost,
 	})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "rsvpReport.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "rsvpReport.html", data); err != nil {
 		log.Printf("%v", err)
-		fmt.Fprintf(wr.ResponseWriter, "<p>Error generating RSVP report: %v", err)
+		c.String(http.StatusInternalServerError, "<p>Error generating RSVP report: %v", err)
 	}
 }
 
-func handleActivitiesReport(ctx context.Context, wr *WrappedRequest) {
+func handleActivitiesReport(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	currentEventKey := wr.EventKey
 
 	var invitations []*Invitation
@@ -288,13 +293,15 @@ func handleActivitiesReport(ctx context.Context, wr *WrappedRequest) {
 		"ActivityResponseMap": activityResponseMap,
 		"PersonMap":           personMap,
 	})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "activitiesReport.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "activitiesReport.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 
 }
 
-func handleRoomingReport(ctx context.Context, wr *WrappedRequest) {
+func handleRoomingReport(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	var bookings []Booking
 	q := datastore.NewQuery("Booking").Ancestor(wr.EventKey)
 	bookingKeys, _ := dsclient.FromContext(ctx).GetAll(ctx, q, &bookings)
@@ -479,12 +486,14 @@ func handleRoomingReport(ctx context.Context, wr *WrappedRequest) {
 		"BookingsByBuilding":   realBookingsByBuilding,
 		"TotalCostForEveryone": totalCostForEveryone,
 	})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "roomingReport.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "roomingReport.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
 
-func handleSaveReservations(ctx context.Context, wr *WrappedRequest) {
+func handleSaveReservations(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	wr.Request.ParseForm()
 
 	bookingToBooked := make(map[int64]bool)
@@ -514,10 +523,12 @@ func handleSaveReservations(ctx context.Context, wr *WrappedRequest) {
 
 	dsclient.FromContext(ctx).PutMulti(ctx, bookingKeys, bookings)
 
-	http.Redirect(wr.ResponseWriter, wr.Request, "admin", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "admin")
 }
 
-func handleFoodReport(ctx context.Context, wr *WrappedRequest) {
+func handleFoodReport(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
@@ -564,12 +575,14 @@ func handleFoodReport(ctx context.Context, wr *WrappedRequest) {
 		"PersonToRestrictions": personToRestrictions,
 	})
 
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "foodReport.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "foodReport.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
 
-func handleRidesReport(ctx context.Context, wr *WrappedRequest) {
+func handleRidesReport(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	currentEventKey := wr.EventKey
 
 	allRsvpStatuses := invitation.GetAllRsvpStatuses()
@@ -667,7 +680,7 @@ func handleRidesReport(ctx context.Context, wr *WrappedRequest) {
 		"FridayIndependent":   FridayIndependent,
 	})
 
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "ridesReport.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "ridesReport.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }

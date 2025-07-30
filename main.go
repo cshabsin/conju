@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
 	"os"
 
 	"cloud.google.com/go/datastore"
-	"google.golang.org/appengine/v2"
-
 	"github.com/cshabsin/conju/conju"
 	"github.com/cshabsin/conju/conju/mailer/forwardemail"
 	"github.com/cshabsin/conju/conju/secretmanager"
-	"github.com/cshabsin/conju/view/poll"
+	"github.com/gin-gonic/gin"
+	"google.golang.org/appengine/v2"
 )
 
 func main() {
@@ -38,14 +38,13 @@ func main() {
 		log.Fatalf("Could not create mail client: %v", err)
 	}
 
-	s := conju.Sessionizer{
-		DatastoreClient:     datastoreClient,
-		SecretmanagerClient: secretmanagerClient,
-		MailClient:          mailClient,
-	}
+	r := gin.Default()
 
-	conju.Register(s)
-	poll.Register(s)
+	ginMiddleware := conju.NewGinMiddleware(datastoreClient, secretmanagerClient, mailClient)
+	r.Use(ginMiddleware.SessionMiddleware())
 
+	conju.Register(r)
+
+	http.Handle("/", r)
 	appengine.Main()
 }

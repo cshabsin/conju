@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/conju/dsclient"
@@ -280,9 +281,9 @@ func (inv *Invitation) Save() ([]datastore.Property, error) {
 }
 
 func (inv *Invitation) AnyAttending() bool {
-	allStatuses := invitation.GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	for _, v := range inv.RsvpMap {
-		attending := allStatuses[v].Attending
+		attending := allRsvpStatuses[v].Attending
 		if attending {
 			return attending
 		}
@@ -291,10 +292,10 @@ func (inv *Invitation) AnyAttending() bool {
 }
 
 func (inv *Invitation) AttendingInvitees() []*datastore.Key {
-	allStatuses := invitation.GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	var attending []*datastore.Key
 	for k, v := range inv.RsvpMap {
-		if allStatuses[v].Attending {
+		if allRsvpStatuses[v].Attending {
 			attending = append(attending, k)
 		}
 	}
@@ -302,10 +303,10 @@ func (inv *Invitation) AttendingInvitees() []*datastore.Key {
 }
 
 func (inv *Invitation) AnyUndecided() bool {
-	allStatuses := invitation.GetAllRsvpStatuses()
+	allRsvpStatuses := invitation.GetAllRsvpStatuses()
 	for _, invitee := range inv.Invitees {
 		if rsvp, present := inv.RsvpMap[invitee]; present {
-			undecided := allStatuses[rsvp].Undecided
+			undecided := allRsvpStatuses[rsvp].Undecided
 			if undecided {
 				return true
 			}
@@ -334,7 +335,15 @@ func (inv *Invitation) HasChildren(ctx context.Context) bool {
 }
 
 // Handles /invitations, listing invitations.
-func handleInvitations(ctx context.Context, wr *WrappedRequest) {
+func handleInvitations(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	currentEventKey := wr.EventKey
 
 	var notInvitedSet = make(map[datastore.Key]person.PersonWithKey)
@@ -439,12 +448,20 @@ func handleInvitations(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/invitations.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "invitations.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "invitations.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
 
-func handleCopyInvitations(ctx context.Context, wr *WrappedRequest) {
+func handleCopyInvitations(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
@@ -478,18 +495,26 @@ func handleCopyInvitations(ctx context.Context, wr *WrappedRequest) {
 		if multiErr, ok := err.(datastore.MultiError); ok {
 			for i, err := range multiErr {
 				if err != nil {
-					fmt.Fprintf(wr.ResponseWriter, "Error in putmulti for key %s: %v\n", newInvitationKeys[i].Encode(), err)
+					c.String(500, "Error in putmulti for key %s: %v\n", newInvitationKeys[i].Encode(), err)
 				}
 			}
 		}
 		log.Printf("Error in putmulti: %v", err)
 		return
 	}
-	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "invitations")
 
 }
 
-func handleAddInvitation(ctx context.Context, wr *WrappedRequest) {
+func handleAddInvitation(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	currentEventKey := wr.EventKey
 	wr.Request.ParseForm()
 
@@ -529,10 +554,18 @@ func handleAddInvitation(ctx context.Context, wr *WrappedRequest) {
 		}
 	}
 
-	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "invitations")
 }
 
-func handleDeleteInvitation(ctx context.Context, wr *WrappedRequest) {
+func handleDeleteInvitation(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
@@ -545,26 +578,36 @@ func handleDeleteInvitation(ctx context.Context, wr *WrappedRequest) {
 	if err != nil {
 		log.Printf("invitation deletion error: %v", err)
 	}
-	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "invitations")
 }
 
 // handleViewInvitationUser handles /viewInvitation URLs.
-func handleViewInvitationAdmin(ctx context.Context, wr *WrappedRequest) {
+func handleViewInvitationAdmin(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, err := datastore.DecodeKey(invitationKeyEncoded)
 	if err != nil {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("Error decoding invitation key: %v", err),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Error decoding invitation key: %v", err)
 	}
-	handleViewInvitation(ctx, wr, invitationKey)
+	handleViewInvitation(c, invitationKey)
 }
 
 // handleViewInvitationUser handles /rsvp URLs.
-func handleViewInvitationUser(ctx context.Context, wr *WrappedRequest) {
-	handleViewInvitation(ctx, wr, wr.InvitationKey)
+func handleViewInvitationUser(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	handleViewInvitation(c, wr.InvitationKey)
 }
 
 var (
@@ -579,7 +622,9 @@ var (
 	invitationTpl *template.Template
 )
 
-func handleViewInvitation(ctx context.Context, wr *WrappedRequest, invitationKey *datastore.Key) {
+func handleViewInvitation(c *gin.Context, invitationKey *datastore.Key) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	var inv Invitation
 	err := dsclient.FromContext(ctx).Get(ctx, invitationKey, &inv)
 	if err != nil {
@@ -616,7 +661,7 @@ func handleViewInvitation(ctx context.Context, wr *WrappedRequest, invitationKey
 	if invitationTpl == nil {
 		invitationTpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/viewInvitation.html", "templates/updatePersonForm.html", "templates/roomingInfo.html"))
 	}
-	if err := invitationTpl.ExecuteTemplate(wr.ResponseWriter, "viewInvitation.html", data); err != nil {
+	if err := invitationTpl.ExecuteTemplate(c.Writer, "viewInvitation.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
@@ -625,16 +670,22 @@ func HasPreference(total int, mask int) bool {
 	return (total & mask) != 0
 }
 
-func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
+func handleSaveInvitation(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	ctx := c.Request.Context()
+
 	wr.Request.ParseForm()
 
 	invitationKeyEncoded := wr.Request.Form.Get("invitation")
 	invitationKey, _ := datastore.DecodeKey(invitationKeyEncoded)
 
 	if !(wr.IsAdminUser() || *wr.InvitationKey == *invitationKey) {
-		http.Error(wr.ResponseWriter,
-			"Not authorized to edit invitation.",
-			http.StatusForbidden)
+		c.String(http.StatusForbidden, "Not authorized to edit invitation.")
 		return
 	}
 
@@ -757,7 +808,7 @@ func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 		invitees = append(invitees, person)
 	}
 
-	savePeople(ctx, wr)
+	savePeople(c)
 
 	type NewPersonInfo struct {
 		Name        string
@@ -779,8 +830,8 @@ func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 	var isAttending []bool
 	for _, invitee := range inv.Invitees {
 		if rsvp, present := rsvpMap[invitee]; present {
-			attending := invitation.GetAllRsvpStatuses()[rsvp].Attending
-			isAttending = append(isAttending, attending)
+			attening := invitation.GetAllRsvpStatuses()[rsvp].Attending
+			isAttending = append(isAttending, attening)
 		} else {
 			isAttending = append(isAttending, false)
 		}
@@ -820,7 +871,7 @@ func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 		BccSelf: false,
 	}
 
-	SendMail(ctx, wr, "rsvpconfirmation", data, header)
+	SendMail(c, "rsvpconfirmation", data, header)
 
 	if !wr.IsAdminUser() {
 
@@ -831,14 +882,14 @@ func handleSaveInvitation(ctx context.Context, wr *WrappedRequest) {
 		})
 
 		tpl := template.Must(template.ParseFiles("templates/main.html", "templates/thanks.html"))
-		if err := tpl.ExecuteTemplate(wr.ResponseWriter, "thanks.html", data); err != nil {
+		if err := tpl.ExecuteTemplate(c.Writer, "thanks.html", data); err != nil {
 			log.Printf("%v", err)
 		}
 
 		return
 	}
 
-	http.Redirect(wr.ResponseWriter, wr.Request, "invitations", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "invitations")
 }
 
 func (inv *Invitation) ClusterByRsvp(ctx context.Context) (map[invitation.RsvpStatus][]person.Person, []person.Person) {

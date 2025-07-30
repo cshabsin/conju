@@ -13,6 +13,7 @@ import (
 	"github.com/cshabsin/conju/model/event"
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
+	"github.com/gin-gonic/gin"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"golang.org/x/text/encoding/charmap"
@@ -62,32 +63,34 @@ func RenderMail(ctx context.Context, eventKey *datastore.Key, templatePrefix str
 	return text.String(), htmlBuf.String(), "", nil
 }
 
-func handleSendMail(ctx context.Context, wr *WrappedRequest) {
+func handleSendMail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.Form["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
 		emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
 	}
 	if !ok || len(emailTemplates) == 0 {
-		handleListMail(ctx, wr)
+		handleListMail(c)
 		return
 	}
 	key, err := datastore.DecodeKey(emailTemplates[0])
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding email template key %s: %v", emailTemplates[0], err),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Error decoding email template key %s: %v", emailTemplates[0], err)
 		return
 	}
 	msg, err := message.Get(ctx, key)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting email template %s: %v", emailTemplates[0], err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "Error getting email template %s: %v", emailTemplates[0], err)
 		return
 	}
-	handleMailPage(ctx, wr, msg.ShortName, "sendEmail.html")
+	handleMailPage(c, msg.ShortName, "sendEmail.html")
 }
 
-func handleEditMail(ctx context.Context, wr *WrappedRequest) {
+func handleEditMail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	wr.Request.ParseForm()
 	isNew := false
 	templateKey := ""
@@ -104,20 +107,18 @@ func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 			emailTemplates, ok = wr.Request.PostForm["emailTemplate"]
 		}
 		if !ok || len(emailTemplates) == 0 {
-			handleListMail(ctx, wr)
+			handleListMail(c)
 			return
 		}
 		templateKey = emailTemplates[0]
 		key, err := datastore.DecodeKey(templateKey)
 		if err != nil {
-			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding email template key %s: %v", templateKey, err),
-				http.StatusBadRequest)
+			c.String(http.StatusBadRequest, "Error decoding email template key %s: %v", templateKey, err)
 			return
 		}
 		msg, err := message.Get(ctx, key)
 		if err != nil {
-			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", templateKey, err),
-				http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, "Error getting template %s: %v", templateKey, err)
 			return
 		}
 		textBody = msg.Plaintext // TODO: convert to ISO-8859-1?
@@ -136,21 +137,20 @@ func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 	})
 	tplFiles := []string{"templates/main.html", "templates/editEmail.html"}
 	webTpl := template.Must(template.ParseFiles(tplFiles...))
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html")
-	if err := webTpl.ExecuteTemplate(wr.ResponseWriter, "editEmail.html", data); err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error rendering edit mail page: %v", err),
-			http.StatusInternalServerError)
+	c.Header("Content-Type", "text/html")
+	if err := webTpl.ExecuteTemplate(c.Writer, "editEmail.html", data); err != nil {
+		c.String(http.StatusInternalServerError, "Error rendering edit mail page: %v", err)
 		return
 	}
 }
 
-func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
+func handleSaveMail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.PostForm["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("%s issued without emailTemplate?", wr.URL.Path),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "%s issued without emailTemplate?", c.Request.URL.Path)
 		return
 	}
 	emailTemplate := emailTemplates[0]
@@ -166,14 +166,12 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 	if wr.Request.PostForm.Get("isNew") != "true" {
 		key, err := datastore.DecodeKey(wr.Request.PostForm.Get("templateKey"))
 		if err != nil {
-			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding template key %s: %v", wr.Request.PostForm.Get("templateKey"), err),
-				http.StatusBadRequest)
+			c.String(http.StatusBadRequest, "Error decoding template key %s: %v", wr.Request.PostForm.Get("templateKey"), err)
 			return
 		}
 		msg, err := message.Get(ctx, key)
 		if err != nil {
-			http.Error(wr.ResponseWriter, fmt.Sprintf("Error getting template %s: %v", emailTemplate, err),
-				http.StatusInternalServerError)
+			c.String(http.StatusInternalServerError, "Error getting template %s: %v", emailTemplate, err)
 			return
 		}
 		emailTemplate = msg.ShortName // Use the existing template name if editing.
@@ -181,21 +179,18 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 		keyForSanityCheck = msg.Key() // For sanity check.
 	}
 	if textBody == "" || htmlBody == "" || subject == "" {
-		http.Error(wr.ResponseWriter, "Missing textBody, htmlBody, or subject",
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Missing textBody, htmlBody, or subject")
 		return
 	}
 	decoder := charmap.ISO8859_1.NewDecoder()
 	textBody, err := decoder.String(textBody)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding plaintext for template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "Error decoding plaintext for template %s: %v", emailTemplate, err)
 		return
 	}
 	htmlBody, err = decoder.String(htmlBody)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding HTML for template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "Error decoding HTML for template %s: %v", emailTemplate, err)
 		return
 	}
 	msg := &message.Message{
@@ -207,27 +202,27 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 		Selectable: true,
 	}
 	if keyForSanityCheck != nil && msg.Key().Encode() != keyForSanityCheck.Encode() {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Key mismatch for template %s: %s != %s", emailTemplate, msg.Key().Encode(), keyForSanityCheck.Encode()),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Key mismatch for template %s: %s != %s", emailTemplate, msg.Key().Encode(), keyForSanityCheck.Encode())
 		return
 	}
 	if err := message.SaveTemplate(ctx, msg); err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error saving template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "Error saving template %s: %v", emailTemplate, err)
 		return
 	}
-	fmt.Fprintf(wr.ResponseWriter, "Saved template %s", emailTemplate)
+	c.String(http.StatusOK, "Saved template %s", emailTemplate)
 }
 
-func handlePreviewMailTemplate(ctx context.Context, wr *WrappedRequest) {
+func handlePreviewMailTemplate(c *gin.Context) {
 
 }
 
-func handleViewMyInvitation(ctx context.Context, wr *WrappedRequest) {
-	handleMailPage(ctx, wr, "initial_invitation", "viewMyInvitation.html")
+func handleViewMyInvitation(c *gin.Context) {
+	handleMailPage(c, "initial_invitation", "viewMyInvitation.html")
 }
 
-func handleMailPage(ctx context.Context, wr *WrappedRequest, emailTemplate, htmlTemplate string) {
+func handleMailPage(c *gin.Context, emailTemplate, htmlTemplate string) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	// TODO: What data do we send this?
 	realizedInvitation := makeRealizedInvitation(ctx, wr.LoginInfo.InvitationKey,
 		wr.LoginInfo.Invitation)
@@ -252,8 +247,7 @@ func handleMailPage(ctx context.Context, wr *WrappedRequest, emailTemplate, html
 	}
 	text, html, subject, err := RenderMail(ctx, wr.Event.Key, emailTemplate, emailData, true)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "Rendering mail: %v", err)
 		return
 	}
 	data := wr.MakeTemplateData(map[string]any{
@@ -265,41 +259,33 @@ func handleMailPage(ctx context.Context, wr *WrappedRequest, emailTemplate, html
 	})
 	tpl, err := template.ParseFiles("templates/main.html", "templates/"+htmlTemplate)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Parsing files: %v", err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, "Parsing files: %v", err)
 		return
 	}
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, htmlTemplate, data); err != nil {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("Rendering HTML display: %v", err),
-			http.StatusInternalServerError)
+	if err := tpl.ExecuteTemplate(c.Writer, htmlTemplate, data); err != nil {
+		c.String(http.StatusInternalServerError, "Rendering HTML display: %v", err)
 		return
 	}
 }
 
-func handleDoSendMail(ctx context.Context, wr *WrappedRequest) {
+func handleDoSendMail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
 	wr.Request.ParseForm()
 	emailTemplates, ok := wr.Request.PostForm["emailTemplate"]
 	if !ok || len(emailTemplates) == 0 {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("%s issued without emailTemplate?", wr.URL.Path),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "%s issued without emailTemplate?", c.Request.URL.Path)
 		return
 	}
 	emailTemplate := emailTemplates[0]
 	distributors, ok := wr.Request.PostForm["distributor"]
 	if !ok || len(distributors) == 0 {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("%s issued without distributor?", wr.URL.Path),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "%s issued without distributor?", c.Request.URL.Path)
 		return
 	}
 	distributorName := distributors[0]
 	distributor, ok := AllDistributors[distributorName]
 	if !ok {
-		http.Error(wr.ResponseWriter,
-			fmt.Sprintf("Bad distributor name: %s", distributorName),
-			http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Bad distributor name: %s", distributorName)
 		return
 	}
 	bccSelf := wr.Request.PostForm.Get("bccSelf") == "1"
@@ -323,19 +309,21 @@ func handleDoSendMail(ctx context.Context, wr *WrappedRequest) {
 		}
 		emailData["Unreserved"] = unreserved
 		headerData.BccSelf = bccSelf
-		return SendMail(ctx, wr, emailTemplate, emailData, headerData)
+		return SendMail(c, emailTemplate, emailData, headerData)
 	}
-	if err := distributor.Distribute(ctx, wr, senderFunc); err != nil {
+	if err := distributor.Distribute(c, senderFunc); err != nil {
 		// Email distributors output info as they go, so don't issue an HTTP error.
-		fmt.Fprintf(wr.ResponseWriter, "Error from email distributor: %v", err)
+		c.String(http.StatusInternalServerError, "Error from email distributor: %v", err)
 	}
 }
 
-func handleListMail(ctx context.Context, wr *WrappedRequest) {
+func handleListMail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	templates, err := message.ListTemplates(ctx, wr.Event.Key)
 	if err != nil {
 		log.Printf("Error listing templates: %v", err)
-		fmt.Fprintf(wr.ResponseWriter, "Error listing templates: %v", err)
+		c.String(http.StatusInternalServerError, "Error listing templates: %v", err)
 		return
 	}
 
@@ -360,7 +348,7 @@ func handleListMail(ctx context.Context, wr *WrappedRequest) {
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listEmail.html"))
 	data := wr.MakeTemplateData(map[string]any{"Templates": templates})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listEmail.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "listEmail.html", data); err != nil {
 		log.Println(err)
 	}
 }
@@ -375,8 +363,10 @@ type EmailData struct {
 	SenderAddress string
 }
 
-func SendMail(ctx context.Context, wr *WrappedRequest, templatePrefix string, data any,
+func SendMail(c *gin.Context, templatePrefix string, data any,
 	headerData MailHeaderInfo) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	sg := &EmailData{
 		EmailClient:   wr.GetEmailClient(),
 		EventKey:      wr.Event.Key,

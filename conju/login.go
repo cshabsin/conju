@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/model/person"
 	"google.golang.org/appengine/v2/user"
@@ -24,9 +25,15 @@ type LoginInfo struct {
 const loginErrorPage = "/loginError"
 const resentInvitationPage = "/resentInvitation"
 
-func handleLogin(urlTarget string) func(ctx context.Context, wr *WrappedRequest) {
-	return func(ctx context.Context, wr *WrappedRequest) {
-		handleLoginInner(ctx, wr, urlTarget)
+func handleLogin(urlTarget string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+		if !ok {
+			log.Printf("could not get wrapped request from context")
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		handleLoginInner(c, wr, urlTarget)
 	}
 }
 
@@ -35,43 +42,39 @@ func handleLogin(urlTarget string) func(ctx context.Context, wr *WrappedRequest)
 // table, and either puts the login code into the session, or writes
 // an error. On error, we display an error page with help. On success,
 // we redirect to urlTarget.
-func handleLoginInner(ctx context.Context, wr *WrappedRequest, urlTarget string) {
+func handleLoginInner(c *gin.Context, wr *WrappedRequest, urlTarget string) {
+	ctx := c.Request.Context()
 	dsclient := dsclient.FromContext(ctx)
 
 	// TODO(cshabsin): Read "message" CGI arg if present and
 	// display it. Prettify this page in general, using templates.
-	url_q := wr.URL.Query()
+	url_q := wr.Request.URL.Query()
 	lc, ok := url_q["loginCode"]
 	if !ok {
-		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
-			"?message=Login is required for this section of our site.  Please use the link from your email to log in.",
-			http.StatusFound)
+		c.Redirect(http.StatusFound, loginErrorPage+
+			"?message=Login is required for this section of our site.  Please use the link from your email to log in.")
 		return
 	}
 	var people []person.Person
 	q := datastore.NewQuery("Person").FilterField("LoginCode", "=", lc[0])
 	peopleKeys, err := dsclient.GetAll(ctx, q, &people)
 	if err != nil {
-		http.Redirect(wr.ResponseWriter, wr.Request,
-			fmt.Sprintf("%s?message=DB error looking you up: %v", loginErrorPage, err),
-			http.StatusFound)
+		c.Redirect(http.StatusFound, fmt.Sprintf("%s?message=DB error looking you up: %v", loginErrorPage, err))
 		return
 	}
 	if len(peopleKeys) == 0 {
-		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
-			"?message=Login not recognized.",
-			http.StatusFound)
+		c.Redirect(http.StatusFound, loginErrorPage+
+			"?message=Login not recognized.")
 		return
 	}
 	if len(peopleKeys) > 1 {
-		http.Redirect(wr.ResponseWriter, wr.Request, loginErrorPage+
-			"?message=DB Error: multiple invitations found.",
-			http.StatusFound)
+		c.Redirect(http.StatusFound, loginErrorPage+
+			"?message=DB Error: multiple invitations found.")
 	}
 	wr.SetSessionValue("code", lc[0])
 	wr.SetSessionValue("person", peopleKeys[0].Encode())
 	wr.SaveSession()
-	http.Redirect(wr.ResponseWriter, wr.Request, urlTarget, http.StatusFound)
+	c.Redirect(http.StatusFound, urlTarget)
 }
 
 func getPersonFromEncodedKey(ctx context.Context, wr *WrappedRequest) (*datastore.Key, *person.Person, error) {
@@ -211,7 +214,7 @@ func InvitationGetter(ctx context.Context, wr *WrappedRequest) error {
 		// Do something.
 	}
 	if wr.LoginInfo.Person == nil {
-		return RedirectError{loginErrorPage + "?message=Please use the link from your invitation email to log in."}
+		return &RedirectError{loginErrorPage + "?message=Please use the link from your invitation email to log in."}
 	}
 	var invitations []Invitation
 	q := datastore.NewQuery("Invitation").
@@ -222,9 +225,9 @@ func InvitationGetter(ctx context.Context, wr *WrappedRequest) error {
 		return err
 	}
 	if len(invitations) == 0 {
-		return RedirectError{loginErrorPage + "?message=No invitation found for currently selected event"}
+		return &RedirectError{loginErrorPage + "?message=No invitation found for currently selected event"}
 	} else if len(invitations) > 1 {
-		return RedirectError{loginErrorPage + "?message=DB Error: multiple invitations found."}
+		return &RedirectError{loginErrorPage + "?message=DB Error: multiple invitations found."}
 	}
 
 	wr.LoginInfo.InvitationKey = invitationKeys[0]
@@ -234,11 +237,19 @@ func InvitationGetter(ctx context.Context, wr *WrappedRequest) error {
 
 // Simple URL handler that prints out the invitation retrieved by
 // LoginGetter, for testing.
-func CheckLogin(ctx context.Context, wr *WrappedRequest) {
-	wr.ResponseWriter.Write([]byte(fmt.Sprintf("Invitation: %s", printInvitation(ctx, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation))))
+func CheckLogin(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	c.String(http.StatusOK, fmt.Sprintf("Invitation: %s", printInvitation(ctx, wr.LoginInfo.InvitationKey, wr.LoginInfo.Invitation)))
 }
 
-func handleLoginError(ctx context.Context, wr *WrappedRequest) {
+func handleLoginError(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	wr.Request.ParseForm()
 	message_list, ok := wr.Request.Form["message"]
 	var message string
@@ -250,41 +261,50 @@ func handleLoginError(ctx context.Context, wr *WrappedRequest) {
 	tpl := template.Must(template.New("").ParseFiles(
 		"templates/main.html",
 		"templates/bad_login.html"))
-	url, _ := user.LoginURL(ctx, "/")
+	url, _ := user.LoginURL(c.Request.Context(), "/")
 	data := wr.MakeTemplateData(map[string]any{
 		"Message":  message,
 		"LoginURL": url,
 	})
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "bad_login.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "bad_login.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
 
-func handleLogout(ctx context.Context, wr *WrappedRequest) {
+func handleLogout(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	wr.SetSessionValue("code", nil)
 	wr.SetSessionValue("person", nil)
 	wr.SaveSession()
-	http.Redirect(wr.ResponseWriter, wr.Request, "/", http.StatusFound)
+	c.Redirect(http.StatusFound, "/")
 }
 
-func handleResendInvitation(ctx context.Context, wr *WrappedRequest) {
-	dsclient := dsclient.FromContext(ctx)
+func handleResendInvitation(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	dsclient := dsclient.FromContext(c.Request.Context())
 
 	wr.Request.ParseForm()
 	emailAddresses, ok := wr.Request.PostForm["emailAddress"]
 	if !ok || len(emailAddresses) != 1 {
-		http.Redirect(wr.ResponseWriter, wr.Request,
-			loginErrorPage+"?message=Bad form input.", http.StatusFound)
+		c.Redirect(http.StatusFound, loginErrorPage+"?message=Bad form input.")
 		return
 	}
 	q := datastore.NewQuery("Person").FilterField("Email", "=", emailAddresses[0])
 	var people []person.Person
-	_, err := dsclient.GetAll(ctx, q, &people)
+	_, err := dsclient.GetAll(c.Request.Context(), q, &people)
 	if err != nil {
 		log.Printf("%v", err)
-		http.Redirect(wr.ResponseWriter, wr.Request,
-			loginErrorPage+"?message=Query error (contact admin: code RIGPER).",
-			http.StatusFound)
+		c.Redirect(http.StatusFound, loginErrorPage+"?message=Query error (contact admin: code RIGPER).")
 	}
 	// NOTE: This does not give an error message if the email
 	// address is not found, so no one can probe the system for
@@ -300,23 +320,22 @@ func handleResendInvitation(ctx context.Context, wr *WrappedRequest) {
 			To:      EmailForPerson(&people[0]),
 			BccSelf: false,
 		}
-		SendMail(ctx, wr, "resendInvitation", data, header)
+		SendMail(c, "resendInvitation", data, header)
 	}
-	// TODO: Make a resentInvitation.html template explaining that
-	// if they don't get email in a minute or two from us, they
-	// should contact us to find out which email addresses of
-	// theirs we have on file.
-	http.Redirect(wr.ResponseWriter, wr.Request,
-		resentInvitationPage+"?emailAddress="+emailAddresses[0],
-		http.StatusFound)
+	c.Redirect(http.StatusFound, resentInvitationPage+"?emailAddress="+emailAddresses[0])
 }
 
-func handleResentInvitation(ctx context.Context, wr *WrappedRequest) {
+func handleResentInvitation(c *gin.Context) {
+	wr, ok := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if !ok {
+		log.Printf("could not get wrapped request from context")
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	wr.Request.ParseForm()
 	emailAddresses, ok := wr.Request.Form["emailAddress"]
 	if !ok || len(emailAddresses) != 1 {
-		http.Redirect(wr.ResponseWriter, wr.Request,
-			loginErrorPage+"?message=An error occurred.", http.StatusFound)
+		c.Redirect(http.StatusFound, loginErrorPage+"?message=An error occurred.")
 		return
 	}
 	data := wr.MakeTemplateData(map[string]any{
@@ -325,7 +344,7 @@ func handleResentInvitation(ctx context.Context, wr *WrappedRequest) {
 	tpl := template.Must(template.New("").ParseFiles(
 		"templates/main.html",
 		"templates/resentInvitation.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "resentInvitation.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "resentInvitation.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }

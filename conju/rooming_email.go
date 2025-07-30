@@ -10,7 +10,9 @@ import (
 	text_template "text/template"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
+	"github.com/cshabsin/conju/activity"
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/invitation"
 	"github.com/cshabsin/conju/model/housing"
@@ -25,38 +27,38 @@ type RenderedMail struct {
 	Subject string
 }
 
-func handleTestSendUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
-	handleTestSendRoomingRelatedEmail(ctx, wr, "updates")
+func handleTestSendUpdatesEmail(c *gin.Context) {
+	handleTestSendRoomingRelatedEmail(c, "updates")
 }
 
-func handleTestSendRoomingEmail(ctx context.Context, wr *WrappedRequest) {
-	handleTestSendRoomingRelatedEmail(ctx, wr, "rooming")
+func handleTestSendRoomingEmail(c *gin.Context) {
+	handleTestSendRoomingRelatedEmail(c, "rooming")
 }
 
-func handleTestSendFinalEmail(ctx context.Context, wr *WrappedRequest) {
-	handleTestSendRoomingRelatedEmail(ctx, wr, "final")
+func handleTestSendFinalEmail(c *gin.Context) {
+	handleTestSendRoomingRelatedEmail(c, "final")
 }
 
-func handleTestSendRoomingRelatedEmail(ctx context.Context, wr *WrappedRequest, emailName string) {
-	rendered_mail, err := getRoomingEmails(ctx, wr, emailName)
+func handleTestSendRoomingRelatedEmail(c *gin.Context, emailName string) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	rendered_mail, err := getRoomingEmails(c.Request.Context(), wr, emailName)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Rendering mail: %v", err))
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	c.Header("Content-Type", "text/plain; charset=utf-8")
 	for _, rm := range rendered_mail {
-		wr.ResponseWriter.Write([]byte(rm.Text))
+		c.String(200, rm.Text)
 	}
 }
 
-func handleAskSendRoomingEmail(ctx context.Context, wr *WrappedRequest) {
-	rendered_mail, err := getRoomingEmails(ctx, wr, "rooming")
+func handleAskSendRoomingEmail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	rendered_mail, err := getRoomingEmails(c.Request.Context(), wr, "rooming")
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Rendering mail: %v", err))
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(wr.ResponseWriter, `
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(200, `
 	Number of emails to send: %d<p>
 	<form method="POST" action="/doSendTestRoomingEmail">
 	<input type="submit" value="Send Test Mail">
@@ -67,14 +69,14 @@ func handleAskSendRoomingEmail(ctx context.Context, wr *WrappedRequest) {
 `, len(rendered_mail))
 }
 
-func handleAskSendUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
-	rendered_mail, err := getRoomingEmails(ctx, wr, "updates")
+func handleAskSendUpdatesEmail(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	rendered_mail, err := getRoomingEmails(c.Request.Context(), wr, "updates")
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Rendering mail: %v", err))
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintf(wr.ResponseWriter, `
+	c.Header("Content-Type", "text/html; charset=utf-8")
+	c.String(200, `
 	Number of emails to send: %d<p>
 	<form method="POST" action="/doSendTestUpdatesEmail">
 	<input type="submit" value="Send Test Mail">
@@ -85,34 +87,33 @@ func handleAskSendUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
 `, len(rendered_mail))
 }
 
-func handleSendTestRoomingEmail(ctx context.Context, wr *WrappedRequest) {
-	handleSendRoomingEmail(ctx, wr, "rooming", true)
+func handleSendTestRoomingEmail(c *gin.Context) {
+	handleSendRoomingEmail(c, "rooming", true)
 }
 
-func handleSendRealRoomingEmail(ctx context.Context, wr *WrappedRequest) {
-	handleSendRoomingEmail(ctx, wr, "rooming", false)
+func handleSendRealRoomingEmail(c *gin.Context) {
+	handleSendRoomingEmail(c, "rooming", false)
 }
 
-func handleSendTestUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
-	handleSendRoomingEmail(ctx, wr, "updates", true)
+func handleSendTestUpdatesEmail(c *gin.Context) {
+	handleSendRoomingEmail(c, "updates", true)
 }
 
-func handleSendRealUpdatesEmail(ctx context.Context, wr *WrappedRequest) {
-	handleSendRoomingEmail(ctx, wr, "updates", false)
+func handleSendRealUpdatesEmail(c *gin.Context) {
+	handleSendRoomingEmail(c, "updates", false)
 }
 
-func handleSendRoomingEmail(ctx context.Context, wr *WrappedRequest, emailName string, isTest bool) {
-	if wr.Method != "POST" {
-		http.Error(wr.ResponseWriter, "Invalid GET on send mail handler.",
-			http.StatusBadRequest)
+func handleSendRoomingEmail(c *gin.Context, emailName string, isTest bool) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	if c.Request.Method != "POST" {
+		c.String(http.StatusBadRequest, "Invalid GET on send mail handler.")
 		return
 	}
-	rendered_mail, err := getRoomingEmails(ctx, wr, emailName)
+	rendered_mail, err := getRoomingEmails(c.Request.Context(), wr, emailName)
 	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Rendering mail: %v", err),
-			http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, fmt.Sprintf("Rendering mail: %v", err))
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	c.Header("Content-Type", "text/html; charset=utf-8")
 	for _, to_render := range rendered_mail {
 		p := to_render.Person
 		message := &mail.SGMailV3{
@@ -130,7 +131,7 @@ func handleSendRoomingEmail(ctx context.Context, wr *WrappedRequest, emailName s
 			p.AddBCCs(mail.NewEmail("", wr.GetBccAddress()))
 			message.AddPersonalizations(p)
 		}
-		fmt.Fprintf(wr.ResponseWriter, "Sending to %s (isTest = %v)<p>", p.FullName(), isTest)
+		c.String(200, "Sending to %s (isTest = %v)<p>", p.FullName(), isTest)
 		_, err = wr.GetEmailClient().Send(message)
 		if err != nil {
 			log.Printf("Error sending mail: %v", err)

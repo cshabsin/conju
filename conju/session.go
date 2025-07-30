@@ -9,14 +9,12 @@ import (
 	"strings"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/sendgrid/sendgrid-go"
-	"google.golang.org/appengine/v2"
 	"google.golang.org/appengine/v2/user"
 
 	"github.com/cshabsin/conju/conju/dsclient"
-	"github.com/cshabsin/conju/conju/mailer"
-	"github.com/cshabsin/conju/conju/mailer/forwardemail"
 	"github.com/cshabsin/conju/conju/secretmanager"
 	"github.com/cshabsin/conju/model/event"
 )
@@ -57,10 +55,10 @@ func initializeCookieStore(ctx context.Context) error {
 }
 
 type WrappedRequest struct {
+	*gin.Context
+
 	EmailClient *sendgrid.Client
 
-	ResponseWriter WrappedResponseWriter
-	*http.Request
 	*sessions.Session
 	hasRunEventGetter bool
 	EventKey          *datastore.Key // TODO: stick these in EventInfo
@@ -72,12 +70,6 @@ type WrappedRequest struct {
 	BccAddress    *string
 	ErrorAddress  *string
 	*BookingInfo
-}
-
-type Getter func(context.Context, *WrappedRequest) error
-
-type Getters struct {
-	Getters []Getter
 }
 
 // Getters should return this error to generate a HTTP redirect.
@@ -98,101 +90,18 @@ func (dpe DoneProcessingError) Error() string {
 	return "Done processing, do not continue."
 }
 
-type Sessionizer struct {
-	DatastoreClient     *datastore.Client
-	SecretmanagerClient *secretmanager.Client
-	MailClient          *forwardemail.Client
-}
 
-func (s Sessionizer) AddSessionHandler(url string, f func(context.Context, *WrappedRequest)) *Getters {
-	var getters Getters
-	getters.Getters = []Getter{EventGetter}
-	http.HandleFunc(url, func(w http.ResponseWriter, r *http.Request) {
-		log.Printf("Handling request %v", r.URL.Path)
-		ctx := dsclient.WrapContext(appengine.NewContext(r), s.DatastoreClient)
-		ctx = secretmanager.WrapContext(ctx, s.SecretmanagerClient)
-		ctx = mailer.WrapContext(ctx, s.MailClient)
-
-		wrw := NewWrappedResponseWriter(w)
-		if store == nil {
-			if err := initializeCookieStore(ctx); err != nil {
-				log.Printf("Could not initialize secret manager in sessionizer: %v", err)
-			}
-			if store == nil {
-				// Fallback to old store.
-				store = sessions.NewCookieStore([]byte("devmode_key_crsdms"))
-			}
-		}
-		sess, err := store.Get(r, "conju")
-		if err != nil {
-			log.Printf("Could not get session from store: %v", err)
-			// TODO: Clear session instead of erroring out?
-			http.Error(wrw, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		u := user.Current(ctx)
-		wr := &WrappedRequest{
-			ResponseWriter: wrw,
-			Request:        r,
-			Session:        sess,
-			User:           u,
-			TemplateData: map[string]any{
-				"User": u,
-			},
-		}
-		if u != nil {
-			logoutUrl, err := user.LogoutURL(ctx, wr.URL.RequestURI())
-			if err == nil {
-				wr.TemplateData["LogoutLink"] = logoutUrl
-			}
-		}
-		wr.TemplateData["IsAdminUser"] = wr.IsAdminUser()
-		wr.TemplateData["DevMode"] = wr.IsAdminUser() && len(wr.Request.URL.Query()["devmode"]) > 0
-		for i, getter := range getters.Getters {
-			if err = getter(ctx, wr); err != nil {
-				if redirect, ok := err.(RedirectError); ok {
-					http.Redirect(wrw, r, redirect.Target, http.StatusFound)
-					return
-				}
-				if _, ok := err.(DoneProcessingError); ok {
-					return
-				}
-				sendErrorMail(wr, fmt.Sprintf(
-					"Getter (index %d) returned an error on request %s: %v",
-					i, wr.Request.URL.Path, err))
-				log.Printf("Getter (index %d) returned an error on request %s: %v",
-					i, wr.Request.URL.Path, err)
-				// TODO: Probably not internal server error
-				http.Error(wrw, err.Error(), http.StatusInternalServerError)
-				return
-			}
-		}
-		f(ctx, wr)
-	})
-	return &getters
-}
-
-func (g *Getters) Needs(getter Getter) *Getters {
-	g.Getters = append(g.Getters, getter)
-	return g
-}
 
 // TODO(cshabsin): Add check for whether the wrapped request has
 // already written the header (in which case emit a warning or
 // something since the change to the value will not be saved.
 func (w *WrappedRequest) SetSessionValue(key string, value any) {
-	if w.ResponseWriter.HasWrittenHeader() {
-		log.Printf("SetSessionValue called after header written. key %s, value %v", key, value)
-	}
 	w.Session.Values[key] = value
 }
 
 // Call SaveSession before writing any output to writer.
 func (w *WrappedRequest) SaveSession() error {
-	if w.ResponseWriter.HasWrittenHeader() {
-		log.Printf("SaveSession called after header written.")
-	}
-	return w.Session.Save(w.Request, w.ResponseWriter)
+	return w.Session.Save(w.Request, w.Writer)
 }
 
 // Attempts to read a datastore key from the request session, returning:
@@ -275,36 +184,7 @@ func (w WrappedRequest) GetHost() string {
 // / WrappedResponseWriter simply records when the header has been
 // / written, so SetSessionValue can check and error when this has
 // / occurred.
-type WrappedResponseWriter struct {
-	http.ResponseWriter
-	stats *responseWriterStats
-}
 
-type responseWriterStats struct {
-	hasWrittenHeader bool
-}
-
-func NewWrappedResponseWriter(w http.ResponseWriter) WrappedResponseWriter {
-	return WrappedResponseWriter{w, &responseWriterStats{false}}
-}
-
-func (wrw WrappedResponseWriter) Header() http.Header {
-	return wrw.ResponseWriter.Header()
-}
-
-func (wrw WrappedResponseWriter) Write(b []byte) (int, error) {
-	wrw.stats.hasWrittenHeader = true
-	return wrw.ResponseWriter.Write(b)
-}
-
-func (wrw WrappedResponseWriter) WriteHeader(statuscode int) {
-	wrw.stats.hasWrittenHeader = true
-	wrw.ResponseWriter.WriteHeader(statuscode)
-}
-
-func (wrw WrappedResponseWriter) HasWrittenHeader() bool {
-	return wrw.stats.hasWrittenHeader
-}
 
 type BookingInfo struct {
 	// map of booking key ID to booking object

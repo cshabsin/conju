@@ -12,20 +12,23 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"github.com/gin-gonic/gin"
 
 	"github.com/cshabsin/conju/conju/dsclient"
 	"github.com/cshabsin/conju/conju/login"
 	"github.com/cshabsin/conju/model/person"
 )
 
-func handleListPeople(ctx context.Context, wr *WrappedRequest) {
+func handleListPeople(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	tic := time.Now()
 	q := datastore.NewQuery("Person").Order("LastName").Order("FirstName")
 
 	var allPeople []*person.Person
 	keys, err := dsclient.FromContext(ctx).GetAll(ctx, q, &allPeople)
 	if err != nil {
-		http.Error(wr.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		c.String(http.StatusInternalServerError, err.Error())
 		log.Printf("GetAll: %v", err)
 		return
 	}
@@ -36,7 +39,7 @@ func handleListPeople(ctx context.Context, wr *WrappedRequest) {
 		allPeople[i].DatastoreKey = keys[i]
 	}
 
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	c.Header("Content-Type", "text/html; charset=utf-8")
 
 	data := wr.MakeTemplateData(map[string]any{
 		"People": allPeople,
@@ -46,7 +49,7 @@ func handleListPeople(ctx context.Context, wr *WrappedRequest) {
 		"makeLoginUrl": MakeLoginUrl,
 	}
 	tpl := template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/listPeople.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "listPeople.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "listPeople.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
@@ -70,8 +73,10 @@ func fetchPerson(ctx context.Context, wr *WrappedRequest, encodedKey string) (*p
 	return &person, nil
 }
 
-func handleUpdatePersonForm(ctx context.Context, wr *WrappedRequest) {
-	queryMap := wr.Request.URL.Query()
+func handleUpdatePersonForm(c *gin.Context) {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
+	queryMap := c.Request.URL.Query()
 
 	var err error
 
@@ -84,12 +89,12 @@ func handleUpdatePersonForm(ctx context.Context, wr *WrappedRequest) {
 		pers, err = fetchPerson(ctx, wr, keyForUpdatePerson)
 		if err != nil {
 			log.Printf("%v", err)
-			http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+			c.Redirect(http.StatusSeeOther, "listPeople")
 		}
 		key, _ := datastore.DecodeKey(keyForUpdatePerson)
 		pers.DatastoreKey = key
 	}
-	wr.ResponseWriter.Header().Set("Content-Type", "text/html; charset=utf-8")
+	c.Header("Content-Type", "text/html; charset=utf-8")
 
 	formInfo := person.MakePersonUpdateFormInfo(pers.DatastoreKey, *pers, 0, false)
 	data := wr.MakeTemplateData(map[string]any{
@@ -100,18 +105,20 @@ func handleUpdatePersonForm(ctx context.Context, wr *WrappedRequest) {
 	}
 
 	var tpl = template.Must(template.New("").Funcs(functionMap).ParseFiles("templates/main.html", "templates/updatePerson.html", "templates/updatePersonForm.html"))
-	if err := tpl.ExecuteTemplate(wr.ResponseWriter, "updatePerson.html", data); err != nil {
+	if err := tpl.ExecuteTemplate(c.Writer, "updatePerson.html", data); err != nil {
 		log.Printf("%v", err)
 	}
 }
 
-func handleSaveUpdatePerson(ctx context.Context, wr *WrappedRequest) {
-	savePeople(ctx, wr)
+func handleSaveUpdatePerson(c *gin.Context) {
+	savePeople(c)
 	// Where to go from here will depend on who's logged in and what they're doing
-	http.Redirect(wr.ResponseWriter, wr.Request, "listPeople", http.StatusSeeOther)
+	c.Redirect(http.StatusSeeOther, "listPeople")
 }
 
-func savePeople(ctx context.Context, wr *WrappedRequest) error {
+func savePeople(c *gin.Context) error {
+	wr, _ := c.MustGet("wrappedRequest").(*WrappedRequest)
+	ctx := c.Request.Context()
 	wr.Request.ParseForm()
 	form := wr.Request.Form
 
