@@ -356,7 +356,16 @@ func handleRoomingReport(ctx context.Context, wr *WrappedRequest) {
 		}
 	}
 
-	shareBedBit := GetAllHousingPreferenceBooleans()[ShareBed].Bit
+	shareBedBit := -1 // if we don't find one, don't match anything.
+	for _, pref := range GetAllHousingPreferenceBooleans() {
+		if pref.Boolean == ShareBed {
+			shareBedBit = pref.Bit
+			break
+		}
+	}
+	if shareBedBit == -1 {
+		log.Printf("No ShareBed bit found")
+	}
 
 	type RealBooking struct {
 		KeyString           string
