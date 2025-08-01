@@ -38,7 +38,7 @@ td:first-child {
 {{range .People}}
 <tr>
 <td>{{.FullName}}</td>
-{{range (index $PersonToRestrictions .DatastoreKey.IntID)}}
+{{range (index $PersonToRestrictions .DatastoreKey.ID)}}
 <td>{{if .}}X{{end}}</td>
 {{end}}
 <td style="text-align:left">{{.FoodNotes}}
