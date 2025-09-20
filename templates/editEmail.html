@@ -30,6 +30,7 @@
 
   <hr>
 
+  {{if .MarkdownBody}}
   <div class="editor-section">
     <h2>Markdown</h2>
     <div class="edit-preview-container">
@@ -39,6 +40,35 @@
       <div class="preview-pane">
         <h3>Preview</h3>
         <iframe id="htmlPreview"></iframe>
+      </div>
+    </div>
+  </div>
+  {{else}}
+  <div class="editor-section">
+    <h2>HTML Version</h2>
+    <div class="edit-preview-container">
+      <div class="edit-pane">
+        <textarea name="htmlBody" id="htmlBody" rows="25">{{.HTMLBody}}</textarea>
+      </div>
+      <div class="preview-pane">
+        <h3>Preview</h3>
+        <iframe id="htmlPreview"></iframe>
+      </div>
+    </div>
+  </div>
+  {{end}}
+
+  <hr>
+
+  <div class="editor-section">
+    <h2>Text Version</h2>
+    <div class="edit-preview-container">
+      <div class="edit-pane">
+        <textarea name="textBody" id="textBody" rows="25">{{.TextBody}}</textarea>
+      </div>
+      <div class="preview-pane">
+        <h3>Preview</h3>
+        <pre id="textPreview"></pre>
       </div>
     </div>
   </div>
@@ -159,10 +189,12 @@
 </style>
 
 <script>
-  // Note: This preview does not use the markdown library, so it will not be a perfect representation.
   document.addEventListener('DOMContentLoaded', function() {
     const markdownBodyTextarea = document.getElementById('markdownBody');
+    const htmlBodyTextarea = document.getElementById('htmlBody');
     const htmlPreviewFrame = document.getElementById('htmlPreview');
+    const textBodyTextarea = document.getElementById('textBody');
+    const textPreviewPre = document.getElementById('textPreview');
 
     // Debounce function to limit the rate of preview updates
     function debounce(func, delay) {
@@ -173,9 +205,19 @@
         };
     }
 
+    function updateMarkdownPreview() {
+		if (markdownBodyTextarea && htmlPreviewFrame) {
+			const content = markdownBodyTextarea.value; // TODO: call /previewMailTemplate endpoint to get the rendered sample HTML content
+			const previewDoc = htmlPreviewFrame.contentDocument || htmlPreviewFrame.contentWindow.document;
+			previewDoc.open();
+			previewDoc.write(content);
+			previewDoc.close();
+		}
+	}
+
     function updateHtmlPreview() {
-      if (markdownBodyTextarea && htmlPreviewFrame) {
-        const content = markdownBodyTextarea.value;  // TODO: call /previewMailTemplate endpoint to get the rendered sample HTML content
+      if (htmlBodyTextarea && htmlPreviewFrame) {
+        const content = htmlBodyTextarea.value;  // TODO: call /previewMailTemplate endpoint to get the rendered sample HTML content
         const previewDoc = htmlPreviewFrame.contentDocument || htmlPreviewFrame.contentWindow.document;
         previewDoc.open();
         previewDoc.write(content);
@@ -183,11 +225,29 @@
       }
     }
 
+    function updateTextPreview() {
+      if (textBodyTextarea && textPreviewPre) {
+        textPreviewPre.textContent = textBodyTextarea.value;  // TODO: call /previewMailTemplate endpoint to get the rendered sample Text content
+      }
+    }
+
+    const debouncedUpdateMarkdownPreview = debounce(updateMarkdownPreview, 250);
     const debouncedUpdateHtmlPreview = debounce(updateHtmlPreview, 250);
+    const debouncedUpdateTextPreview = debounce(updateTextPreview, 250);
 
     if (markdownBodyTextarea) {
-      markdownBodyTextarea.addEventListener('input', debouncedUpdateHtmlPreview);
+      markdownBodyTextarea.addEventListener('input', debouncedUpdateMarkdownPreview);
+      updateMarkdownPreview(); // Initial preview on page load
+    }
+
+    if (htmlBodyTextarea) {
+      htmlBodyTextarea.addEventListener('input', debouncedUpdateHtmlPreview);
       updateHtmlPreview(); // Initial preview on page load
+    }
+
+    if (textBodyTextarea) {
+      textBodyTextarea.addEventListener('input', debouncedUpdateTextPreview);
+      updateTextPreview(); // Initial preview on page load
     }
   });
 </script>

@@ -14,6 +14,9 @@ import (
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go"
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"golang.org/x/text/encoding/charmap"
 )
@@ -29,52 +32,74 @@ var emailFunctionMap = template.FuncMap{
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
+	"github.com/huantt/plaintext-extractor"
 )
 
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
 func RenderMail(ctx context.Context, eventKey *datastore.Key, templatePrefix string, data any, needSubject bool) (string, string, string, error) {
-	tpl, err := message.GetTemplates(ctx, eventKey, emailFunctionMap)
+	htmlTpl, textTpl, err := message.GetTemplates(ctx, eventKey, emailFunctionMap)
 	if err != nil {
 		return "", "", "", fmt.Errorf("error getting templates: %w", err)
 	}
 
 	// Hard-code that we want the roomingInfo template available for now.
-	tpl, err = tpl.ParseFiles("templates/roomingInfo.html")
+	htmlTpl, err = htmlTpl.ParseFiles("templates/roomingInfo.html")
+	if err != nil {
+		return "", "", "", err
+	}
+	textTpl, err = textTpl.ParseFiles("templates/roomingInfo.html")
 	if err != nil {
 		return "", "", "", err
 	}
 
-	var markdownBuf bytes.Buffer
-	if err := tpl.ExecuteTemplate(&markdownBuf, templatePrefix+"_markdown", data); err != nil {
-		return "", "", "", err
+	var text string
+	var html string
+	if textTpl.Lookup(templatePrefix+"_markdown") != nil {
+		var markdownBuf bytes.Buffer
+		if err := textTpl.ExecuteTemplate(&markdownBuf, templatePrefix+"_markdown", data); err != nil {
+			return "", "", "", err
+		}
+		md := markdownBuf.String()
+
+		extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+		p := parser.NewWithExtensions(extensions)
+		doc := p.Parse(markdownBuf.Bytes())
+
+		// create HTML renderer with extensions
+		htmlFlags := html.CommonFlags | html.HrefTargetBlank
+		opts := html.RendererOptions{Flags: htmlFlags}
+		renderer := html.NewRenderer(opts)
+
+		htmlBytes := markdown.Render(doc, renderer)
+		html = string(htmlBytes)
+
+		text, err = plaintext.Markdown(md, &plaintext.MarkdownOptions{})
+		if err != nil {
+			return "", "", "", err
+		}
+
+	} else {
+		var textBuf bytes.Buffer
+		if err := textTpl.ExecuteTemplate(&textBuf, templatePrefix+"_text", data); err != nil {
+			return "", "", "", err
+		}
+		text = textBuf.String()
+		var htmlBuf bytes.Buffer
+		if err := htmlTpl.ExecuteTemplate(&htmlBuf, templatePrefix+"_html", data); err != nil {
+			return text, "", "", err
+		}
+		html = htmlBuf.String()
 	}
-
-	// TODO: also render a text-only version.
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
-	p := parser.NewWithExtensions(extensions)
-	doc := p.Parse(markdownBuf.Bytes())
-
-	// create HTML renderer with extensions
-	htmlFlags := html.CommonFlags | html.HrefTargetBlank
-	opts := html.RendererOptions{Flags: htmlFlags}
-	renderer := html.NewRenderer(opts)
-
-	htmlBytes := markdown.Render(doc, renderer)
-
-	// TODO: To render a text-only version, we could walk the AST and output
-	// the text content of nodes. For now, we'll just use the markdown source
-	// as the text version.
-	text := markdownBuf.String()
 
 	if needSubject {
 		var subject bytes.Buffer
-		if err := tpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
-			return "", string(htmlBytes), "", err
+		if err := textTpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
+			return text, html, "", err
 		}
-		return text, string(htmlBytes), subject.String(), nil
+		return text, html, subject.String(), nil
 	}
-	return text, string(htmlBytes), "", nil
+	return text, html, "", nil
 }
 
 func handleSendMail(ctx context.Context, wr *WrappedRequest) {
@@ -107,7 +132,8 @@ func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 	isNew := false
 	templateKey := ""
 	shortName := ""
-	markdownBody := ""
+	textBody := ""
+	htmlBody := ""
 	subject := ""
 	isGlobal := false
 	if wr.Request.Form["new"] != nil {
@@ -134,7 +160,8 @@ func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 				http.StatusInternalServerError)
 			return
 		}
-		markdownBody = msg.Markdown
+		textBody = msg.Plaintext // TODO: convert to ISO-8859-1?
+		htmlBody = msg.HTML
 		subject = msg.Subject
 		isGlobal = msg.Event == nil
 	}
@@ -143,7 +170,9 @@ func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 		"IsGlobal":     isGlobal,
 		"TemplateKey":  templateKey,
 		"ShortName":    shortName,
-		"MarkdownBody": markdownBody,
+		"TextBody":     textBody,
+		"HTMLBody":     htmlBody,
+		"MarkdownBody": msg.Markdown,
 		"Subject":      subject,
 	})
 	tplFiles := []string{"templates/main.html", "templates/editEmail.html"}
@@ -167,6 +196,8 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 	}
 	emailTemplate := emailTemplates[0]
 	markdownBody := wr.Request.PostForm.Get("markdownBody")
+	textBody := wr.Request.PostForm.Get("textBody")
+	htmlBody := wr.Request.PostForm.Get("htmlBody")
 	subject := wr.Request.PostForm.Get("subject")
 
 	eventKey := wr.Event.Key
@@ -191,24 +222,37 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 		eventKey = msg.Event          // Use the existing event key if editing an existing template.
 		keyForSanityCheck = msg.Key() // For sanity check.
 	}
-	if markdownBody == "" || subject == "" {
-		http.Error(wr.ResponseWriter, "Missing markdownBody or subject",
-			http.StatusBadRequest)
-		return
-	}
-	decoder := charmap.ISO8859_1.NewDecoder()
-	markdownBody, err := decoder.String(markdownBody)
-	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding markdown for template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
-		return
-	}
 	msg := &message.Message{
 		Event:      eventKey,
 		ShortName:  emailTemplate,
-		Markdown:   markdownBody,
 		Subject:    subject,
 		Selectable: true,
+	}
+	if markdownBody != "" {
+		msg.Markdown = markdownBody
+		msg.HTML = ""
+		msg.Plaintext = ""
+	} else {
+		if textBody == "" || htmlBody == "" {
+			http.Error(wr.ResponseWriter, "Missing textBody, htmlBody, or subject",
+				http.StatusBadRequest)
+			return
+		}
+		decoder := charmap.ISO8859_1.NewDecoder()
+		textBody, err := decoder.String(textBody)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding plaintext for template %s: %v", emailTemplate, err),
+				http.StatusInternalServerError)
+			return
+		}
+		htmlBody, err = decoder.String(htmlBody)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding HTML for template %s: %v", emailTemplate, err),
+				http.StatusInternalServerError)
+			return
+		}
+		msg.Plaintext = textBody
+		msg.HTML = htmlBody
 	}
 	if keyForSanityCheck != nil && msg.Key().Encode() != keyForSanityCheck.Encode() {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Key mismatch for template %s: %s != %s", emailTemplate, msg.Key().Encode(), keyForSanityCheck.Encode()),
