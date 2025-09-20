@@ -30,20 +30,7 @@
 
   <hr>
 
-  {{if .MarkdownBody}}
-  <div class="editor-section">
-    <h2>Markdown</h2>
-    <div class="edit-preview-container">
-      <div class="edit-pane">
-        <textarea name="markdownBody" id="markdownBody" rows="25">{{.MarkdownBody}}</textarea>
-      </div>
-      <div class="preview-pane">
-        <h3>Preview</h3>
-        <iframe id="htmlPreview"></iframe>
-      </div>
-    </div>
-  </div>
-  {{else}}
+  {{if .HTMLBody}}
   <div class="editor-section">
     <h2>HTML Version</h2>
     <div class="edit-preview-container">
@@ -56,7 +43,6 @@
       </div>
     </div>
   </div>
-  {{end}}
 
   <hr>
 
@@ -72,6 +58,20 @@
       </div>
     </div>
   </div>
+  {{else}}
+  <div class="editor-section">
+    <h2>Markdown</h2>
+    <div class="edit-preview-container">
+      <div class="edit-pane">
+        <textarea name="markdownBody" id="markdownBody" rows="25">{{.MarkdownBody}}</textarea>
+      </div>
+      <div class="preview-pane">
+        <h3>Preview</h3>
+        <iframe id="htmlPreview"></iframe>
+      </div>
+    </div>
+  </div>
+  {{end}}
 
   <hr>
 
