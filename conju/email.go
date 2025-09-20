@@ -14,11 +14,12 @@ import (
 	"github.com/cshabsin/conju/model/message"
 	"github.com/cshabsin/conju/model/person"
 	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"golang.org/x/text/encoding/charmap"
+
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
-	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"golang.org/x/text/encoding/charmap"
 )
 
 var emailFunctionMap = template.FuncMap{
@@ -28,12 +29,6 @@ var emailFunctionMap = template.FuncMap{
 	"SharerName":                  MakeSharerName,
 	"DerefPeople":                 DerefPeople,
 }
-
-	"github.com/gomarkdown/markdown"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
-	"github.com/huantt/plaintext-extractor"
-)
 
 // Renders the named mail template and returns the filled text, filled
 // html, and filled subject line, or an error.
@@ -73,11 +68,7 @@ func RenderMail(ctx context.Context, eventKey *datastore.Key, templatePrefix str
 
 		htmlBytes := markdown.Render(doc, renderer)
 		html = string(htmlBytes)
-
-		text, err = plaintext.Markdown(md, &plaintext.MarkdownOptions{})
-		if err != nil {
-			return "", "", "", err
-		}
+		text = md
 
 	} else {
 		var textBuf bytes.Buffer
@@ -195,10 +186,15 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 		return
 	}
 	emailTemplate := emailTemplates[0]
+	subject := wr.Request.PostForm.Get("subject")
+	if subject == "" {
+		http.Error(wr.ResponseWriter, "Missing subject", http.StatusBadRequest)
+		return
+	}
+
 	markdownBody := wr.Request.PostForm.Get("markdownBody")
 	textBody := wr.Request.PostForm.Get("textBody")
 	htmlBody := wr.Request.PostForm.Get("htmlBody")
-	subject := wr.Request.PostForm.Get("subject")
 
 	eventKey := wr.Event.Key
 	var keyForSanityCheck *datastore.Key
@@ -230,11 +226,9 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 	}
 	if markdownBody != "" {
 		msg.Markdown = markdownBody
-		msg.HTML = ""
-		msg.Plaintext = ""
 	} else {
 		if textBody == "" || htmlBody == "" {
-			http.Error(wr.ResponseWriter, "Missing textBody, htmlBody, or subject",
+			http.Error(wr.ResponseWriter, "Missing textBody or htmlBody",
 				http.StatusBadRequest)
 			return
 		}

@@ -176,6 +176,9 @@ func htmlContents(m *Message) string {
 func textContents(m *Message) string {
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
+	if m.Markdown != "" {
+		content.WriteString(fmt.Sprintf("{{define \"%s_markdown\"}}\n%s\n{{end}}\n", m.ShortName, m.Markdown))
+	}
 	content.WriteString(fmt.Sprintf("{{define \"%s_text\"}}\n%s\n{{end}}\n", m.ShortName, m.Plaintext))
 	return content.String()
 }
