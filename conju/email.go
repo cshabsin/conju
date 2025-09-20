@@ -16,6 +16,10 @@ import (
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 	"golang.org/x/text/encoding/charmap"
+
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/html"
+	"github.com/gomarkdown/markdown/parser"
 )
 
 var emailFunctionMap = template.FuncMap{
@@ -44,22 +48,49 @@ func RenderMail(ctx context.Context, eventKey *datastore.Key, templatePrefix str
 		return "", "", "", err
 	}
 
-	var text bytes.Buffer
-	if err := textTpl.ExecuteTemplate(&text, templatePrefix+"_text", data); err != nil {
-		return "", "", "", err
+	var text string
+	var html string
+	if textTpl.Lookup(templatePrefix+"_markdown") != nil {
+		var markdownBuf bytes.Buffer
+		if err := textTpl.ExecuteTemplate(&markdownBuf, templatePrefix+"_markdown", data); err != nil {
+			return "", "", "", err
+		}
+		md := markdownBuf.String()
+
+		extensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.NoEmptyLineBeforeBlock
+		p := parser.NewWithExtensions(extensions)
+		doc := p.Parse(markdownBuf.Bytes())
+
+		// create HTML renderer with extensions
+		htmlFlags := html.CommonFlags | html.HrefTargetBlank
+		opts := html.RendererOptions{Flags: htmlFlags}
+		renderer := html.NewRenderer(opts)
+
+		htmlBytes := markdown.Render(doc, renderer)
+		html = string(htmlBytes)
+		text = md
+
+	} else {
+		var textBuf bytes.Buffer
+		if err := textTpl.ExecuteTemplate(&textBuf, templatePrefix+"_text", data); err != nil {
+			return "", "", "", err
+		}
+		text = textBuf.String()
+		var htmlBuf bytes.Buffer
+		if err := htmlTpl.ExecuteTemplate(&htmlBuf, templatePrefix+"_html", data); err != nil {
+			return text, "", "", err
+		}
+		html = htmlBuf.String()
 	}
-	var htmlBuf bytes.Buffer
-	if err := htmlTpl.ExecuteTemplate(&htmlBuf, templatePrefix+"_html", data); err != nil {
-		return text.String(), "", "", err
-	}
+
 	if needSubject {
 		var subject bytes.Buffer
 		if err := textTpl.ExecuteTemplate(&subject, templatePrefix+"_subject", data); err != nil {
-			return text.String(), htmlBuf.String(), "", err
+			return text, html, "", err
 		}
-		return text.String(), htmlBuf.String(), subject.String(), nil
+		return text, html, subject.String(), nil
 	}
-	return text.String(), htmlBuf.String(), "", nil
+	return text, html, "", nil
 }
 
 func handleSendMail(ctx context.Context, wr *WrappedRequest) {
@@ -126,13 +157,14 @@ func handleEditMail(ctx context.Context, wr *WrappedRequest) {
 		isGlobal = msg.Event == nil
 	}
 	data := wr.MakeTemplateData(map[string]any{
-		"IsNew":       isNew,
-		"IsGlobal":    isGlobal,
-		"TemplateKey": templateKey,
-		"ShortName":   shortName,
-		"TextBody":    textBody,
-		"HTMLBody":    htmlBody,
-		"Subject":     subject,
+		"IsNew":        isNew,
+		"IsGlobal":     isGlobal,
+		"TemplateKey":  templateKey,
+		"ShortName":    shortName,
+		"TextBody":     textBody,
+		"HTMLBody":     htmlBody,
+		"MarkdownBody": msg.Markdown,
+		"Subject":      subject,
 	})
 	tplFiles := []string{"templates/main.html", "templates/editEmail.html"}
 	webTpl := template.Must(template.ParseFiles(tplFiles...))
@@ -154,9 +186,15 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 		return
 	}
 	emailTemplate := emailTemplates[0]
+	subject := wr.Request.PostForm.Get("subject")
+	if subject == "" {
+		http.Error(wr.ResponseWriter, "Missing subject", http.StatusBadRequest)
+		return
+	}
+
+	markdownBody := wr.Request.PostForm.Get("markdownBody")
 	textBody := wr.Request.PostForm.Get("textBody")
 	htmlBody := wr.Request.PostForm.Get("htmlBody")
-	subject := wr.Request.PostForm.Get("subject")
 
 	eventKey := wr.Event.Key
 	var keyForSanityCheck *datastore.Key
@@ -180,31 +218,35 @@ func handleSaveMail(ctx context.Context, wr *WrappedRequest) {
 		eventKey = msg.Event          // Use the existing event key if editing an existing template.
 		keyForSanityCheck = msg.Key() // For sanity check.
 	}
-	if textBody == "" || htmlBody == "" || subject == "" {
-		http.Error(wr.ResponseWriter, "Missing textBody, htmlBody, or subject",
-			http.StatusBadRequest)
-		return
-	}
-	decoder := charmap.ISO8859_1.NewDecoder()
-	textBody, err := decoder.String(textBody)
-	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding plaintext for template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
-		return
-	}
-	htmlBody, err = decoder.String(htmlBody)
-	if err != nil {
-		http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding HTML for template %s: %v", emailTemplate, err),
-			http.StatusInternalServerError)
-		return
-	}
 	msg := &message.Message{
 		Event:      eventKey,
 		ShortName:  emailTemplate,
-		Plaintext:  textBody,
-		HTML:       htmlBody,
 		Subject:    subject,
 		Selectable: true,
+	}
+	if markdownBody != "" {
+		msg.Markdown = markdownBody
+	} else {
+		if textBody == "" || htmlBody == "" {
+			http.Error(wr.ResponseWriter, "Missing textBody or htmlBody",
+				http.StatusBadRequest)
+			return
+		}
+		decoder := charmap.ISO8859_1.NewDecoder()
+		textBody, err := decoder.String(textBody)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding plaintext for template %s: %v", emailTemplate, err),
+				http.StatusInternalServerError)
+			return
+		}
+		htmlBody, err = decoder.String(htmlBody)
+		if err != nil {
+			http.Error(wr.ResponseWriter, fmt.Sprintf("Error decoding HTML for template %s: %v", emailTemplate, err),
+				http.StatusInternalServerError)
+			return
+		}
+		msg.Plaintext = textBody
+		msg.HTML = htmlBody
 	}
 	if keyForSanityCheck != nil && msg.Key().Encode() != keyForSanityCheck.Encode() {
 		http.Error(wr.ResponseWriter, fmt.Sprintf("Key mismatch for template %s: %s != %s", emailTemplate, msg.Key().Encode(), keyForSanityCheck.Encode()),

@@ -47,6 +47,7 @@ type Message struct {
 	Subject   string      `datastore:",noindex"` // subject template for the message
 	Plaintext string      `datastore:",noindex"` // plaintext version of the message template
 	HTML      string      `datastore:",noindex"` // HTML version of the message template
+	Markdown  string      `datastore:",noindex"` // Markdown version of the message template
 
 	// Whether this message can be selected by users for sending.
 	// If false, it just contains utility templates that are used by other messages.
@@ -165,6 +166,9 @@ func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_tem
 func htmlContents(m *Message) string {
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
+	if m.Markdown != "" {
+		content.WriteString(fmt.Sprintf("{{define \"%s_markdown\"}}\n%s\n{{end}}\n", m.ShortName, m.Markdown))
+	}
 	content.WriteString(fmt.Sprintf("{{define \"%s_html\"}}\n%s\n{{end}}\n", m.ShortName, m.HTML))
 	return content.String()
 }
@@ -172,6 +176,9 @@ func htmlContents(m *Message) string {
 func textContents(m *Message) string {
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
+	if m.Markdown != "" {
+		content.WriteString(fmt.Sprintf("{{define \"%s_markdown\"}}\n%s\n{{end}}\n", m.ShortName, m.Markdown))
+	}
 	content.WriteString(fmt.Sprintf("{{define \"%s_text\"}}\n%s\n{{end}}\n", m.ShortName, m.Plaintext))
 	return content.String()
 }

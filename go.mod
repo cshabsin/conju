@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.6.0
 	cloud.google.com/go/datastore v1.20.0
 	cloud.google.com/go/secretmanager v1.14.2
+	github.com/gomarkdown/markdown v0.0.0-20250810172220-2e2c11897d1a
 	github.com/gorilla/sessions v1.2.1
 	github.com/sendgrid/sendgrid-go v3.10.5+incompatible
 	golang.org/x/oauth2 v0.24.0

@@ -30,6 +30,7 @@
 
   <hr>
 
+  {{if .HTMLBody}}
   <div class="editor-section">
     <h2>HTML Version</h2>
     <div class="edit-preview-container">
@@ -57,6 +58,20 @@
       </div>
     </div>
   </div>
+  {{else}}
+  <div class="editor-section">
+    <h2>Markdown</h2>
+    <div class="edit-preview-container">
+      <div class="edit-pane">
+        <textarea name="markdownBody" id="markdownBody" rows="25">{{.MarkdownBody}}</textarea>
+      </div>
+      <div class="preview-pane">
+        <h3>Preview</h3>
+        <iframe id="htmlPreview"></iframe>
+      </div>
+    </div>
+  </div>
+  {{end}}
 
   <hr>
 
@@ -175,6 +190,7 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    const markdownBodyTextarea = document.getElementById('markdownBody');
     const htmlBodyTextarea = document.getElementById('htmlBody');
     const htmlPreviewFrame = document.getElementById('htmlPreview');
     const textBodyTextarea = document.getElementById('textBody');
@@ -188,6 +204,16 @@
             timeout = setTimeout(() => func.apply(this, args), delay);
         };
     }
+
+    function updateMarkdownPreview() {
+		if (markdownBodyTextarea && htmlPreviewFrame) {
+			const content = markdownBodyTextarea.value; // TODO: call /previewMailTemplate endpoint to get the rendered sample HTML content
+			const previewDoc = htmlPreviewFrame.contentDocument || htmlPreviewFrame.contentWindow.document;
+			previewDoc.open();
+			previewDoc.write(content);
+			previewDoc.close();
+		}
+	}
 
     function updateHtmlPreview() {
       if (htmlBodyTextarea && htmlPreviewFrame) {
@@ -205,8 +231,14 @@
       }
     }
 
+    const debouncedUpdateMarkdownPreview = debounce(updateMarkdownPreview, 250);
     const debouncedUpdateHtmlPreview = debounce(updateHtmlPreview, 250);
     const debouncedUpdateTextPreview = debounce(updateTextPreview, 250);
+
+    if (markdownBodyTextarea) {
+      markdownBodyTextarea.addEventListener('input', debouncedUpdateMarkdownPreview);
+      updateMarkdownPreview(); // Initial preview on page load
+    }
 
     if (htmlBodyTextarea) {
       htmlBodyTextarea.addEventListener('input', debouncedUpdateHtmlPreview);
