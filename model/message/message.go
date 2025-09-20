@@ -43,10 +43,11 @@ type Message struct {
 	Event     *datastore.Key // the event id this message is associated with
 	ShortName string         // the short name of the message, used to identify it
 
-	Type      MessageType // the type of message (individual, invitee, attendee, admin)
-	Subject   string      `datastore:",noindex"` // subject template for the message
-	Plaintext string      `datastore:",noindex"` // plaintext version of the message template
-	HTML      string      `datastore:",noindex"` // HTML version of the message template
+	Type    MessageType // the type of message (individual, invitee, attendee, admin)
+	Subject string      `datastore:",noindex"` // subject template for the message
+	// Markdown version of the message template. From this, we can generate both
+	// HTML and plaintext.
+	Markdown string `datastore:",noindex"`
 
 	// Whether this message can be selected by users for sending.
 	// If false, it just contains utility templates that are used by other messages.
@@ -139,39 +140,28 @@ func Get(ctx context.Context, key *datastore.Key) (*Message, error) {
 	return &msg, nil
 }
 
-func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_template.FuncMap) (*html_template.Template, *text_template.Template, error) {
+func GetTemplates(ctx context.Context, eventKey *datastore.Key, funcMap text_template.FuncMap) (*text_template.Template, error) {
 	msgs, err := global(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error listing global templates: %w", err)
+		return nil, fmt.Errorf("error listing global templates: %w", err)
 	}
 	eventMsgs, err := forEvent(ctx, eventKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error listing event templates: %w", err)
+		return nil, fmt.Errorf("error listing event templates: %w", err)
 	}
 	msgs = append(msgs, eventMsgs...)
-	htmlTpl := html_template.New("").Funcs(funcMap)
-	txtTpl := text_template.New("").Funcs(funcMap)
+	tpl := text_template.New("").Funcs(funcMap)
 	for _, msg := range msgs {
-		if _, err := htmlTpl.Parse(htmlContents(msg)); err != nil {
-			return nil, nil, fmt.Errorf("error parsing HTML template %q: %w", msg.ShortName, err)
-		}
-		if _, err := txtTpl.Parse(textContents(msg)); err != nil {
-			return nil, nil, fmt.Errorf("error parsing text template %q: %w", msg.ShortName, err)
+		if _, err := tpl.Parse(markdownContents(msg)); err != nil {
+			return nil, fmt.Errorf("error parsing markdown template %q: %w", msg.ShortName, err)
 		}
 	}
-	return htmlTpl, txtTpl, nil
+	return tpl, nil
 }
 
-func htmlContents(m *Message) string {
+func markdownContents(m *Message) string {
 	var content strings.Builder
 	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
-	content.WriteString(fmt.Sprintf("{{define \"%s_html\"}}\n%s\n{{end}}\n", m.ShortName, m.HTML))
-	return content.String()
-}
-
-func textContents(m *Message) string {
-	var content strings.Builder
-	content.WriteString(fmt.Sprintf("{{define \"%s_subject\"}}\n%s\n{{end}}\n", m.ShortName, m.Subject))
-	content.WriteString(fmt.Sprintf("{{define \"%s_text\"}}\n%s\n{{end}}\n", m.ShortName, m.Plaintext))
+	content.WriteString(fmt.Sprintf("{{define \"%s_markdown\"}}\n%s\n{{end}}\n", m.ShortName, m.Markdown))
 	return content.String()
 }
