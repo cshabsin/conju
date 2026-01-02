@@ -1,0 +1,44 @@
+      td{border:1px solid black;width:100px;height:100px;}
+      .ThuFriSat{background-color: #5A0ABF; color: lightgray !important}
+      .FriSatSun{background-color: #5A0ABF; color: lightgray !important}
+      .FriSat{background-color: #AA66FF}
+      .SatSun{background-color: #800080}
+      .Maybe{background-color: #D6ADF7}
+      .NoRsvps{background-color: #EBD9FA}
+      .roomProperties{display:none}
+      .guestProperties{display:none}
+      .guestKey{display:none}
+      .constraintsNotMet{border: 3px solid red !important}
+      .all{background-color: #76A6F5}
+      .fs{background-color: #0761F2}
+      .ss{background-color: #00FF00}
+      .group{border:1px solid black; margin:3px; padding:2px;width:100px;height:auto;z-index:10; font-size:smaller;color:black}
+      .group .group {border:0px; width:95px; margin:0px; padding:0px}
+      .guestContainer{border:0px;}
+      /* .booked{background-color:#CCCCCC;opacity:.2} */
+      .typeHolder{margin:10px}
+      .unassigned div.group{display:inline-block; position:relative}
+      .unassigned .guestContainer .group{display:block}
+      .guestContainer {display:inline-block}
+      .exploder {float: right; position:absolute;top:0px; left:90; z-index:11}
+      td{vertical-align:top}
+      .building{display:inline-block;margin:0px 20px}
+      .buildingWithImage{display:inline-block; position:relative}
+      .buildingWithImage div{position:absolute}
+      .buildingWithImage div div{position:static}
+      img{opacity: .5}
+      img.desaturate{
+        -webkit-filter: grayscale(100%);
+        filter: grayscale(100%);
+        filter: url(desaturate.svg#greyscale);
+      }
+      .allBuildings{height:1000px}
+      .building{width:350px;}
+      .building img{opacity: .3}
+
+
+
+/*
+      .buildingWithImage > div:nth-child(2n) { background-color: #AA66FF; opacity:.3}
+      .buildingWithImage > div:nth-child(2n+1) { background-color: lightgreen; opacity:.3}
+*/
